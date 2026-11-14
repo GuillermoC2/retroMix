@@ -578,6 +578,7 @@ export class MazeRunMode implements GameMode {
 
     if (state.phase !== 'playing') this.scroll.update(dt, state.meters, this.player.y, 1, false);
     this.cameraRig.update(dt, this.scroll.y);
+    this.updateWallColor();
     this.mazeView.update(dt, this.cameraRig.focus.y);
     this.pelletsView.update(dt);
     this.portalsView.update(dt, this.cameraRig.focus.y);
@@ -617,6 +618,22 @@ export class MazeRunMode implements GameMode {
     this.anchorHud();
     this.placePortalLabels();
   }
+
+  /**
+   * Color de las paredes según el poder: GHOUL las pone en alerta roja (desde que
+   * aterriza); GIGANTE acelera el cambio de color habitual.
+   */
+  private updateWallColor(): void {
+    const neon = this.mazeView.neon;
+    const id = this.powers.active?.id;
+    neon.speed = id === 'giant' ? CONFIG.specialPowers.giant.neonSpeed : 1;
+    neon.alert = id === 'ghoul' || this.legsLanding ? this.ghoulAlert : null;
+  }
+
+  private readonly ghoulAlert = (() => {
+    const a = CONFIG.specialPowers.ghoul.wallAlert;
+    return { dim: new THREE.Color(a.dim), bright: new THREE.Color(a.bright), period: a.period, duty: a.duty };
+  })();
 
   /** Carteles con el nombre del minijuego sobre los portales abiertos. */
   private placePortalLabels(): void {

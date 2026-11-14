@@ -167,16 +167,34 @@ html, body {
 
 /* --- Popups --- */
 .popups { position: absolute; inset: 0; }
-.popup.fail { color: #ff3a4a; font-size: 14px; }
+/* Puntos de fantasmas y energizadores: entran de golpe con rebote, parpadean entre colores neón con un
+   halo y suben flotando antes de desvanecerse (D-039). */
 .popup {
   position: absolute;
   transform: translate(-50%, -50%);
-  font-size: 12px;
+  font-size: 20px;
   color: #3ae8ff;
-  text-shadow: var(--shadow);
-  animation: popup 0.9s steps(9) forwards;
+  text-shadow: var(--shadow), 0 0 10px currentColor, 0 0 22px currentColor;
+  animation: popup 1.2s steps(24) forwards;
+  pointer-events: none;
 }
 @keyframes popup {
+  0%   { opacity: 1; margin-top: 0;     transform: translate(-50%, -50%) scale(0.2);                  color: var(--white); }
+  10%  {             margin-top: -6px;  transform: translate(-50%, -50%) scale(1.75) rotate(-8deg);   color: var(--white); }
+  20%  {             margin-top: -10px; transform: translate(-50%, -50%) scale(0.95) rotate(5deg);    color: var(--yellow); }
+  30%  {             margin-top: -14px; transform: translate(-50%, -50%) scale(1.2) rotate(-3deg);    color: #ff3ad8; }
+  40%  {             margin-top: -18px; transform: translate(-50%, -50%) scale(1.05) rotate(1deg);    color: #3ae8ff; }
+  55%  {             margin-top: -26px; transform: translate(-50%, -50%) scale(1.1);                  color: var(--yellow); }
+  70%  { opacity: 1; margin-top: -36px; transform: translate(-50%, -50%) scale(1.05);                 color: var(--white); }
+  100% { opacity: 0; margin-top: -64px; transform: translate(-50%, -50%) scale(0.8);                  color: #3ae8ff; }
+}
+.popup.fail {
+  font-size: 14px;
+  color: #ff3a4a;
+  text-shadow: var(--shadow);
+  animation: popup-fail 0.9s steps(9) forwards;
+}
+@keyframes popup-fail {
   from { opacity: 1; margin-top: 0; }
   to { opacity: 0; margin-top: -40px; }
 }

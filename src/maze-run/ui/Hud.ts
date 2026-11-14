@@ -59,6 +59,9 @@ export class Hud {
     this.root.append(this.keys, this.message, this.god, this.special, this.announcer);
     this.setGodMode('');
     this.setSpecial(null);
+    // Al acabar, el anuncio se retira del todo: si se quedara con `show`, al volver a mostrar la
+    // interfaz (tras un minijuego o el menú K) el navegador repetiría la animación con el texto viejo.
+    this.announcer.addEventListener('animationend', () => this.clearAnnounce());
     parent.appendChild(this.root);
     this.score = new ScoreDisplay(this.root, records.bestScore);
     this.altitude = new AltitudeDisplay(this.root, records.bestDistance);
@@ -158,7 +161,14 @@ export class Hud {
   }
 
   setVisible(visible: boolean): void {
+    // Un anuncio a medias no se repite al volver (ver el constructor).
+    if (!visible) this.clearAnnounce();
     this.root.style.display = visible ? '' : 'none';
+  }
+
+  private clearAnnounce(): void {
+    this.announcer.classList.remove('show');
+    this.announcer.innerHTML = '';
   }
 
   dispose(): void {

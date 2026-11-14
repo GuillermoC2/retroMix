@@ -254,6 +254,19 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
   - **Movimiento más caótico, sin pasarse:** los puntos intermedios de cada tentáculo se retuercen con dos ondas de frecuencias distintas por tentáculo, de lado y en altura (`writhe` 0,22). En la cinemática, igual en el ángulo.
   - **Cinemática en estrella:** los tentáculos ya no salen solo de la espalda (detrás de la boca), sino uno en cada diagonal (45°, 135°, 225° y 315°), y más largos (1,45 × escala), así que ocupan más pantalla.
 
+## D-038 · Color de las paredes según el poder
+- **Fecha:** 2026-11-14 · **Estado:** Vigente
+- **Contexto:** petición del usuario: con GHOUL, paredes rojas que cambian rápido entre un rojo muy apagado y uno intenso, como una alerta; con GIGANTE, simplemente un cambio de color habitual más rápido.
+- **Decisión:** `NeonCycle` (`render/neon.ts`) gana dos controles que maneja `MazeRunMode.updateWallColor()` cada fotograma:
+  - `speed`: multiplica la velocidad del ciclo de colores. Con GIGANTE, ×5 (`giant.neonSpeed`).
+  - `alert`: parpadeo entre dos colores que sustituye al ciclo, con un fundido de entrada y salida de 0,2 s. Siempre empieza en el pulso intenso. Con GHOUL, entre 0x2a0006 y 0xff1a2c, periodo 0,4 s, intenso el 45 % (`ghoul.wallAlert`). Empieza al aterrizar la cinemática y dura hasta el final de la animación de salida.
+- **Consecuencias:** todo lo que usa el color del laberinto (contornos, laterales, suelo, rejilla de fondo y pedazos de los bloques rotos) se tiñe igual. El ciclo normal sigue avanzando por debajo, así que al acabar continúa donde iba. Los tentáculos rojos se distinguen algo menos sobre las paredes rojas; queda anotado por si hace falta contraste.
+
+## D-039 · Puntos flotantes más llamativos
+- **Fecha:** 2026-11-14 · **Estado:** Vigente
+- **Contexto:** petición del usuario: al comer un fantasma o un energizador, los puntos deben saltar más llamativos y algo más grandes.
+- **Decisión:** solo CSS (`.popup` en `src/style.css`), ya que solo esos dos casos muestran puntos flotantes. La letra pasa de 12 a 20 px y la animación de 0,9 a 1,2 s, a saltos (`steps(24)`) para mantener el aire retro. Entra de golpe desde ×0,2 hasta ×1,75 inclinado, rebota con pequeños giros, parpadea entre blanco, amarillo, rosa y cian con un halo de su color y sube 64 px mientras se desvanece. La "X" de fallo al romper muro mantiene la animación anterior (`popup-fail`).
+
 ## D-015 · Pruebas fuera del repositorio (provisional)
 - **Fecha:** 2026-11-13 · **Estado:** En revisión
 - **Decisión actual:** el test de conectividad del generador, el fuzzing de movimiento y las capturas con Edge headless + `puppeteer-core` se ejecutaron desde un directorio temporal, sin añadir dependencias al proyecto.

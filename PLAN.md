@@ -64,6 +64,7 @@ Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[?]` propuesta sin
 - [x] Puntos fuera de la caja: cifra flotante que cuenta hacia arriba y reacciona según lo ganado — D-027
 - [x] Abajo a la derecha, ayudas con icono de tecla pixelado: "C CAMBIAR VISTA" y "ESPACIO ROMPER MURO" — D-027
 - [x] Verificación: capturas a 1280×720, 1440×900, 1920×1080 y 1024×768, y aviso en tamaños de móvil
+- [x] Puntos de fantasmas y energizadores más llamativos: más grandes, entran con rebote, parpadean entre colores neón con halo y suben flotando — D-039
 
 ## Herramientas de desarrollo
 
@@ -113,6 +114,8 @@ activa solo; si se pierde, se acaba la partida.
 - [ ] Mejorar la interfaz y el funcionamiento del Pong (pedido por el usuario; se hará más adelante)
 - [x] Poder GHOUL: 4 tentáculos rojos con venas, camina por encima de los muros rompiendo los que pisa y pisa a los fantasmas; máscara original y ojo rojo; 10 s, ×1,2 — D-036
 - [x] GHOUL revisado: tentáculos de vóxeles, sin máscara (gris oscuro con ojo rojo), más grande (×2,6), nueva animación; GIGANTE al doble (×6) — D-037
+- [x] Color de las paredes con los poderes: alerta roja con GHOUL, cambio de color más rápido con GIGANTE — D-038
+- [x] Corregido: al recibir un segundo poder se veía un momento el anuncio del primero (la animación se repetía al volver a mostrar la interfaz tras el minijuego o el menú K)
 - [ ] Más poderes especiales
 - [ ] Más minijuegos (Tetris, Space Invaders…)
 - [ ] Animaciones de entrada y salida del portal más elaboradas (a petición del usuario, más adelante)

@@ -283,6 +283,8 @@ export const CONFIG = {
     },
     giant: {
       name: 'GIGANTE',
+      /** El cambio de color habitual de las paredes va este número de veces más rápido. */
+      neonSpeed: 5,
       /** Duración (s), tamaño (×) y multiplicador de velocidad. */
       duration: 8,
       scale: 6,
@@ -309,6 +311,8 @@ export const CONFIG = {
      */
     ghoul: {
       name: 'GHOUL',
+      /** Paredes en alerta: parpadeo rápido entre un rojo muy apagado y uno intenso (periodo s, fracción intensa). */
+      wallAlert: { dim: 0x2a0006, bright: 0xff1a2c, period: 0.4, duty: 0.45 },
       duration: 10,
       /** Tamaño (×, casi como el GIGANTE original) y multiplicador de velocidad. */
       scale: 2.6,
