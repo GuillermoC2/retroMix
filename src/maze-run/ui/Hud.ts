@@ -1,6 +1,7 @@
 import { CONFIG } from '../../config';
 import type { RecordEntry } from '../../core/Records';
 import { AltitudeDisplay } from './AltitudeDisplay';
+import { RecordsList } from './RecordsList';
 import { ScoreDisplay } from './ScoreDisplay';
 
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text = '') => {
@@ -28,13 +29,15 @@ function press(key: HTMLElement): void {
 
 /**
  * Marcadores en pantalla, sin cajas, en una columna a la derecha del laberinto:
- * altura arriba, puntos en el centro y ayudas de control abajo. La columna se
- * calcula proyectando el borde del laberinto a pantalla.
+ * altura arriba, puntos en el centro y ayudas de control abajo. A la izquierda,
+ * la lista de récords de distancia. Las columnas se calculan proyectando los
+ * bordes del laberinto a pantalla.
  */
 export class Hud {
   readonly root = el('div', 'hud');
   private altitude: AltitudeDisplay;
   private score: ScoreDisplay;
+  private records: RecordsList;
   private keys = el('div', 'hud-keys');
   private power = keyHint('ESPACIO', 'ROMPER MURO');
   private charges = el('div', 'key-sub');
@@ -65,6 +68,7 @@ export class Hud {
     parent.appendChild(this.root);
     this.score = new ScoreDisplay(this.root, records.bestScore);
     this.altitude = new AltitudeDisplay(this.root, records.bestDistance);
+    this.records = new RecordsList(this.root, records.topDistances);
   }
 
   setValues(meters: number, score: number): void {
@@ -72,13 +76,21 @@ export class Hud {
     this.score.setScore(score);
   }
 
+  /** Lista de récords de distancia actualizada (p. ej. al acabar la partida); `highlight` resalta un puesto. */
+  setRecords(distances: number[], highlight = -1): void {
+    this.records.set(distances, highlight);
+  }
+
   /**
-   * Coloca la columna del HUD centrada entre el laberinto y el borde derecho.
+   * Coloca la columna del HUD centrada entre el laberinto y el borde derecho, y la
+   * lista de récords entre el borde izquierdo y el laberinto.
    * @param mazeRightPx borde derecho del laberinto en pantalla (el más a la derecha de su altura visible).
+   * @param mazeLeftPx borde izquierdo del laberinto en pantalla (el más a la izquierda).
    */
-  anchor(mazeRightPx: number): void {
+  anchor(mazeRightPx: number, mazeLeftPx: number): void {
     const { padding } = CONFIG.ui.layout;
     const W = window.innerWidth;
+    this.records.anchor(mazeLeftPx / 2, Math.max(0, mazeLeftPx - 2 * padding));
     const x = (mazeRightPx + W) / 2;
     const available = Math.max(0, W - mazeRightPx - 2 * padding);
     this.altitude.anchor(x, available);
@@ -96,6 +108,7 @@ export class Hud {
   update(dt: number): void {
     this.altitude.update(dt);
     this.score.update(dt);
+    this.records.update(dt);
   }
 
   /** Cargas del poder romper muro. */

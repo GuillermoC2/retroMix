@@ -267,6 +267,13 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 - **Contexto:** petición del usuario: al comer un fantasma o un energizador, los puntos deben saltar más llamativos y algo más grandes.
 - **Decisión:** solo CSS (`.popup` en `src/style.css`), ya que solo esos dos casos muestran puntos flotantes. La letra pasa de 12 a 20 px y la animación de 0,9 a 1,2 s, a saltos (`steps(24)`) para mantener el aire retro. Entra de golpe desde ×0,2 hasta ×1,75 inclinado, rebota con pequeños giros, parpadea entre blanco, amarillo, rosa y cian con un halo de su color y sube 64 px mientras se desvanece. La "X" de fallo al romper muro mantiene la animación anterior (`popup-fail`).
 
+## D-040 · Lista de récords de distancia a la izquierda
+- **Fecha:** 2026-11-14 · **Estado:** Vigente
+- **Contexto:** petición del usuario: una lista de récords de distancia a la izquierda de la pantalla, grande, casi como la cifra de altura de la partida.
+- **Datos:** `Records` guarda además `topDistances`, las 5 mejores distancias (`TOP_DISTANCES`) de mayor a menor, en la misma clave de localStorage. Los récords antiguos empiezan la lista con su `bestDistance`. Ante un empate, la partida nueva va detrás. Las partidas con trucos del modo dios no cuentan, igual que los demás récords. `submit` devuelve también el puesto conseguido (`distanceRank`, -1 si no entra).
+- **Interfaz** (`ui/RecordsList.ts`): título "RECORDS" y 5 filas con el puesto pequeño y la cifra grande (48 px; la altura tiene 60), que flotan con `JuicyText`. Colores: 1.º amarillo, 2.º blanco, 3.º naranja, el resto lila, y "---" apagado para los huecos. Se centra entre el borde izquierdo de la pantalla y el del laberinto (proyectado, como la columna de la derecha) y se encoge si no cabe de ancho o de alto (`CONFIG.ui.records`). Al acabar la partida se actualiza y, si se ha entrado en la lista, esa fila salta, suelta chispas y parpadea.
+- **Verificación:** capturas a 1280×720, 1920×1080 y 1024×768 con la lista vacía y con 4 récords.
+
 ## D-015 · Pruebas fuera del repositorio (provisional)
 - **Fecha:** 2026-11-13 · **Estado:** En revisión
 - **Decisión actual:** el test de conectividad del generador, el fuzzing de movimiento y las capturas con Edge headless + `puppeteer-core` se ejecutaron desde un directorio temporal, sin añadir dependencias al proyecto.

@@ -65,6 +65,7 @@ Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[?]` propuesta sin
 - [x] Abajo a la derecha, ayudas con icono de tecla pixelado: "C CAMBIAR VISTA" y "ESPACIO ROMPER MURO" — D-027
 - [x] Verificación: capturas a 1280×720, 1440×900, 1920×1080 y 1024×768, y aviso en tamaños de móvil
 - [x] Puntos de fantasmas y energizadores más llamativos: más grandes, entran con rebote, parpadean entre colores neón con halo y suben flotando — D-039
+- [x] Lista de las 5 mejores distancias a la izquierda del laberinto, con cifras grandes (48 px, casi como la altura) que flotan; el puesto nuevo parpadea al acabar la partida — D-040
 
 ## Herramientas de desarrollo
 
@@ -91,6 +92,7 @@ No se harán sin el visto bueno del usuario (se evita añadir funcionalidades no
 - [?] GIGANTE inmune a la lava (ahora la lava sí le mata, D-031)
 - [?] Puntos por cada muro comido por el GIGANTE
 - [?] Atajo de desarrollo para saltar al siguiente portal
+- [?] Lista de récords que reacciona en directo: al superar una distancia de la lista durante la partida, esa fila salta y se marca como superada
 - [?] Retocar el sprite del protagonista mirando hacia arriba (parado, se lee algo como un corazón)
 
 ## Fase 2 — Minijuegos como desafíos: portales

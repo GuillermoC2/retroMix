@@ -67,6 +67,27 @@ html, body {
   to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.3); opacity: 0; }
 }
 
+/* --- Lista de récords de distancia (izquierda del laberinto) --- */
+.records { position: absolute; transform-origin: top center; display: grid; grid-template-columns: auto auto; column-gap: 18px; row-gap: 22px; align-items: center; width: max-content; }
+.records-title { grid-column: 1 / -1; justify-self: center; font-size: 14px; color: var(--blue); letter-spacing: 4px; margin-bottom: 6px; text-shadow: var(--shadow); }
+.records-row { display: contents; }
+.records-rank { justify-self: end; font-size: 20px; color: #9aa3ff; text-shadow: var(--shadow); }
+.records-number { justify-self: end; text-align: right; color: #c4c8f4; --edge: #0b0b3a; }
+.records-number .juicy-body {
+  text-shadow:
+    -4px 0 var(--edge), 4px 0 var(--edge), 0 -4px var(--edge), 0 4px var(--edge),
+    -4px -4px var(--edge), 4px -4px var(--edge), -4px 4px var(--edge), 4px 4px var(--edge),
+    6px 8px 0 rgba(0, 0, 0, 0.65);
+}
+.rank-1 .records-number { color: var(--yellow); --edge: #2a1400; }
+.rank-1 .records-rank { color: var(--yellow); }
+.rank-2 .records-number { color: #e4e8ff; }
+.rank-3 .records-number { color: #ff9a4a; --edge: #2a0e00; }
+.rank-3 .records-rank { color: #ff9a4a; }
+.records-row.empty .records-number { color: #3a3f78; }
+.records-row.new .records-number { animation: records-new 0.5s steps(2, jump-none) infinite; }
+@keyframes records-new { 50% { color: #ffffff; } }
+
 /* --- Puntos flotantes --- */
 .score { position: absolute; transform: translateX(-50%); text-align: center; }
 .score-label { font-size: 11px; color: var(--blue); letter-spacing: 3px; margin-bottom: 14px; text-shadow: var(--shadow); }

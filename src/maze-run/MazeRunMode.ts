@@ -560,6 +560,7 @@ export class MazeRunMode implements GameMode {
     const newRecord = this.usedCheats
       ? { distance: false, score: false }
       : this.ctx.records.submit(GAME_ID, state.meters, state.score);
+    if ('distanceRank' in newRecord) this.hud.setRecords(this.ctx.records.get(GAME_ID).topDistances, newRecord.distanceRank);
     this.state.setPhase('over');
     this.hud.setMessage('');
     this.gameOver = new GameOverScreen(this.ctx.ui, {
@@ -661,12 +662,10 @@ export class MazeRunMode implements GameMode {
     const z = CONFIG.maze.wallDepth;
     // Por la perspectiva, el borde del laberinto no está igual de a la derecha arriba
     // que abajo: la columna del HUD empieza en el punto más a la derecha.
-    const right = Math.max(
-      this.toScreen(half, y, z).x,
-      this.toScreen(half, focus.y + halfHeight, z).x,
-      this.toScreen(half, focus.y - halfHeight, z).x,
-    );
-    this.hud.anchor(right);
+    const ys = [y, focus.y + halfHeight, focus.y - halfHeight];
+    const right = Math.max(...ys.map((v) => this.toScreen(half, v, z).x));
+    const left = Math.min(...ys.map((v) => this.toScreen(-half, v, z).x));
+    this.hud.anchor(right, left);
   }
 
   private popupAt(text: string, tileX: number, tileY: number, className = ''): void {

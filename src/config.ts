@@ -205,6 +205,19 @@ export const CONFIG = {
       /** Cada cuántos metros hay un pop pequeño. */
       smallPopEvery: 10,
     },
+    /** Lista de récords de distancia a la izquierda del laberinto (D-040). */
+    records: {
+      /** Borde superior de la lista en pantalla (fracción desde arriba). */
+      screenY: 0.07,
+      /** Altura máxima de la lista (fracción de la pantalla); si no cabe, se encoge. */
+      maxHeight: 0.86,
+      /** Tamaño de las cifras: casi como la altura de la partida (60). */
+      fontSize: 48,
+      swayAmplitude: 5,
+      swayPeriod: 3.1,
+      tiltAmplitude: 2,
+      waveAmplitude: 2,
+    },
     /** Puntuación flotante: cuenta hacia arriba y reacciona según lo ganado. */
     score: {
       /** Separación (px) entre la línea del récord de altura y los puntos, que van justo debajo. */
