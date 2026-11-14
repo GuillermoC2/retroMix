@@ -168,7 +168,7 @@ export class MazeRunMode implements GameMode {
     for (const { ghost, score } of hit.eaten) state.addScore(score, ghost.x, ghost.y, true);
     if (hit.killed) return this.die('ghost');
 
-    // El escenario sube solo; la lava nunca queda por debajo del borde inferior de la pantalla.
+    // El escenario sube solo; la lava persigue el borde inferior de la pantalla (puede quedarse atrás un rato).
     this.scroll.update(dt, state.meters, player.y, state.modifiers.scrollSpeed, true);
     const screenBottom = this.scroll.y - this.cameraRig.halfHeight;
     this.lava.update(dt, state.meters, screenBottom + CONFIG.lava.screenOffset, state.modifiers.lavaSpeed);
@@ -190,7 +190,7 @@ export class MazeRunMode implements GameMode {
     const dir = want !== null && !maze.isOpen(x + DX[want], y + DY[want]) ? want : player.dir;
     const result = this.wallBreaker.tryBreak(maze, x, y, dir);
     if (result.ok) {
-      this.shatter.burst(result.tiles, result.dir, (ty) => this.mazeView.neon.colorAt(ty));
+      this.shatter.burst(result.tiles, result.dir, this.mazeView.neon.color);
       this.cameraRig.shake(CONFIG.powers.wallBreak.shake);
       this.hud.pulsePower();
       this.state.events.emit('wallBroken', { tiles: result.tiles });

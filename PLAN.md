@@ -5,7 +5,7 @@ Documento vivo. Se actualiza al empezar y al terminar cada tarea. Las decisiones
 
 Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[?]` propuesta sin aprobar (requiere visto bueno del usuario)
 
-**Estado actual:** Fase 1.2 completada (poder romper muros, con cargas infinitas en modo desarrollador). Siguiente paso: probar el poder y la partida y dar feedback; decidir cómo se ganan las cargas.
+**Estado actual:** Fase 1.3 completada (color neón único que cambia con el tiempo; la lava se puede dejar atrás y vuelve). Siguiente paso: probar y dar feedback; decidir cómo se ganan las cargas de romper muro.
 
 ---
 
@@ -36,6 +36,13 @@ Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[?]` propuesta sin
 - [x] Animación: el bloque estalla en pedazos voxel del color neón del muro, con destello, sacudida de cámara y rediseño de contornos
 - [x] Cargas infinitas mientras `CONFIG.dev.infinitePowers = true`; indicador de cargas en el HUD — D-018
 - [x] Verificación: 4.500 intentos aleatorios sin romper el borde ni dejar zonas inaccesibles; animación comprobada en el juego
+
+## Fase 1.3 — Color único y lava que se puede dejar atrás
+
+- [x] Repositorio git inicializado y primer commit (`586a76d`)
+- [x] El laberinto tiene un único color neón que cambia con el tiempo con un degradado (no un degradado por alturas) — D-019
+- [x] La lava puede quedarse atrás (fuera de pantalla) al subir rápido, pero vuelve al poco tiempo — D-020
+- [x] Ajustes de la lava según feedback (se ocultaba demasiado → se veía siempre → punto intermedio) — D-020
 
 ## Siguiente — Ajuste por juego real
 
@@ -70,7 +77,6 @@ Se definirá con el usuario antes de empezar. Esqueleto previsto según la arqui
 - Bundle de unos 580 kB por Three.js (aceptado, D-001).
 - Las líneas en perspectiva muestran dientes de sierra por el render a baja resolución (aceptado, D-002).
 - Las pruebas no están en el repo (D-015).
-- Sin control de versiones: el proyecto no es un repositorio git. Recomendable inicializarlo antes de la Fase 2.
 
 ## Cómo se usa este documento
 

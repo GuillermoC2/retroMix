@@ -43,7 +43,7 @@ src/
     Rng.ts                  aleatorio con semilla
   render/                   ← utilidades gráficas reutilizables
     PixelRenderer.ts        render a baja resolución
-    neon.ts                 degradado neón animado inyectado en materiales
+    neon.ts                 color neón único que cambia con el tiempo
     voxel.ts                sprite pixel art → geometría voxel 2.5D
     pixelTextures.ts        texturas generadas por código
   maze-run/                 ← el juego del laberinto
@@ -73,9 +73,9 @@ Todas las curvas siguen `start + (max − start) · (1 − e^(−metros / rampDi
 
 - **Avance del escenario** (`scroll`): la cámara sube sola aunque el jugador no se mueva, y le sigue si va
   por delante. Nunca baja (`systems/AutoScroll.ts`).
-- **Lava** (`lava`): sube con velocidad propia (algo mayor que el avance, para que entre en pantalla si el
-  jugador va lento) y **nunca queda por debajo del borde inferior de la pantalla** (`screenOffset`): quedarse
-  quieto o retroceder lleva a la lava.
+- **Lava** (`lava`): sube con velocidad propia y persigue el borde inferior de la pantalla (`screenOffset`). Si el
+  jugador sube muy rápido se queda atrás y se oculta (hasta `maxHidden` filas), pero recupera terreno en pocos
+  segundos (`catchUpRate`). Quedarse quieto o retroceder lleva a la lava.
 - **Fantasmas**: cantidad por tramos de distancia (`countByDistance`), velocidad creciente con tope,
   duración del susto decreciente. Personalidades en `entities/Ghost.ts` (`PERSONALITIES`).
 
@@ -87,9 +87,9 @@ El borde exterior es irrompible. La animación de pedazos está en `effects/Shat
 
 ## Estética neón
 
-Las texturas de los muros son máscaras en escala de grises; el color lo pone `render/neon.ts`, que inyecta en los
-materiales un degradado según la altura que además fluye con el tiempo. Paleta, filas por color, velocidad del
-flujo y número de escalones en `maze.neon`. La altura de los muros es `maze.wallDepth`.
+Las texturas de los muros son máscaras en escala de grises. El color lo pone `render/neon.ts`: todo el laberinto tiene
+un único color neón que se mantiene unos segundos y funde al siguiente de la paleta. Paleta, duración de cada color y
+duración del fundido en `maze.neon`. La altura de los muros es `maze.wallDepth`.
 
 ## Preparado para minijuegos (aún no implementados)
 

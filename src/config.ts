@@ -31,15 +31,14 @@ export const CONFIG = {
     /** Profundidad (eje Z): cuánto sobresalen las paredes del suelo. */
     wallDepth: 1.1,
     /**
-     * Color neón de las paredes: degradado que recorre `colors` según la altura
-     * (`rowsPerColor` filas por color) y fluye hacia arriba a `flowSpeed` filas/s.
-     * `steps` = escalones de cada transición (pocos = más pixel art).
+     * Color neón del laberinto: todo el laberinto tiene UN color, que va pasando
+     * por `colors` con el tiempo. Cada color dura `secondsPerColor` segundos; la
+     * fracción final `transition` de ese tiempo es el degradado hacia el siguiente.
      */
     neon: {
       colors: [0x00f0ff, 0x2f6bff, 0x9d3bff, 0xff2bd6, 0xff2f6d, 0xffe62a, 0x39ff6a],
-      rowsPerColor: 14,
-      flowSpeed: 1.5,
-      steps: 6,
+      secondsPerColor: 9,
+      transition: 0.45,
     },
     /**
      * Estilos de sección. Cada sección elige uno al azar según `weight`.
@@ -102,10 +101,15 @@ export const CONFIG = {
     /** Distancia (metros) a la que la velocidad alcanza ~63% del rango. */
     rampDistance: 450,
     /**
-     * La lava nunca queda por debajo del borde inferior de la pantalla: siempre
-     * se ven al menos estas filas de lava. Así el avance del escenario empuja.
+     * Posición "de persecución": estas filas por encima del borde inferior de la
+     * pantalla. Si el jugador sube rápido, la lava se queda atrás (fuera de
+     * pantalla, sensación de huida) y vuelve hacia esa posición en poco tiempo.
      */
-    screenOffset: 1.2,
+    screenOffset: 2,
+    /** Rapidez con que recupera terreno: fracción del hueco cerrada por segundo (exponencial). */
+    catchUpRate: 1.65,
+    /** Máximo de filas que puede quedar oculta por debajo de la pantalla. */
+    maxHidden: 4,
     /** Retraso (s) antes de que la lava empiece a subir por sí misma. */
     startDelay: 1.5,
   },

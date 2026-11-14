@@ -62,13 +62,12 @@ export class ShatterEffect {
   }
 
   /**
-   * @param colorAt color neón del muro a una altura dada (mismo degradado que el laberinto).
+   * @param neon color neón actual del laberinto.
    */
-  burst(tiles: ReadonlyArray<{ x: number; y: number }>, dir: Dir, colorAt: (y: number) => THREE.Color): void {
+  burst(tiles: ReadonlyArray<{ x: number; y: number }>, dir: Dir, neon: THREE.Color): void {
     const depth = CONFIG.maze.wallDepth;
     const cell = 1 / GRID;
     for (const t of tiles) {
-      const neon = colorAt(t.y);
       for (let gy = 0; gy < GRID; gy++) {
         for (let gx = 0; gx < GRID; gx++) {
           for (let gz = 0; gz < LAYERS; gz++) {
@@ -94,7 +93,7 @@ export class ShatterEffect {
     }
     const mid = tiles[Math.floor(tiles.length / 2)];
     this.flash.position.set(worldX(mid.x), mid.y, depth + 0.8);
-    this.flash.color.copy(colorAt(mid.y));
+    this.flash.color.copy(neon);
     this.flashTime = 0.3;
     this.mesh.instanceColor!.needsUpdate = true;
   }

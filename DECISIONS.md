@@ -68,14 +68,14 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 - La lava recuperaba terreno si el jugador se alejaba más de N filas. No obligaba a moverse si el jugador simplemente esperaba.
 
 ## D-011 · El escenario avanza solo y la lava queda atada al borde inferior
-- **Fecha:** 2026-11-14 · **Estado:** Vigente
+- **Fecha:** 2026-11-14 · **Estado:** Vigente el avance automático; la atadura rígida de la lava fue **sustituida por D-020**
 - **Contexto:** petición del usuario: el escenario debe subir solo para obligar a no quedarse quieto.
 - **Decisión:** `AutoScroll` sube la cámara a velocidad creciente (y sigue al jugador si va por delante). Nunca baja. La lava tiene velocidad propia algo mayor que el avance y nunca queda por debajo del borde inferior de la pantalla (`lava.screenOffset`).
 - **Alternativas:** morir al salir de la pantalla por abajo — dos causas de muerte para lo mismo; se prefirió una sola (la lava).
 - **Consecuencias:** quedarse quieto al inicio mata en unos 13 s. El borde inferior se calcula con la geometría frontal para que cambiar de cámara no mueva la lava.
 
 ## D-012 · Muros neón con degradado animado por shader
-- **Fecha:** 2026-11-14 · **Estado:** Vigente
+- **Fecha:** 2026-11-14 · **Estado:** Vigente la altura de los muros y el uso de máscaras en grises; el degradado por alturas fue **sustituido por D-019**
 - **Contexto:** petición del usuario: muros más altos y con color neón en degradado.
 - **Decisión:** las texturas de los muros pasan a ser máscaras en grises y `render/neon.ts` inyecta en los materiales Lambert un degradado según la altura que fluye con el tiempo (uniformes compartidos). La paleta incluye un amarillo entre rosa y lima para evitar un marrón en la mezcla. Luz ambiental neutra. `wallDepth` sube a 1,1 y la vista LATERAL baja a 32°.
 - **Alternativas:** colores por vértice o regenerar texturas — sin animación barata.
@@ -104,6 +104,21 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 ## D-018 · Cargas finitas con interruptor de desarrollo
 - **Fecha:** 2026-11-14 · **Estado:** Vigente
 - **Decisión:** el poder funciona por cargas (`WallBreaker.charges`, `grant()` para recompensas futuras). `CONFIG.dev.infinitePowers = true` las hace infinitas para pruebas, y el HUD lo indica con "(DEV)". Cómo se ganan cargas en el juego normal está **pendiente de decidir** (PLAN.md).
+
+## D-019 · Un único color neón para todo el laberinto, que cambia con el tiempo
+- **Fecha:** 2026-11-14 · **Estado:** Vigente
+- **Contexto:** petición del usuario: no quiere varios colores a la vez en el laberinto, sino un solo color que vaya cambiando con un degradado.
+- **Decisión:** `NeonCycle` (`render/neon.ts`) calcula un único color por fotograma y lo pasa a los materiales como uniforme. Cada color de la paleta se mantiene y en la parte final (`transition`) funde suavemente al siguiente (`secondsPerColor` = 9 s). Los pedazos al romper un muro usan ese mismo color.
+- **Consecuencias:** el shader es más simple (ya no depende de la altura). Sin escalones en la transición: un salto de color de toda la pantalla parpadearía.
+
+## D-020 · La lava se puede dejar atrás, pero vuelve
+- **Fecha:** 2026-11-14 · **Estado:** Vigente (sustituye la atadura rígida de D-011)
+- **Contexto:** petición del usuario: al subir muy rápido, la lava debe ocultarse un poco (sensación de huida) y volver al poco tiempo.
+- **Decisión:** la lava persigue una posición ligada al borde inferior de la pantalla (`screenOffset`) cerrando el hueco de forma exponencial (`catchUpRate`). Nunca queda más de `maxHidden` filas por debajo de esa posición. Su velocidad propia se mantiene.
+- **Ajuste (mismo día, feedback del usuario: "se oculta demasiado"):** con `screenOffset` 1,2, `catchUpRate` 0,55 y `maxHidden` 6, al subir la lava topaba con el límite y casi nunca se veía. El retraso al subir es ≈ velocidad / `catchUpRate`. Nuevos valores: `screenOffset` 2,5, `catchUpRate` 2,2, `maxHidden` 3.
+- **Segundo ajuste (feedback: "te has pasado, déjalo en un punto intermedio"):** con 2,5 / 2,2 / 3 la lava se veía casi siempre. La media exacta de los parámetros (1,85 / 1,4 / 4,5) no daba un término medio perceptible (la respuesta no es lineal), así que se ajustó midiendo la visibilidad. **Valores actuales:** `screenOffset` 2, `catchUpRate` 1,65, `maxHidden` 4.
+- **Medido con los valores actuales** (varía según el laberinto): a ritmo normal se ve ~60–90 % del tiempo, asomando y escondiéndose; con un esprint perfecto se oculta casi siempre, pero solo hasta ~1,8 filas bajo el borde, y vuelve enseguida. Quieto, alcanza al jugador en ~6 s.
+- **Cómo afinar:** el retraso al subir ≈ velocidad del jugador / `catchUpRate`. Si ese retraso supera `screenOffset`, la lava sale de pantalla. `maxHidden` limita cuánto se esconde.
 
 ## D-015 · Pruebas fuera del repositorio (provisional)
 - **Fecha:** 2026-11-13 · **Estado:** En revisión

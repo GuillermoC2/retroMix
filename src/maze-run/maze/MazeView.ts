@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { CONFIG } from '../../config';
-import { NeonGradient } from '../../render/neon';
+import { NeonCycle } from '../../render/neon';
 import { PixelCanvas, hexRGB } from '../../render/pixelTextures';
 import { worldX } from '../world';
 import type { Chunk, Maze } from './Maze';
@@ -39,12 +39,12 @@ export class MazeView {
   private sideMaterial: THREE.MeshLambertMaterial;
   private floor: THREE.Mesh;
   /** Degradado neón de los muros (público para que los efectos usen el mismo color). */
-  readonly neon: NeonGradient;
+  readonly neon: NeonCycle;
   private unsubscribe: Array<() => void>;
 
   constructor(private maze: Maze) {
-    const { colors, rowsPerColor, flowSpeed, steps } = CONFIG.maze.neon;
-    this.neon = new NeonGradient(colors, rowsPerColor, flowSpeed, steps);
+    const { colors, secondsPerColor, transition } = CONFIG.maze.neon;
+    this.neon = new NeonCycle(colors, secondsPerColor, transition);
     const sideTex = this.sideTexture();
     this.sideMaterial = this.neon.apply(
       new THREE.MeshLambertMaterial({ map: sideTex, emissive: 0xffffff, emissiveMap: sideTex, emissiveIntensity: 0.22 }),
