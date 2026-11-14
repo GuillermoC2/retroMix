@@ -57,6 +57,9 @@ export class MazeRunMode implements GameMode {
   private hud!: Hud;
   private popups!: Popups;
   private gameOver: GameOverScreen | null = null;
+  /** Herramienta de desarrollo: no se puede morir. Una partida que lo usa no guarda récords. */
+  private godMode = false;
+  private usedGodMode = false;
   private stopResize: () => void = () => {};
   private projector = new THREE.Vector3();
 
@@ -114,6 +117,11 @@ export class MazeRunMode implements GameMode {
     state.phaseTime += dt;
 
     if (input.pressed('camera')) this.hud.setView(this.cameraRig.cycleView());
+    if (CONFIG.dev.godModeKey && input.pressed('god') && (state.phase === 'ready' || state.phase === 'playing')) {
+      this.godMode = !this.godMode;
+      this.usedGodMode ||= this.godMode;
+      this.hud.setGodMode(this.godMode);
+    }
 
     switch (state.phase) {
       case 'ready': {
@@ -166,13 +174,13 @@ export class MazeRunMode implements GameMode {
     this.ghosts.update(dt, player, state.meters, this.lava.y, state.modifiers.ghostSpeed);
     const hit = this.ghosts.checkPlayer(player);
     for (const { ghost, score } of hit.eaten) state.addScore(score, ghost.x, ghost.y, true);
-    if (hit.killed) return this.die('ghost');
+    if (hit.killed && !this.godMode) return this.die('ghost');
 
     // El escenario sube solo; la lava persigue el borde inferior de la pantalla (puede quedarse atrás un rato).
     this.scroll.update(dt, state.meters, player.y, state.modifiers.scrollSpeed, true);
     const screenBottom = this.scroll.y - this.cameraRig.halfHeight;
     this.lava.update(dt, state.meters, screenBottom + CONFIG.lava.screenOffset, state.modifiers.lavaSpeed);
-    if (this.lava.touches(player.y)) return this.die('lava');
+    if (this.lava.touches(player.y) && !this.godMode) return this.die('lava');
 
     maze.ensureGenerated(player.tileY + CONFIG.maze.generateAhead);
     maze.destroyBelow(Math.floor(this.lava.y) - CONFIG.maze.destroyBelowLava);
@@ -209,7 +217,9 @@ export class MazeRunMode implements GameMode {
 
   private finish(): void {
     const { state } = this;
-    const newRecord = this.ctx.records.submit(GAME_ID, state.meters, state.score);
+    const newRecord = this.usedGodMode
+      ? { distance: false, score: false }
+      : this.ctx.records.submit(GAME_ID, state.meters, state.score);
     this.state.setPhase('over');
     this.hud.setMessage('');
     this.gameOver = new GameOverScreen(this.ctx.ui, {
@@ -236,6 +246,7 @@ export class MazeRunMode implements GameMode {
     this.lavaView.update(dt, this.lava);
     this.shatter.update(dt);
     this.hud.setValues(state.meters, state.score);
+    this.hud.update(dt);
     this.hud.setPower(this.wallBreaker.charges, CONFIG.dev.infinitePowers);
   }
 
@@ -256,9 +267,9 @@ export class MazeRunMode implements GameMode {
     const half = CONFIG.maze.width / 2;
     const y = this.cameraRig.focus.y - CONFIG.camera.lookAhead;
     const z = CONFIG.maze.wallDepth;
-    const left = this.toScreen(-half, y, z);
     const right = this.toScreen(half, y, z);
-    this.hud.anchor(left.x, right.x, window.innerHeight / 2);
+    const rightTop = this.toScreen(half, this.cameraRig.focus.y + this.cameraRig.halfHeight, z);
+    this.hud.anchor(right.x, Math.max(right.x, rightTop.x), window.innerHeight / 2);
   }
 
   private popupAt(text: string, tileX: number, tileY: number, className = ''): void {

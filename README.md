@@ -21,6 +21,7 @@ npm run build      # comprobación de tipos + build de producción en dist/
 | Espacio | Romper el muro de delante (o el de la dirección pulsada si está bloqueada) |
 | C | Cambiar perspectiva: derecha → frontal → izquierda → lateral |
 | Enter / Espacio | Reiniciar tras el Game Over |
+| K | *(desarrollo)* Modo dios: no se puede morir. Requiere `CONFIG.dev.godModeKey`; la partida no guarda récords |
 
 ## Tecnología
 
@@ -41,6 +42,8 @@ src/
     Events.ts               emisor de eventos tipado
     Records.ts              récords en localStorage, por juego
     Rng.ts                  aleatorio con semilla
+  ui/                       ← componentes de interfaz reutilizables
+    JuicyText.ts            texto flotante con reacciones (pop, giro, temblor, destello, chispas)
   render/                   ← utilidades gráficas reutilizables
     PixelRenderer.ts        render a baja resolución
     neon.ts                 color neón único que cambia con el tiempo

@@ -1,4 +1,4 @@
-export type Action = 'up' | 'down' | 'left' | 'right' | 'camera' | 'confirm' | 'power';
+export type Action = 'up' | 'down' | 'left' | 'right' | 'camera' | 'confirm' | 'power' | 'god';
 
 /** Una tecla puede disparar varias acciones; cada modo decide cuáles le importan según su estado. */
 const KEY_MAP: Record<string, readonly Action[]> = {
@@ -11,6 +11,7 @@ const KEY_MAP: Record<string, readonly Action[]> = {
   ArrowRight: ['right'],
   KeyD: ['right'],
   KeyC: ['camera'],
+  KeyK: ['god'],
   Enter: ['confirm'],
   Space: ['confirm', 'power'],
 };

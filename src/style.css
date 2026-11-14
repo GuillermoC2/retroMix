@@ -44,12 +44,39 @@ html, body {
   text-shadow: var(--shadow);
   white-space: nowrap;
 }
-.hud-left { text-align: right; }
 .hud-label { font-size: 11px; color: var(--blue); margin-bottom: 10px; letter-spacing: 2px; }
-.hud-meters-row { display: flex; align-items: baseline; justify-content: flex-end; gap: 6px; }
-.hud-meters { font-size: 34px; color: var(--yellow); }
-.hud-meters.bump { animation: bump 0.18s steps(2); }
-.hud-unit { font-size: 16px; color: var(--yellow); }
+
+/* --- Altura flotante --- */
+.altitude { position: absolute; text-align: right; }
+.juicy { position: relative; }
+.juicy-body { display: inline-block; white-space: nowrap; will-change: transform; }
+.juicy-char { display: inline-block; }
+.altitude-number {
+  color: var(--yellow);
+  --edge: #2a1400;
+  text-shadow:
+    -4px 0 var(--edge), 4px 0 var(--edge), 0 -4px var(--edge), 0 4px var(--edge),
+    -4px -4px var(--edge), 4px -4px var(--edge), -4px 4px var(--edge), 4px 4px var(--edge),
+    7px 9px 0 rgba(0, 0, 0, 0.65);
+}
+.altitude-unit { font-size: 0.45em; margin-left: 0.15em; }
+.juicy-flash .juicy-char { color: #ffffff; }
+.altitude-record { font-size: 9px; color: #9aa3ff; margin-top: 18px; text-shadow: var(--shadow); }
+.juicy-spark {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--yellow);
+  box-shadow: 0 0 0 2px #2a1400;
+  pointer-events: none;
+  animation: spark 0.65s steps(7) forwards;
+}
+.juicy-spark:nth-child(3n) { background: #ffffff; }
+.juicy-spark:nth-child(3n + 1) { background: #ff5ad8; }
+@keyframes spark {
+  from { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.3); opacity: 0; }
+}
 .hud-score { font-size: 20px; color: var(--white); }
 .hud-sub { font-size: 9px; color: #9aa3ff; margin-top: 12px; }
 .hud-hint { font-size: 8px; color: #6b72b8; margin-top: 16px; }
@@ -57,6 +84,18 @@ html, body {
 .hud-power.empty { color: #555a80; }
 .hud-power.bump { animation: bump 0.18s steps(2); }
 
+.hud-god {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  font-size: 10px;
+  color: #000;
+  background: #ff5ad8;
+  box-shadow: 0 0 0 3px #000;
+  animation: blink 1s steps(2, jump-none) infinite;
+}
 .hud-message {
   position: absolute;
   left: 50%;
@@ -119,7 +158,6 @@ html, body {
 /* Pantallas estrechas: los paneles pasan arriba para no tapar el laberinto. */
 @media (max-aspect-ratio: 1/1) {
   .hud-panel { top: 12px !important; transform: none; padding: 8px 10px; }
-  .hud-left { left: 8px; right: auto !important; }
-  .hud-right { right: 8px; left: auto !important; }
-  .hud-meters { font-size: 20px; }
+  /* La esquina superior derecha es de la cifra de altura: los puntos pasan a la izquierda. */
+  .hud-right { left: 8px !important; right: auto; }
 }

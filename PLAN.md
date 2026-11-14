@@ -5,7 +5,7 @@ Documento vivo. Se actualiza al empezar y al terminar cada tarea. Las decisiones
 
 Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[?]` propuesta sin aprobar (requiere visto bueno del usuario)
 
-**Estado actual:** Fase 1.3 completada (color neón único que cambia con el tiempo; la lava se puede dejar atrás y vuelve). Siguiente paso: probar y dar feedback; decidir cómo se ganan las cargas de romper muro.
+**Estado actual:** Fase 1.5 completada (altura flotante con reacciones); Fase 1.3 completada (color neón único que cambia con el tiempo; la lava se puede dejar atrás y vuelve). Siguiente paso: probar y dar feedback; decidir cómo se ganan las cargas de romper muro.
 
 ---
 
@@ -48,6 +48,19 @@ Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[?]` propuesta sin
 
 - [x] Contorno tipo tubo de neón (línea + halo), laterales con canto brillante y resplandor en la base, rejilla de fondo — D-021
 - [x] Aprobada por el usuario
+
+## Fase 1.5 — Altura flotante (interfaz con reacciones estilo Balatro)
+
+- [x] La cifra de altura sale del panel azul: grande, flotante, con balanceo rítmico; crece y reacciona cada 100 m — D-022
+- [x] Componente reutilizable de texto con reacciones (`src/ui/JuicyText.ts`, base para futuros efectos de interfaz) — D-022
+- [x] La cifra de altura se mueve a la esquina superior derecha — D-024
+- [ ] Más efectos para la cifra de altura (a petición del usuario, en el futuro)
+
+## Herramientas de desarrollo
+
+- [x] Modo dios con la tecla K (no se puede morir), solo para desarrollo — D-023
+- [x] Cargas infinitas de romper muro (`dev.infinitePowers`) — D-018
+- [ ] Antes de publicar: poner a `false` todo lo de `CONFIG.dev`
 
 ## Siguiente — Ajuste por juego real
 

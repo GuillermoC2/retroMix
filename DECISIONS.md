@@ -124,6 +124,23 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 - **Fecha:** 2026-11-14 · **Estado:** Vigente (aprobada por el usuario)
 - **Decisión:** solo cambia `MazeView`: (1) el contorno de los muros se dibuja como tubo de neón, con un halo tenue a cada lado de la línea; (2) las caras laterales sustituyen la trama de ladrillos por paneles lisos con canto brillante arriba y resplandor en la base; (3) una rejilla tenue del color del laberinto llena el vacío negro de los lados. La generación y la jugabilidad no cambian.
 
+## D-022 · Interfaz "viva" inspirada en las reacciones de Balatro: altura flotante
+- **Fecha:** 2026-11-14 · **Estado:** Vigente
+- **Contexto:** el usuario quiere la altura fuera del panel azul, más grande, flotando con ritmo y reaccionando a hitos. Indica que la interfaz tomará inspiración de Balatro (movimientos y reacciones a eventos) y que se añadirán más efectos.
+- **Decisión:** componente genérico `src/ui/JuicyText.ts` (fuera de `maze-run`, reutilizable por futuros minijuegos). Hace balanceo rítmico con inclinación, ondulación por carácter y reacciones con **muelles amortiguados** (rebotan y se asientan): `pop`, `kick`, `shake`, `flash` y `burst`. Se actualiza por fotograma desde el bucle del juego, no con animaciones CSS, para que los efectos se combinen. Las reglas de cuándo reaccionar viven aparte, en `maze-run/ui/AltitudeDisplay.ts`: micro-pop cada metro, pop cada 10 m y, cada 100 m, crecer un escalón (+8 %, hasta 8 escalones) con pop, giro, temblor, destello y chispas. Los parámetros están en `CONFIG.ui.altitude`.
+- **Alcance de la inspiración:** solo la sensación de movimiento y reacción; ni gráficos ni tipografía ni elementos concretos de Balatro (D-004).
+- **Consecuencias:** un efecto nuevo es un método en `JuicyText` (cómo) más una regla en `AltitudeDisplay` (cuándo). La cifra crece hacia la izquierda (origen en el lado derecho) y se encoge sola si no cabe junto al laberinto.
+
+## D-023 · Modo dios para desarrollo (tecla K)
+- **Fecha:** 2026-11-14 · **Estado:** Vigente
+- **Decisión:** con `CONFIG.dev.godModeKey = true`, la tecla K activa o desactiva el modo dios: ni los fantasmas ni la lava matan. Los fantasmas asustados se pueden seguir comiendo. Un indicador rosa parpadeante "MODO DIOS [K]" lo deja claro. Una partida en la que se haya activado **no guarda récords**, para no contaminarlos. El laberinto se sigue destruyendo bajo la lava como siempre, aunque el jugador esté dentro; el usuario prefiere no gastar recursos en ese caso, que nadie va a usar.
+- **Consecuencias:** igual que `infinitePowers`, hay que desactivarlo antes de publicar (anotado en PLAN.md).
+
+## D-024 · La cifra de altura pasa a la esquina superior derecha
+- **Fecha:** 2026-11-14 · **Estado:** Vigente (sustituye la posición de D-022; el resto de D-022 sigue igual)
+- **Contexto:** petición del usuario.
+- **Decisión:** la cifra se fija a `CONFIG.ui.altitude.margin` px de los bordes superior y derecho, con el origen de escala arriba a la derecha (crece hacia la izquierda y hacia abajo). Se encoge sola si no cabe a la derecha del laberinto, midiendo el borde del laberinto en lo alto de la pantalla, donde la perspectiva lo hace más ancho. La línea del récord se desplaza con el crecimiento. En pantallas verticales el panel de puntos pasa a la izquierda para dejarle la esquina.
+
 ## D-015 · Pruebas fuera del repositorio (provisional)
 - **Fecha:** 2026-11-13 · **Estado:** En revisión
 - **Decisión actual:** el test de conectividad del generador, el fuzzing de movimiento y las capturas con Edge headless + `puppeteer-core` se ejecutaron desde un directorio temporal, sin añadir dependencias al proyecto.

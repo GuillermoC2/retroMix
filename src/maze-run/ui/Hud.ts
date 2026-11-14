@@ -1,4 +1,5 @@
 import type { RecordEntry } from '../../core/Records';
+import { AltitudeDisplay } from './AltitudeDisplay';
 
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text = '') => {
   const e = document.createElement(tag);
@@ -10,57 +11,55 @@ const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className: string, te
 const pad = (n: number, len: number) => String(Math.floor(n)).padStart(len, '0');
 
 /**
- * Marcadores en pantalla. El panel de metros se ancla al borde izquierdo del
- * laberinto (posición proyectada desde el mundo) y el de puntos al derecho.
+ * Marcadores en pantalla. La altura es una cifra flotante en la esquina
+ * superior derecha; el panel de puntos se ancla al borde derecho del laberinto
+ * (posición proyectada desde el mundo).
  */
 export class Hud {
   readonly root = el('div', 'hud');
-  private left = el('div', 'hud-panel hud-left');
   private right = el('div', 'hud-panel hud-right');
-  private meters = el('div', 'hud-meters', '0000');
   private score = el('div', 'hud-score', '000000');
-  private bestMeters = el('div', 'hud-sub');
   private bestScore = el('div', 'hud-sub');
   private view = el('div', 'hud-hint');
   private power = el('div', 'hud-power');
   private powerShown = '';
   private message = el('div', 'hud-message');
-  private shown = { meters: -1, score: -1 };
+  private god = el('div', 'hud-god', 'MODO DIOS [K]');
+  private shownScore = -1;
+  private altitude: AltitudeDisplay;
 
   constructor(parent: HTMLElement, records: RecordEntry) {
-    const metersRow = el('div', 'hud-meters-row');
-    metersRow.append(this.meters, el('span', 'hud-unit', 'M'));
-    this.left.append(el('div', 'hud-label', 'ALTURA'), metersRow, this.bestMeters);
     this.right.append(el('div', 'hud-label', 'PUNTOS'), this.score, this.bestScore, this.power, this.view);
-    this.root.append(this.left, this.right, this.message);
+    this.root.append(this.right, this.message, this.god);
+    this.setGodMode(false);
     parent.appendChild(this.root);
-    this.bestMeters.textContent = `RECORD ${records.bestDistance} M`;
+    this.altitude = new AltitudeDisplay(this.root, records.bestDistance);
     this.bestScore.textContent = `RECORD ${records.bestScore}`;
   }
 
   setValues(meters: number, score: number): void {
-    if (meters !== this.shown.meters) {
-      const milestone = Math.floor(meters / 10) > Math.floor(this.shown.meters / 10) && this.shown.meters >= 0;
-      this.shown.meters = meters;
-      this.meters.textContent = pad(meters, 4);
-      if (milestone) {
-        this.meters.classList.remove('bump');
-        void this.meters.offsetWidth; // reinicia la animación CSS
-        this.meters.classList.add('bump');
-      }
-    }
-    if (score !== this.shown.score) {
-      this.shown.score = score;
+    this.altitude.setMeters(meters);
+    if (score !== this.shownScore) {
+      this.shownScore = score;
       this.score.textContent = pad(score, 6);
     }
   }
 
   /** Coloca los paneles junto a los bordes del laberinto (coordenadas de pantalla en px). */
-  anchor(mazeLeftPx: number, mazeRightPx: number, centerYPx: number): void {
+  /**
+   * @param mazeRightPx borde derecho del laberinto a la altura del jugador.
+   * @param mazeRightTopPx borde derecho del laberinto en lo alto de la pantalla (donde está la cifra).
+   */
+  anchor(mazeRightPx: number, mazeRightTopPx: number, centerYPx: number): void {
     const w = window.innerWidth;
-    this.left.style.right = `${Math.max(8, w - mazeLeftPx + 18)}px`;
+    this.altitude.anchor(mazeRightTopPx);
     this.right.style.left = `${Math.min(w - 8, mazeRightPx + 18)}px`;
-    this.left.style.top = this.right.style.top = `${centerYPx}px`;
+    this.right.style.top = `${centerYPx}px`;
+  }
+
+  /** Animaciones por fotograma (cifra flotante). */
+  update(dt: number): void {
+    this.altitude.update(dt);
   }
 
   /** Cargas del poder romper muro. */
@@ -78,6 +77,11 @@ CARGAS ${charges === Infinity ? 'INF' : charges}${devInfinite ? ' (DEV)' : ''}`;
     this.power.classList.remove('bump');
     void this.power.offsetWidth;
     this.power.classList.add('bump');
+  }
+
+  /** Indicador de modo dios (herramienta de desarrollo). */
+  setGodMode(on: boolean): void {
+    this.god.style.display = on ? '' : 'none';
   }
 
   setView(name: string): void {

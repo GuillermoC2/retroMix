@@ -170,6 +170,30 @@ export const CONFIG = {
     metersPerRow: 1,
   },
 
+  ui: {
+    /** Cifra de altura flotante (estilo de reacciones inspirado en Balatro). */
+    altitude: {
+      fontSize: 60,
+      /** Distancia (px) a los bordes superior y derecho de la pantalla. */
+      margin: 28,
+      /** Separación mínima (px) respecto al borde derecho del laberinto. */
+      gap: 24,
+      /** Balanceo lateral rítmico: amplitud (px), periodo (s) e inclinación (grados). */
+      swayAmplitude: 9,
+      swayPeriod: 2.8,
+      tiltAmplitude: 3.5,
+      /** Ondulación vertical de cada dígito (px). */
+      waveAmplitude: 2.5,
+      /** Cada cuántos metros hay un hito (crece y reacciona con fuerza). */
+      milestone: 100,
+      /** Crecimiento por hito y número máximo de escalones. */
+      growthPerMilestone: 0.08,
+      maxGrowthSteps: 8,
+      /** Cada cuántos metros hay un pop pequeño. */
+      smallPopEvery: 10,
+    },
+  },
+
   powers: {
     /** Romper muro (Espacio): atraviesa en línea recta el muro que hay delante del jugador. */
     wallBreak: {
@@ -187,6 +211,8 @@ export const CONFIG = {
   /** Ajustes solo para desarrollo/pruebas. Poner a false para el juego normal. */
   dev: {
     infinitePowers: true,
+    /** Permite activar/desactivar el modo dios (no se puede morir) con la tecla K. */
+    godModeKey: true,
   },
 } as const;
 
