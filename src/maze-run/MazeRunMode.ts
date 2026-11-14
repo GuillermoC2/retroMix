@@ -343,23 +343,34 @@ export class MazeRunMode implements GameMode {
   }
 
   /**
-   * Fin del GHOUL: baja al suelo. Si queda encima de un muro (o en un agujero
-   * aislado), se abre el camino más corto hasta los pasillos para no quedar atrapado.
+   * Fin del GHOUL: cae al suelo rompiendo los bloques de alrededor (las pisadas
+   * pueden haberle dejado encerrado). Si aun así queda aislado, se abre el camino
+   * más corto hasta los pasillos para no quedar atrapado nunca.
    */
   private endGhoul(): void {
     const { player, maze } = this;
-    const here = { x: player.tileX, y: player.tileY };
-    // Si va entre dos casillas, terminará en la siguiente: también cuenta.
-    const next = { x: Math.round(player.x + DX[player.dir] * 0.5), y: Math.round(player.y + DY[player.dir] * 0.5) };
-    const inner = (t: { x: number; y: number }) => t.x >= 1 && t.x <= maze.width - 2;
-    const walls = [here, next].filter((t, i, all) => inner(t) && maze.tile(t.x, t.y) === Tile.Wall && all.findIndex((o) => o.x === t.x && o.y === t.y) === i);
+    const R = CONFIG.specialPowers.ghoul.landBreakRadius;
+    const walls: Array<{ x: number; y: number }> = [];
+    for (let ty = Math.ceil(player.y - R); ty <= Math.floor(player.y + R); ty++) {
+      for (let tx = Math.max(1, Math.ceil(player.x - R)); tx <= Math.min(maze.width - 2, Math.floor(player.x + R)); tx++) {
+        if ((tx - player.x) ** 2 + (ty - player.y) ** 2 <= R * R && maze.tile(tx, ty) === Tile.Wall) walls.push({ x: tx, y: ty });
+      }
+    }
     if (walls.length) maze.setTiles(walls, Tile.Open);
+    // Si va entre dos casillas, terminará en la siguiente: el camino se busca desde ahí.
+    const next = { x: Math.round(player.x + DX[player.dir] * 0.5), y: Math.round(player.y + DY[player.dir] * 0.5) };
+    if (maze.tile(next.x, next.y) === Tile.Wall && next.x >= 1 && next.x <= maze.width - 2) {
+      maze.setTiles([next], Tile.Open);
+      walls.push(next);
+    }
     const path = escapeTiles(maze, next.x, next.y);
     if (path.length) maze.setTiles(path, Tile.Open);
     const broken = [...walls, ...path];
+    // Golpe de la caída: sacudida y humo aunque no haya bloques que romper.
+    this.cameraRig.shake(0.35);
+    this.smoke.ring(worldX(player.x), player.y, CONFIG.maze.wallDepth * 0.5, R, 18, 0.7);
     if (broken.length) {
       this.shatter.burst(broken, player.dir, this.mazeView.neon.color, true);
-      this.cameraRig.shake(0.2);
       this.state.events.emit('wallBroken', { tiles: broken });
     }
   }
@@ -384,10 +395,17 @@ export class MazeRunMode implements GameMode {
       const [r0, r1] = CONFIG.specialPowers.ghoul.thickness;
       const below = body.z - r0 * k - 0.15;
       const bodyR = (HERO_DIAMETER / 2) * Math.abs(this.playerView.mesh.scale.y);
-      const wobble = Math.sin(t * 5 + i * 1.9) * 0.15 * k;
+      // Se retuercen con ondas de varias frecuencias (algo caótico, sin pasarse).
+      const w = CONFIG.specialPowers.ghoul.writhe * k;
+      const n1 = (a: number) => Math.sin(t * (4.1 + i * 0.7) + a + i * 1.9) * 0.6 + Math.sin(t * (9.3 - i * 0.9) + a * 2.3) * 0.4;
+      const reachMid = Math.max(bodyR, dist * 0.5);
       pts[0].set(body.x + ux * bodyR * 0.6, body.y + uy * bodyR * 0.6, below);
-      pts[1].set(body.x + ux * Math.max(bodyR, dist * 0.5), body.y + uy * Math.max(bodyR, dist * 0.5) + wobble, below + 0.1 * k);
-      pts[2].set(body.x + dx * 0.82, body.y + dy * 0.82, f.z + 0.7 * k);
+      pts[1].set(
+        body.x + ux * reachMid - uy * n1(0) * w * 1.6,
+        body.y + uy * reachMid + ux * n1(0) * w * 1.6,
+        below + 0.1 * k + n1(1.3) * w,
+      );
+      pts[2].set(body.x + dx * 0.82 - uy * n1(2.1) * w, body.y + dy * 0.82 + ux * n1(2.1) * w, f.z + 0.7 * k + Math.abs(n1(3.7)) * w);
       pts[3].set(fx, f.y, f.z);
       curve.updateArcLengths();
       this.tentacles.set(i, curve, r0 * k, r1 * Math.max(0.6, k), extent);

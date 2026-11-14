@@ -249,6 +249,10 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 - **Patas bajo el cuerpo:** salen del borde del cuerpo por debajo de él y bajan en arco a cada pie. *(Al arquearlas por encima, en la primera prueba tapaban el cuerpo por completo y solo se veía una X roja.)* En la cinemática quedan detrás del cuerpo.
 - **Nueva cinemática** (≈ 2,3 s de acto): (1) se oscurece parpadeando entre amarillo y gris, cada vez más gris, y se le enciende el ojo; (2) crece de golpe (0,3 s, con sacudida) hasta ×2,6; (3) le brotan los cuatro tentáculos de vóxeles uno a uno y se agitan; luego cae como siempre y aterriza clavándolos.
 - **GIGANTE ×6** (antes ×3): come el doble de ancho (`reach` 2,9 ≈ 6×6 casillas). Su centro no entra en muros a menos de 3 columnas del borde, para que el cuerpo no lo atraviese.
+- **Ajustes posteriores (petición del usuario):**
+  - **Caída al acabar:** además del camino de escape, rompe todos los bloques a menos de `landBreakRadius` (1,6) de su centro, con sacudida y anillo de humo. Así nunca queda atrapado entre bloques que las pisadas dejaron sueltos. Probado acabando el poder 6 veces en sitios distintos, 2 de ellas encima de un muro: siempre termina en una casilla abierta con salida.
+  - **Movimiento más caótico, sin pasarse:** los puntos intermedios de cada tentáculo se retuercen con dos ondas de frecuencias distintas por tentáculo, de lado y en altura (`writhe` 0,22). En la cinemática, igual en el ángulo.
+  - **Cinemática en estrella:** los tentáculos ya no salen solo de la espalda (detrás de la boca), sino uno en cada diagonal (45°, 135°, 225° y 315°), y más largos (1,45 × escala), así que ocupan más pantalla.
 
 ## D-015 · Pruebas fuera del repositorio (provisional)
 - **Fecha:** 2026-11-13 · **Estado:** En revisión

@@ -213,20 +213,23 @@ class GhoulAct implements PowerAct {
     const scale = Math.abs(pose.scale.y);
     const [r0, r1] = this.cfg.thickness;
     const k0 = scale / this.cfg.scale;
-    // El protagonista mira a la derecha: los tentáculos salen de la espalda (izquierda), en abanico.
-    const base = [118, 160, 202, 244];
+    // En estrella, uno a cada lado del cuerpo (en diagonal), detrás de él.
+    const base = [45, 135, 225, 315];
+    const writhe = this.cfg.writhe;
     let drawn = false;
     for (let i = 0; i < TENTACLE_COUNT; i++) {
       const k = stage === 'act' ? (t - this.tentaclesAt - i * tentacleEvery) / tentacleGrow : 1;
       if (k <= 0) continue;
       // Brota pasándose un poco de largo y vuelve.
       const grow = k >= 1 ? 1 : Math.min(1.2, k * 1.2);
-      const len = 1.05 * scale * grow;
+      const len = 1.45 * scale * grow;
       // Detrás del cuerpo (más lejos de la cámara) para que el cuerpo quede delante.
       const behind = r0 * k0 + 0.2;
       this.points.forEach((pt, n) => {
         const u = n / (this.points.length - 1);
-        const a = (base[i] + u * 35 * (i % 2 ? 1 : -1)) * DEG + Math.sin(this.clock * 3 + i * 1.7 + u * 3) * 0.22 * u;
+        // Se curvan y se retuercen con ondas de varias frecuencias (algo caótico).
+        const chaos = Math.sin(this.clock * (3 + i * 0.6) + i * 1.7 + u * 3) * 0.6 + Math.sin(this.clock * (7.7 - i) + u * 5.1) * 0.4;
+        const a = (base[i] + u * 30 * (i % 2 ? 1 : -1)) * DEG + chaos * writhe * 1.3 * u;
         const r = 0.3 * scale + u * len;
         this.dir.copy(s.right).multiplyScalar(Math.cos(a)).addScaledVector(s.up, Math.sin(a));
         pt.copy(pose.position).addScaledVector(this.dir, r).addScaledVector(s.forward, behind + 0.05 * scale * u);

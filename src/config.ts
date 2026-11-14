@@ -335,6 +335,10 @@ export const CONFIG = {
       stompRadius: 1.3,
       /** Sacudida de cámara por paso que rompe un bloque. */
       shake: 0.07,
+      /** Cuánto se retuercen los tentáculos (casillas, a escala ×1): ondas de varias frecuencias. */
+      writhe: 0.22,
+      /** Al acabar, cae y rompe los bloques a menos de esta distancia (casillas) de su centro. */
+      landBreakRadius: 1.6,
       /**
        * Acto de la cinemática: se oscurece parpadeando (`darkenTime`), crece de golpe
        * (`growTime`) hasta ocupar `closeUpEndSize` de la pantalla, le brotan los
