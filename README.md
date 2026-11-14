@@ -5,6 +5,9 @@ esquiva fantasmas y escapa de la lava que asciende. El objetivo es llegar lo má
 
 > Seguimiento del proyecto: [PLAN.md](PLAN.md) (qué está hecho y qué sigue) · [DECISIONS.md](DECISIONS.md) (por qué se hizo así).
 
+Solo para ordenador con teclado: en pantallas de móvil (o ventanas pequeñas o verticales) se muestra un aviso
+y el juego se detiene.
+
 ## Ejecutar
 
 ```bash

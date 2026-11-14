@@ -76,7 +76,6 @@ export class MazeRunMode implements GameMode {
     this.cameraRig.snap(this.scroll.y);
 
     this.hud = new Hud(this.ctx.ui, this.ctx.records.get(GAME_ID));
-    this.hud.setView(this.cameraRig.viewName);
     this.hud.setMessage('PULSA UNA DIRECCION PARA EMPEZAR', true);
     this.popups = new Popups(this.ctx.ui);
     this.stopResize = this.ctx.renderer.onResize((aspect) => this.cameraRig.setAspect(aspect));
@@ -116,7 +115,10 @@ export class MazeRunMode implements GameMode {
     const { state } = this;
     state.phaseTime += dt;
 
-    if (input.pressed('camera')) this.hud.setView(this.cameraRig.cycleView());
+    if (input.pressed('camera')) {
+      this.cameraRig.cycleView();
+      this.hud.pressViewKey();
+    }
     if (CONFIG.dev.godModeKey && input.pressed('god') && (state.phase === 'ready' || state.phase === 'playing')) {
       this.godMode = !this.godMode;
       this.usedGodMode ||= this.godMode;
@@ -195,6 +197,7 @@ export class MazeRunMode implements GameMode {
     const x = player.tileX;
     const y = player.tileY;
     const want = player.wantDir;
+    this.hud.pressPowerKey();
     const dir = want !== null && !maze.isOpen(x + DX[want], y + DY[want]) ? want : player.dir;
     const result = this.wallBreaker.tryBreak(maze, x, y, dir);
     if (result.ok) {
@@ -265,11 +268,17 @@ export class MazeRunMode implements GameMode {
 
   private anchorHud(): void {
     const half = CONFIG.maze.width / 2;
-    const y = this.cameraRig.focus.y - CONFIG.camera.lookAhead;
+    const { focus, halfHeight } = this.cameraRig;
+    const y = focus.y - CONFIG.camera.lookAhead;
     const z = CONFIG.maze.wallDepth;
-    const right = this.toScreen(half, y, z);
-    const rightTop = this.toScreen(half, this.cameraRig.focus.y + this.cameraRig.halfHeight, z);
-    this.hud.anchor(right.x, Math.max(right.x, rightTop.x), window.innerHeight / 2);
+    // Por la perspectiva, el borde del laberinto no está igual de a la derecha arriba
+    // que abajo: la columna del HUD empieza en el punto más a la derecha.
+    const right = Math.max(
+      this.toScreen(half, y, z).x,
+      this.toScreen(half, focus.y + halfHeight, z).x,
+      this.toScreen(half, focus.y - halfHeight, z).x,
+    );
+    this.hud.anchor(right);
   }
 
   private popupAt(text: string, tileX: number, tileY: number, className = ''): void {

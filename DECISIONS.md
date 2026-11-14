@@ -81,7 +81,7 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 - **Alternativas:** colores por vértice o regenerar texturas — sin animación barata.
 
 ## D-013 · Interfaz en DOM anclada al laberinto
-- **Fecha:** 2026-11-13 · **Estado:** Vigente
+- **Fecha:** 2026-11-13 · **Estado:** Vigente (la disposición de los paneles la sustituye D-027; lo de pantallas estrechas, D-026)
 - **Decisión:** el HUD es HTML/CSS. Los paneles se colocan proyectando los bordes del laberinto a pantalla: los metros a la izquierda y los puntos a la derecha. Los textos van en mayúsculas sin tilde porque la fuente pixel dibuja las mayúsculas acentuadas como minúsculas.
 - **Consecuencias:** en pantallas estrechas los paneles pasan arriba.
 
@@ -142,9 +142,23 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 - **Decisión:** la cifra se fija a `CONFIG.ui.altitude.margin` px de los bordes superior y derecho, con el origen de escala arriba a la derecha (crece hacia la izquierda y hacia abajo). Se encoge sola si no cabe a la derecha del laberinto, midiendo el borde del laberinto en lo alto de la pantalla, donde la perspectiva lo hace más ancho. La línea del récord se desplaza con el crecimiento. En pantallas verticales el panel de puntos pasa a la izquierda para dejarle la esquina.
 
 ## D-025 · Altura centrada sobre el panel de puntos y crecimiento más contenido
-- **Fecha:** 2026-11-14 · **Estado:** Vigente
+- **Fecha:** 2026-11-14 · **Estado:** Vigente el crecimiento; la posición la sustituye D-027
 - **Contexto:** feedback del usuario: la cifra crecía demasiado y quería verla más centrada, entre el panel de puntos y lo alto de la pantalla.
 - **Decisión:** la cifra se centra horizontalmente sobre el panel de puntos y, en vertical, a medio camino entre el borde superior y el panel, con el origen de escala en el centro. Si no cabe centrada sin acercarse al laberinto, se desplaza a la derecha y, como último recurso, se encoge. Crecimiento: +4 % por hito, como máximo 6 hitos (+24 % en total; antes, +8 % y 8 hitos, +64 %).
+
+## D-026 · Solo escritorio: aviso en pantallas de móvil
+- **Fecha:** 2026-11-14 · **Estado:** Vigente
+- **Contexto:** el usuario indica que la interfaz no está pensada para móviles y que no hay que esforzarse en ello; basta con un mensaje claro.
+- **Decisión:** si la pantalla cumple `CONFIG.ui.unsupportedScreen` (ancho ≤ 760 px, alto ≤ 480 px o más alta que ancha), se muestra a pantalla completa "NO SE PUEDE JUGAR EN MOVIL" y el bucle del juego se detiene (`Game.suspended`), así no se pierde la partida si se achica la ventana del ordenador. Al volver a un tamaño válido, sigue donde estaba. Se elimina todo el código de adaptación a pantallas estrechas.
+- **Consecuencias:** se descarta la propuesta de controles táctiles.
+
+## D-027 · Interfaz sin cajas en una columna a la derecha del laberinto
+- **Fecha:** 2026-11-14 · **Estado:** Vigente
+- **Contexto:** el usuario pide la altura centrada entre el laberinto y el borde derecho de la pantalla, los puntos fuera de su caja con reacciones al estilo Balatro (como la altura, D-022) y, abajo a la derecha, "C CAMBIAR VISTA" con un icono de tecla pixelado.
+- **Decisión:** desaparece el panel azul. Todo el HUD se centra en la columna que va del borde derecho del laberinto (el punto más a la derecha de su altura visible, por la perspectiva) al borde de la pantalla: altura arriba (`CONFIG.ui.altitude.screenY` = 0,15), puntos justo debajo de la altura (`CONFIG.ui.score.gapBelowAltitude`; a petición del usuario, que avisa de que puede cambiar) y ayudas abajo.
+  - **Puntos** (`ScoreDisplay`, con `JuicyText`): la cifra cuenta hacia arriba hasta el valor real (`tallyRate`) en lugar de saltar. Reacciona según lo ganado de golpe: micro-pop por punto, pop y giro por energizador, y pop, giro, temblor, destello cian y chispas por fantasma. Se usan blanco y cian para no confundirse con el amarillo de la altura. Parámetros en `CONFIG.ui.score`.
+  - **Ayudas** con icono de tecla en CSS (contorno de esquinas recortadas, bisel y canto inferior). La tecla se hunde al pulsarla. También pasa a ser una ayuda de este tipo el poder de romper muro ("ESPACIO ROMPER MURO" con las cargas debajo), que estaba en el panel. Se deja de mostrar el nombre de la vista actual, como pidió el usuario ("simplemente C Cambiar vista").
+  - Si la columna es estrecha, las ayudas ponen el texto bajo la tecla, y las cifras y las ayudas se encogen como último recurso.
 
 ## D-015 · Pruebas fuera del repositorio (provisional)
 - **Fecha:** 2026-11-13 · **Estado:** En revisión

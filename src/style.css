@@ -33,18 +33,7 @@ html, body {
 
 .ui-root { position: absolute; inset: 0; pointer-events: none; }
 
-/* --- HUD --- */
-.hud-panel {
-  position: absolute;
-  transform: translateY(-50%);
-  padding: 14px 16px;
-  border: 4px solid var(--blue);
-  background: rgba(3, 3, 16, 0.82);
-  box-shadow: 0 0 0 4px #000, 6px 6px 0 4px rgba(0, 0, 0, 0.6);
-  text-shadow: var(--shadow);
-  white-space: nowrap;
-}
-.hud-label { font-size: 11px; color: var(--blue); margin-bottom: 10px; letter-spacing: 2px; }
+/* --- HUD: columna sin cajas a la derecha del laberinto --- */
 
 /* --- Altura flotante --- */
 .altitude { position: absolute; transform: translate(-50%, -50%); text-align: center; }
@@ -77,12 +66,77 @@ html, body {
   from { transform: translate(-50%, -50%) scale(1); opacity: 1; }
   to { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.3); opacity: 0; }
 }
-.hud-score { font-size: 20px; color: var(--white); }
-.hud-sub { font-size: 9px; color: #9aa3ff; margin-top: 12px; }
-.hud-hint { font-size: 8px; color: #6b72b8; margin-top: 16px; }
-.hud-power { font-size: 8px; line-height: 1.9; color: #3ae8ff; margin-top: 14px; white-space: pre; }
-.hud-power.empty { color: #555a80; }
-.hud-power.bump { animation: bump 0.18s steps(2); }
+
+/* --- Puntos flotantes --- */
+.score { position: absolute; transform: translateX(-50%); text-align: center; }
+.score-label { font-size: 11px; color: var(--blue); letter-spacing: 3px; margin-bottom: 14px; text-shadow: var(--shadow); }
+.score-number {
+  color: var(--white);
+  --edge: #0b0b3a;
+  text-shadow:
+    -3px 0 var(--edge), 3px 0 var(--edge), 0 -3px var(--edge), 0 3px var(--edge),
+    -3px -3px var(--edge), 3px -3px var(--edge), -3px 3px var(--edge), 3px 3px var(--edge),
+    5px 7px 0 rgba(0, 0, 0, 0.65);
+}
+.score-flash .juicy-char { color: #3ae8ff; }
+.juicy-spark.score-spark:nth-child(n) { background: #3ae8ff; box-shadow: 0 0 0 2px #0b0b3a; }
+.juicy-spark.score-spark:nth-child(2n) { background: #ffffff; }
+.score-record { font-size: 9px; color: #9aa3ff; margin-top: 14px; text-shadow: var(--shadow); }
+
+/* --- Ayudas de control con icono de tecla pixelado --- */
+.hud-keys {
+  position: absolute;
+  bottom: 28px;
+  transform: translateX(-50%);
+  transform-origin: bottom center;
+  width: max-content;
+  /* Dos columnas (tecla | texto) para que los textos queden alineados. */
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  column-gap: 18px;
+  row-gap: 22px;
+}
+.key-hint { display: contents; white-space: nowrap; }
+.hud-keys.stacked { grid-template-columns: auto; justify-items: center; text-align: center; row-gap: 6px; }
+.hud-keys.stacked .key-label { margin-bottom: 14px; }
+.hud-keys.stacked .key-label:last-child { margin-bottom: 0; }
+.key-hint .key { justify-self: center; }
+.key-label { font-size: 10px; line-height: 1.9; color: #c4c8f4; text-shadow: var(--shadow); white-space: nowrap; }
+.key-sub { font-size: 8px; color: #3ae8ff; }
+.key-hint.empty .key-sub { color: #555a80; }
+.key-label.bump { animation: bump 0.18s steps(2); }
+/* Tecla: contorno negro con esquinas recortadas (pixel art), bisel y canto inferior. */
+.key {
+  display: inline-block;
+  min-width: 40px;
+  margin: 3px 3px 12px;
+  padding: 10px 10px 8px;
+  font-size: 12px;
+  text-align: center;
+  color: #12123a;
+  background: #e4e7ff;
+  box-shadow:
+    inset -3px -3px 0 #a7ade8,
+    inset 3px 3px 0 #ffffff,
+    0 6px 0 #6c72bb,
+    0 -3px 0 #000,
+    -3px 0 0 #000,
+    3px 0 0 #000,
+    -3px 6px 0 #000,
+    3px 6px 0 #000,
+    0 9px 0 #000;
+}
+.key.pressed { animation: key-press 0.16s steps(1); }
+@keyframes key-press {
+  0% {
+    transform: translateY(6px);
+    background: #c9cdf8;
+    box-shadow:
+      inset -3px -3px 0 #a7ade8, inset 3px 3px 0 #ffffff,
+      0 -3px 0 #000, -3px 0 0 #000, 3px 0 0 #000, 0 3px 0 #000;
+  }
+}
 
 .hud-god {
   position: absolute;
@@ -155,9 +209,19 @@ html, body {
 .go-records { font-size: 8px; color: #9aa3ff; margin-top: 26px; line-height: 1.8; }
 .go-restart { font-size: 11px; color: var(--white); margin-top: 26px; }
 
-/* Pantallas estrechas: los paneles pasan arriba para no tapar el laberinto. */
-@media (max-aspect-ratio: 1/1) {
-  .hud-panel { top: 12px !important; transform: none; padding: 8px 10px; }
-  /* La esquina superior derecha es de la cifra de altura: los puntos pasan a la izquierda. */
-  .hud-right { left: 8px !important; right: auto; }
+/* --- Aviso de pantalla no compatible (móvil o ventana demasiado pequeña) --- */
+.unsupported {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: var(--bg);
+  text-align: center;
+  text-shadow: var(--shadow);
 }
+.unsupported-box { max-width: 520px; line-height: 2; }
+.unsupported-title { font-size: 26px; color: var(--yellow); margin-bottom: 24px; }
+.unsupported p { font-size: 14px; color: #ff2e3a; margin: 0 0 20px; }
+.unsupported p.unsupported-hint { font-size: 9px; color: #9aa3ff; }

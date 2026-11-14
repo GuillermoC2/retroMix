@@ -19,6 +19,8 @@ const MAX_DT = 1 / 20;
 export class Game {
   readonly ctx: GameContext;
   private last = 0;
+  /** Detenido (p. ej. pantalla no compatible): ni se actualiza ni se dibuja. */
+  suspended = false;
 
   constructor(root: HTMLElement) {
     const ui = document.createElement('div');
@@ -32,8 +34,10 @@ export class Game {
     const frame = (t: number) => {
       const dt = this.last ? Math.min(MAX_DT, (t - this.last) / 1000) : 0;
       this.last = t;
-      this.ctx.modes.update(dt);
-      this.ctx.modes.render();
+      if (!this.suspended) {
+        this.ctx.modes.update(dt);
+        this.ctx.modes.render();
+      }
       this.ctx.input.endFrame();
       requestAnimationFrame(frame);
     };

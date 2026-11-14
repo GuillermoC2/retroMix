@@ -171,13 +171,26 @@ export const CONFIG = {
   },
 
   ui: {
+    /**
+     * Pantallas donde no se puede jugar (móviles, ventanas pequeñas o verticales):
+     * se muestra un aviso y el juego se detiene. Consulta CSS media query.
+     */
+    unsupportedScreen: '(max-width: 760px), (max-height: 480px), (max-aspect-ratio: 1/1)',
+    /**
+     * Columna del HUD a la derecha del laberinto: los elementos se centran entre el
+     * borde derecho del laberinto y el de la pantalla.
+     */
+    layout: {
+      /** Separación mínima (px) a cada lado de la columna (laberinto y borde de pantalla). */
+      padding: 24,
+      /** Distancia mínima (px) al borde superior. */
+      margin: 28,
+    },
     /** Cifra de altura flotante (estilo de reacciones inspirado en Balatro). */
     altitude: {
+      /** Altura del centro de la cifra en pantalla (fracción desde arriba). */
+      screenY: 0.15,
       fontSize: 60,
-      /** Distancia mínima (px) a los bordes de la pantalla. */
-      margin: 28,
-      /** Separación mínima (px) respecto al borde derecho del laberinto. */
-      gap: 24,
       /** Balanceo lateral rítmico: amplitud (px), periodo (s) e inclinación (grados). */
       swayAmplitude: 9,
       swayPeriod: 2.8,
@@ -191,6 +204,21 @@ export const CONFIG = {
       maxGrowthSteps: 6,
       /** Cada cuántos metros hay un pop pequeño. */
       smallPopEvery: 10,
+    },
+    /** Puntuación flotante: cuenta hacia arriba y reacciona según lo ganado. */
+    score: {
+      /** Separación (px) entre la línea del récord de altura y los puntos, que van justo debajo. */
+      gapBelowAltitude: 26,
+      fontSize: 34,
+      swayAmplitude: 6,
+      swayPeriod: 3.4,
+      tiltAmplitude: 2.5,
+      waveAmplitude: 1.5,
+      /** Rapidez del recuento hacia la cifra real (fracción del hueco por segundo, exponencial). */
+      tallyRate: 9,
+      /** Ganancias a partir de las cuales la reacción es media (energizador) o grande (fantasma). */
+      mediumGain: 50,
+      bigGain: 200,
     },
   },
 

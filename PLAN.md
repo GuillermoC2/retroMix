@@ -5,7 +5,7 @@ Documento vivo. Se actualiza al empezar y al terminar cada tarea. Las decisiones
 
 Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[?]` propuesta sin aprobar (requiere visto bueno del usuario)
 
-**Estado actual:** Fase 1.5 completada (altura flotante con reacciones); Fase 1.3 completada (color neón único que cambia con el tiempo; la lava se puede dejar atrás y vuelve). Siguiente paso: probar y dar feedback; decidir cómo se ganan las cargas de romper muro.
+**Estado actual:** Fase 1.6 completada (interfaz sin cajas en una columna a la derecha del laberinto; solo escritorio). Fase 1.5 completada (altura flotante con reacciones); Fase 1.3 completada (color neón único que cambia con el tiempo; la lava se puede dejar atrás y vuelve). Siguiente paso: probar y dar feedback; decidir cómo se ganan las cargas de romper muro.
 
 ---
 
@@ -57,6 +57,14 @@ Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[?]` propuesta sin
 - [x] Crece menos y se centra sobre el panel de puntos — D-025
 - [ ] Más efectos para la cifra de altura (a petición del usuario, en el futuro)
 
+## Fase 1.6 — Interfaz sin cajas, en columna a la derecha del laberinto
+
+- [x] Solo escritorio: en pantallas de móvil (o ventanas pequeñas o verticales) se muestra un aviso y el juego se detiene — D-026
+- [x] Altura centrada entre el borde derecho del laberinto y el de la pantalla — D-027
+- [x] Puntos fuera de la caja: cifra flotante que cuenta hacia arriba y reacciona según lo ganado — D-027
+- [x] Abajo a la derecha, ayudas con icono de tecla pixelado: "C CAMBIAR VISTA" y "ESPACIO ROMPER MURO" — D-027
+- [x] Verificación: capturas a 1280×720, 1440×900, 1920×1080 y 1024×768, y aviso en tamaños de móvil
+
 ## Herramientas de desarrollo
 
 - [x] Modo dios con la tecla K (no se puede morir), solo para desarrollo — D-023
@@ -77,8 +85,7 @@ No se harán sin el visto bueno del usuario (se evita añadir funcionalidades no
 - [?] Incorporar las pruebas al repo como `npm test`: conectividad del generador y fuzzing de movimiento (D-015)
 - [?] Sonido y efectos (comer, energizador, muerte, música)
 - [?] Tecla de pausa
-- [?] Controles táctiles o móvil
-- [?] Hacer que el borde del HUD siga el color neón de la zona actual
+- ~~Controles táctiles o móvil~~ — descartado: el juego es solo para escritorio (D-026)
 - [?] Retocar el sprite del protagonista mirando hacia arriba (parado, se lee algo como un corazón)
 
 ## Fase 2 — Minijuegos como desafíos (alcance por definir)
