@@ -120,6 +120,10 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 - **Medido con los valores actuales** (varía según el laberinto): a ritmo normal se ve ~60–90 % del tiempo, asomando y escondiéndose; con un esprint perfecto se oculta casi siempre, pero solo hasta ~1,8 filas bajo el borde, y vuelve enseguida. Quieto, alcanza al jugador en ~6 s.
 - **Cómo afinar:** el retraso al subir ≈ velocidad del jugador / `catchUpRate`. Si ese retraso supera `screenOffset`, la lava sale de pantalla. `maxHidden` limita cuánto se esconde.
 
+## D-021 · Mejora visual del laberinto manteniendo el estilo
+- **Fecha:** 2026-11-14 · **Estado:** Vigente (aprobada por el usuario)
+- **Decisión:** solo cambia `MazeView`: (1) el contorno de los muros se dibuja como tubo de neón, con un halo tenue a cada lado de la línea; (2) las caras laterales sustituyen la trama de ladrillos por paneles lisos con canto brillante arriba y resplandor en la base; (3) una rejilla tenue del color del laberinto llena el vacío negro de los lados. La generación y la jugabilidad no cambian.
+
 ## D-015 · Pruebas fuera del repositorio (provisional)
 - **Fecha:** 2026-11-13 · **Estado:** En revisión
 - **Decisión actual:** el test de conectividad del generador, el fuzzing de movimiento y las capturas con Edge headless + `puppeteer-core` se ejecutaron desde un directorio temporal, sin añadir dependencias al proyecto.

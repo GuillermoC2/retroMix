@@ -9,18 +9,26 @@ import { Tile } from './grid';
 /** Píxeles de textura por casilla y separación del contorno respecto al borde. */
 const T = 8;
 const INSET = 2;
+/** Tamaño (casillas) de cada celda de la rejilla de fondo. */
+const BACKDROP_CELL = 3;
 
 /**
  * Las texturas son máscaras en escala de grises: el color real lo pone el
  * degradado neón (blanco = neón pleno, gris oscuro = relleno tenue del mismo tono).
  */
 const PALETTE = {
-  fillA: hexRGB(0x242424),
-  fillB: hexRGB(0x2e2e2e),
+  fillA: hexRGB(0x1c1c1c),
+  fillB: hexRGB(0x262626),
+  /** Tubo de neón: línea plena y un halo tenue a cada lado. */
   line: hexRGB(0xffffff),
-  side: [0x1c1c1c, 0x262626, 0x303030, 0x3a3a3a, 0x454545, 0x525252, 0x626262, 0xffffff].map(hexRGB),
-  floorA: hexRGB(0x0e0e0e),
-  floorB: hexRGB(0x262626),
+  halo: hexRGB(0x5c5c5c),
+  /** Caras laterales de abajo (suelo) a arriba (tapa): resplandor en la base, cuerpo oscuro y canto brillante. */
+  side: [0x8a8a8a, 0x3c3c3c, 0x202020, 0x242424, 0x2a2a2a, 0x323232, 0x4a4a4a, 0xffffff].map(hexRGB),
+  sideRib: hexRGB(0x161616),
+  floorA: hexRGB(0x0c0c0c),
+  floorB: hexRGB(0x2a2a2a),
+  backdropA: hexRGB(0x000000),
+  backdropB: hexRGB(0x1c1c1c),
 };
 
 /**
@@ -38,6 +46,7 @@ export class MazeView {
   private pending: Chunk[] = [];
   private sideMaterial: THREE.MeshLambertMaterial;
   private floor: THREE.Mesh;
+  private backdrop: THREE.Mesh;
   /** Degradado neón de los muros (público para que los efectos usen el mismo color). */
   readonly neon: NeonCycle;
   private unsubscribe: Array<() => void>;
@@ -50,7 +59,8 @@ export class MazeView {
       new THREE.MeshLambertMaterial({ map: sideTex, emissive: 0xffffff, emissiveMap: sideTex, emissiveIntensity: 0.22 }),
     );
     this.floor = this.createFloor();
-    this.group.add(this.floor);
+    this.backdrop = this.createBackdrop();
+    this.group.add(this.floor, this.backdrop);
     this.unsubscribe = [
       maze.events.on('chunkAdded', (c) => {
         this.pending.push(c);
@@ -69,6 +79,7 @@ export class MazeView {
   update(dt: number, focusY: number): void {
     this.neon.update(dt);
     this.floor.position.y = Math.round(focusY);
+    this.backdrop.position.y = Math.round(focusY / BACKDROP_CELL) * BACKDROP_CELL;
   }
 
   private flushPending(): void {
@@ -146,27 +157,35 @@ export class MazeView {
     const down = !wall(0, -1);
     const left = !wall(-1, 0);
     const right = !wall(1, 0);
-    const L = PALETTE.line;
-    const far = T - 1 - INSET;
-    const dot = (i: number, j: number) => c.set(px + i, py + j, L);
 
-    // Lados rectos; las esquinas convexas se recortan para que queden redondeadas.
-    const i0 = left ? INSET + 1 : 0;
-    const i1 = right ? far - 1 : T - 1;
-    const j0 = up ? INSET + 1 : 0;
-    const j1 = down ? far - 1 : T - 1;
-    if (up) for (let i = i0; i <= i1; i++) dot(i, INSET);
-    if (down) for (let i = i0; i <= i1; i++) dot(i, far);
-    if (left) for (let j = j0; j <= j1; j++) dot(INSET, j);
-    if (right) for (let j = j0; j <= j1; j++) dot(far, j);
+    /** Traza el contorno a `inset` píxeles del borde de la pieza. */
+    const outline = (inset: number, color: (typeof PALETTE)['line']) => {
+      const far = T - 1 - inset;
+      const dot = (i: number, j: number) => c.set(px + i, py + j, color);
 
-    // Esquinas cóncavas (pared en ambos lados, hueco en diagonal).
-    for (let k = 0; k < INSET; k++) {
-      if (!up && !left && !wall(-1, 1)) dot(INSET, k), dot(k, INSET);
-      if (!up && !right && !wall(1, 1)) dot(far, k), dot(T - 1 - k, INSET);
-      if (!down && !left && !wall(-1, -1)) dot(INSET, T - 1 - k), dot(k, far);
-      if (!down && !right && !wall(1, -1)) dot(far, T - 1 - k), dot(T - 1 - k, far);
-    }
+      // Lados rectos; las esquinas convexas se recortan para que queden redondeadas.
+      const i0 = left ? inset + 1 : 0;
+      const i1 = right ? far - 1 : T - 1;
+      const j0 = up ? inset + 1 : 0;
+      const j1 = down ? far - 1 : T - 1;
+      if (up) for (let i = i0; i <= i1; i++) dot(i, inset);
+      if (down) for (let i = i0; i <= i1; i++) dot(i, far);
+      if (left) for (let j = j0; j <= j1; j++) dot(inset, j);
+      if (right) for (let j = j0; j <= j1; j++) dot(far, j);
+
+      // Esquinas cóncavas (pared en ambos lados, hueco en diagonal).
+      for (let k = 0; k < inset; k++) {
+        if (!up && !left && !wall(-1, 1)) dot(inset, k), dot(k, inset);
+        if (!up && !right && !wall(1, 1)) dot(far, k), dot(T - 1 - k, inset);
+        if (!down && !left && !wall(-1, -1)) dot(inset, T - 1 - k), dot(k, far);
+        if (!down && !right && !wall(1, -1)) dot(far, T - 1 - k), dot(T - 1 - k, far);
+      }
+    };
+
+    // Halo a ambos lados y, encima, la línea plena: efecto de tubo de neón.
+    outline(INSET - 1, PALETTE.halo);
+    outline(INSET + 1, PALETTE.halo);
+    outline(INSET, PALETTE.line);
   }
 
   // ---------------------------------------------------------------------------
@@ -218,11 +237,8 @@ export class MazeView {
     const c = new PixelCanvas(8, 8);
     for (let j = 0; j < 8; j++) {
       const shade = PALETTE.side[7 - j];
-      for (let i = 0; i < 8; i++) {
-        // Trama de ladrillos discreta para dar textura pixel art.
-        const seam = j > 0 && j < 7 && (j % 3 === 0 || (i === (j < 3 ? 2 : 6) && j % 3 !== 0));
-        c.set(i, j, seam ? PALETTE.side[Math.max(0, 6 - j)] : shade);
-      }
+      // Una costilla vertical por casilla da aspecto de paneles sin ensuciar el canto ni la base.
+      for (let i = 0; i < 8; i++) c.set(i, j, i === 0 && j > 1 && j < 6 ? PALETTE.sideRib : shade);
     }
     return c.toTexture();
   }
@@ -239,6 +255,21 @@ export class MazeView {
     return mesh;
   }
 
+  /** Rejilla tenue del color del laberinto que llena el vacío a los lados y da sensación de ascenso. */
+  private createBackdrop(): THREE.Mesh {
+    const n = 12;
+    const c = new PixelCanvas(n, n);
+    for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) c.set(i, j, i === 0 || j === 0 ? PALETTE.backdropB : PALETTE.backdropA);
+    const tex = c.toTexture(true);
+    const size = BACKDROP_CELL * 40;
+    tex.repeat.set(size / BACKDROP_CELL, size / BACKDROP_CELL);
+    const material = this.neon.apply(new THREE.MeshLambertMaterial({ map: tex, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.3 }));
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(size, size), material);
+    // Desfase de media casilla para que las líneas no coincidan con el borde del laberinto.
+    mesh.position.set(0.5, 0, -2.5);
+    return mesh;
+  }
+
   dispose(): void {
     this.unsubscribe.forEach((u) => u());
     [...this.built.keys()].forEach((i) => this.destroy(i));
@@ -248,5 +279,9 @@ export class MazeView {
     const fm = this.floor.material as THREE.MeshLambertMaterial;
     fm.map?.dispose();
     fm.dispose();
+    this.backdrop.geometry.dispose();
+    const bm = this.backdrop.material as THREE.MeshLambertMaterial;
+    bm.map?.dispose();
+    bm.dispose();
   }
 }

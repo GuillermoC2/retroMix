@@ -44,6 +44,11 @@ Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[?]` propuesta sin
 - [x] La lava puede quedarse atrás (fuera de pantalla) al subir rápido, pero vuelve al poco tiempo — D-020
 - [x] Ajustes de la lava según feedback (se ocultaba demasiado → se veía siempre → punto intermedio) — D-020
 
+## Fase 1.4 — Mejora visual del laberinto ✅
+
+- [x] Contorno tipo tubo de neón (línea + halo), laterales con canto brillante y resplandor en la base, rejilla de fondo — D-021
+- [x] Aprobada por el usuario
+
 ## Siguiente — Ajuste por juego real
 
 - [ ] El usuario prueba el juego y da feedback sobre la sensación de control, la presión y la dificultad
