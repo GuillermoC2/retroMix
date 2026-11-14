@@ -174,7 +174,7 @@ export const CONFIG = {
     /** Cifra de altura flotante (estilo de reacciones inspirado en Balatro). */
     altitude: {
       fontSize: 60,
-      /** Distancia (px) a los bordes superior y derecho de la pantalla. */
+      /** Distancia mínima (px) a los bordes de la pantalla. */
       margin: 28,
       /** Separación mínima (px) respecto al borde derecho del laberinto. */
       gap: 24,
@@ -187,8 +187,8 @@ export const CONFIG = {
       /** Cada cuántos metros hay un hito (crece y reacciona con fuerza). */
       milestone: 100,
       /** Crecimiento por hito y número máximo de escalones. */
-      growthPerMilestone: 0.08,
-      maxGrowthSteps: 8,
+      growthPerMilestone: 0.04,
+      maxGrowthSteps: 6,
       /** Cada cuántos metros hay un pop pequeño. */
       smallPopEvery: 10,
     },

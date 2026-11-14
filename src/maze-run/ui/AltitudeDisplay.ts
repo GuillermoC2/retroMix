@@ -2,7 +2,8 @@ import { CONFIG } from '../../config';
 import { JuicyText } from '../../ui/JuicyText';
 
 /**
- * Cifra de altura flotante en la esquina superior derecha de la pantalla.
+ * Cifra de altura flotante centrada sobre el panel de puntos, a medio camino
+ * entre el borde superior de la pantalla y el panel.
  * Reglas de reacción (todas en `CONFIG.ui.altitude`):
  *  - cada metro: micro-pop,
  *  - cada `smallPopEvery` metros: pop algo mayor,
@@ -27,7 +28,7 @@ export class AltitudeDisplay {
       swayPeriod: cfg.swayPeriod,
       tiltAmplitude: cfg.tiltAmplitude,
       waveAmplitude: cfg.waveAmplitude,
-      origin: 'right top',
+      origin: 'center',
     });
     this.number.body.style.fontSize = `${cfg.fontSize}px`;
     this.record.className = 'altitude-record';
@@ -64,25 +65,38 @@ export class AltitudeDisplay {
   }
 
   /**
-   * Coloca la cifra en la esquina superior derecha y la encoge si no cabe en
-   * el espacio que queda a la derecha del laberinto (para no taparlo).
+   * Centra la cifra sobre el panel de puntos, a medio camino entre el borde
+   * superior y el panel. Si no cabe centrada sin tapar el laberinto, se desplaza
+   * hacia la derecha; si tampoco cabe así, se encoge.
+   * @param mazeRightPx borde derecho del laberinto a la altura de la cifra.
+   * @param panel rectángulo del panel de puntos.
    */
-  anchor(mazeRightPx: number): void {
+  anchor(mazeRightPx: number, panel: DOMRect): void {
     const { margin, gap } = CONFIG.ui.altitude;
-    this.root.style.right = `${margin}px`;
-    this.root.style.top = `${margin}px`;
-    const narrow = window.innerWidth < window.innerHeight;
+    const W = window.innerWidth;
+    const narrow = W < window.innerHeight;
     // En pantallas estrechas el laberinto ocupa todo el ancho: se limita a una fracción de la pantalla.
-    const available = narrow ? window.innerWidth * 0.45 : window.innerWidth - mazeRightPx - gap - margin;
+    const available = narrow ? W * 0.45 : W - mazeRightPx - gap - margin;
     const needed = this.number.naturalWidth * this.number.restScale;
     this.number.fit = needed > 0 ? Math.max(0.3, Math.min(1, available / needed)) : 1;
+
+    const width = needed * this.number.fit;
+    const height = this.number.naturalHeight * this.number.restScale * this.number.fit;
+    const minX = narrow ? W / 2 : mazeRightPx + gap + width / 2;
+    const maxX = W - margin - width / 2;
+    const centerX = narrow ? maxX : panel.left + panel.width / 2;
+    const x = Math.min(maxX, Math.max(minX, centerX));
+    const y = Math.max(margin + height / 2, narrow ? 0 : panel.top / 2);
+    this.root.style.left = `${Math.round(x)}px`;
+    this.root.style.top = `${Math.round(y)}px`;
   }
 
   update(dt: number): void {
     this.number.update(dt);
     // La escala es una transformación (no afecta al flujo): bajar la línea del récord
     // lo que crece la cifra, sin seguir los rebotes para que no baile.
-    const extra = this.number.naturalHeight * (this.number.currentScale - 1);
+    // Con el origen en el centro, la cifra crece la mitad hacia abajo.
+    const extra = (this.number.naturalHeight * (this.number.currentScale - 1)) / 2;
     this.record.style.transform = `translateY(${Math.round(extra)}px)`;
   }
 

@@ -137,9 +137,14 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 - **Consecuencias:** igual que `infinitePowers`, hay que desactivarlo antes de publicar (anotado en PLAN.md).
 
 ## D-024 · La cifra de altura pasa a la esquina superior derecha
-- **Fecha:** 2026-11-14 · **Estado:** Vigente (sustituye la posición de D-022; el resto de D-022 sigue igual)
+- **Fecha:** 2026-11-14 · **Estado:** Sustituida por D-025 (la posición; el desplazamiento de la línea del récord sigue vigente)
 - **Contexto:** petición del usuario.
 - **Decisión:** la cifra se fija a `CONFIG.ui.altitude.margin` px de los bordes superior y derecho, con el origen de escala arriba a la derecha (crece hacia la izquierda y hacia abajo). Se encoge sola si no cabe a la derecha del laberinto, midiendo el borde del laberinto en lo alto de la pantalla, donde la perspectiva lo hace más ancho. La línea del récord se desplaza con el crecimiento. En pantallas verticales el panel de puntos pasa a la izquierda para dejarle la esquina.
+
+## D-025 · Altura centrada sobre el panel de puntos y crecimiento más contenido
+- **Fecha:** 2026-11-14 · **Estado:** Vigente
+- **Contexto:** feedback del usuario: la cifra crecía demasiado y quería verla más centrada, entre el panel de puntos y lo alto de la pantalla.
+- **Decisión:** la cifra se centra horizontalmente sobre el panel de puntos y, en vertical, a medio camino entre el borde superior y el panel, con el origen de escala en el centro. Si no cabe centrada sin acercarse al laberinto, se desplaza a la derecha y, como último recurso, se encoge. Crecimiento: +4 % por hito, como máximo 6 hitos (+24 % en total; antes, +8 % y 8 hitos, +64 %).
 
 ## D-015 · Pruebas fuera del repositorio (provisional)
 - **Fecha:** 2026-11-13 · **Estado:** En revisión

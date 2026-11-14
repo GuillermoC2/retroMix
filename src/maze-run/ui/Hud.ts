@@ -52,7 +52,7 @@ export class Hud {
    */
   anchor(mazeRightPx: number, mazeRightTopPx: number, centerYPx: number): void {
     const w = window.innerWidth;
-    this.altitude.anchor(mazeRightTopPx);
+    this.altitude.anchor(mazeRightTopPx, this.right.getBoundingClientRect());
     this.right.style.left = `${Math.min(w - 8, mazeRightPx + 18)}px`;
     this.right.style.top = `${centerYPx}px`;
   }

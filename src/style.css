@@ -47,7 +47,7 @@ html, body {
 .hud-label { font-size: 11px; color: var(--blue); margin-bottom: 10px; letter-spacing: 2px; }
 
 /* --- Altura flotante --- */
-.altitude { position: absolute; text-align: right; }
+.altitude { position: absolute; transform: translate(-50%, -50%); text-align: center; }
 .juicy { position: relative; }
 .juicy-body { display: inline-block; white-space: nowrap; will-change: transform; }
 .juicy-char { display: inline-block; }

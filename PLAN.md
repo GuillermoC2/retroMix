@@ -54,6 +54,7 @@ Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[?]` propuesta sin
 - [x] La cifra de altura sale del panel azul: grande, flotante, con balanceo rítmico; crece y reacciona cada 100 m — D-022
 - [x] Componente reutilizable de texto con reacciones (`src/ui/JuicyText.ts`, base para futuros efectos de interfaz) — D-022
 - [x] La cifra de altura se mueve a la esquina superior derecha — D-024
+- [x] Crece menos y se centra sobre el panel de puntos — D-025
 - [ ] Más efectos para la cifra de altura (a petición del usuario, en el futuro)
 
 ## Herramientas de desarrollo
