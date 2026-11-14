@@ -63,27 +63,31 @@ export class ShatterEffect {
 
   /**
    * @param neon color neón actual del laberinto.
+   * @param coarse pedazos más grandes y menos numerosos (2×2×2 por casilla), para
+   *   cuando se rompen muchas casillas seguidas (poder GIGANTE).
    */
-  burst(tiles: ReadonlyArray<{ x: number; y: number }>, dir: Dir, neon: THREE.Color): void {
+  burst(tiles: ReadonlyArray<{ x: number; y: number }>, dir: Dir, neon: THREE.Color, coarse = false): void {
     const depth = CONFIG.maze.wallDepth;
-    const cell = 1 / GRID;
+    const grid = coarse ? 2 : GRID;
+    const layers = coarse ? 2 : LAYERS;
+    const cell = 1 / grid;
     for (const t of tiles) {
-      for (let gy = 0; gy < GRID; gy++) {
-        for (let gx = 0; gx < GRID; gx++) {
-          for (let gz = 0; gz < LAYERS; gz++) {
-            const lx = (gx - (GRID - 1) / 2) * cell;
-            const ly = (gy - (GRID - 1) / 2) * cell;
-            const front = gz === LAYERS - 1;
-            const edge = gx === 0 || gy === 0 || gx === GRID - 1 || gy === GRID - 1;
+      for (let gy = 0; gy < grid; gy++) {
+        for (let gx = 0; gx < grid; gx++) {
+          for (let gz = 0; gz < layers; gz++) {
+            const lx = (gx - (grid - 1) / 2) * cell;
+            const ly = (gy - (grid - 1) / 2) * cell;
+            const front = gz === layers - 1;
+            const edge = coarse || gx === 0 || gy === 0 || gx === grid - 1 || gy === grid - 1;
             // Los pedazos del frente y del contorno brillan con el neón; el interior es relleno oscuro.
             const brightness = front && edge ? 1 : front ? 0.35 : 0.2;
             this.spawn(
               worldX(t.x) + lx + rand(-0.04, 0.04),
               t.y + ly + rand(-0.04, 0.04),
-              ((gz + 0.5) / LAYERS) * depth,
+              ((gz + 0.5) / layers) * depth,
               lx * rand(3, 6) + DX[dir] * rand(1, 3),
               ly * rand(3, 6) + DY[dir] * rand(1, 3) + rand(1, 3.5),
-              rand(2, 5.5) * (0.5 + gz / LAYERS),
+              rand(2, 5.5) * (0.5 + gz / layers),
               cell * rand(0.6, 0.95),
               this.color.copy(neon).multiplyScalar(brightness),
             );

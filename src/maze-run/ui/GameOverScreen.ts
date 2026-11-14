@@ -7,7 +7,15 @@ export interface GameOverData {
   cause: DeathCause;
   records: RecordEntry;
   newRecord: { distance: boolean; score: boolean };
+  /** Nombre del minijuego perdido (si la causa es `minigame`). */
+  minigame?: string;
 }
+
+const CAUSES: Record<DeathCause, (d: GameOverData) => string> = {
+  ghost: () => '¡ATRAPADO POR UN FANTASMA!',
+  lava: () => '¡TE ALCANZO LA LAVA!',
+  minigame: (d) => `¡HAS PERDIDO AL ${d.minigame ?? 'MINIJUEGO'}!`,
+};
 
 /** Pantalla de fin de partida con resultado, récords y cómo reiniciar. */
 export class GameOverScreen {
@@ -15,7 +23,7 @@ export class GameOverScreen {
 
   constructor(parent: HTMLElement, data: GameOverData) {
     this.root.className = 'game-over';
-    const cause = data.cause === 'lava' ? '¡TE ALCANZO LA LAVA!' : '¡ATRAPADO POR UN FANTASMA!';
+    const cause = CAUSES[data.cause](data);
     const badge = (on: boolean) => (on ? '<span class="new-record">¡NUEVO RECORD!</span>' : '');
     this.root.innerHTML = `
       <div class="go-box">

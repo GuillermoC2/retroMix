@@ -8,6 +8,11 @@
  * recibe `resume()` y aplica el resultado.
  */
 export interface GameMode {
+  /**
+   * Se dibuja encima del modo de debajo, que sigue visible (aunque en pausa):
+   * p. ej. un minijuego en una ventana sobre el laberinto.
+   */
+  readonly overlay?: boolean;
   enter(): void;
   exit(): void;
   pause?(): void;
@@ -46,7 +51,10 @@ export class ModeStack {
     this.top?.update(dt);
   }
 
+  /** Dibuja el modo superior y, si es superpuesto, también los de debajo (de abajo a arriba). */
   render(): void {
-    this.top?.render();
+    let first = this.stack.length - 1;
+    while (first > 0 && this.stack[first].overlay) first--;
+    for (let i = Math.max(0, first); i < this.stack.length; i++) this.stack[i].render();
   }
 }

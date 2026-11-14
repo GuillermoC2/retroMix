@@ -39,10 +39,12 @@ export class Pellets {
   private populate(chunk: Chunk): void {
     const pellets: Pellet[] = [];
     const energizers = new Set(chunk.energizers.map((e) => key(e.x, e.y)));
+    const portals = new Set(chunk.portals.map((p) => key(p.x, p.y)));
     let dots = 0;
     let powers = 0;
     this.maze.forEachOpen(chunk.yStart, chunk.yEnd, (x, y) => {
       if (x === CONFIG.player.startColumn && y === CONFIG.player.startRow) return;
+      if (portals.has(key(x, y))) return;
       const isPower = energizers.has(key(x, y));
       const p: Pellet = {
         x,

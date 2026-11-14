@@ -5,7 +5,7 @@ Documento vivo. Se actualiza al empezar y al terminar cada tarea. Las decisiones
 
 Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[?]` propuesta sin aprobar (requiere visto bueno del usuario)
 
-**Estado actual:** Fase 1.6 completada (interfaz sin cajas en una columna a la derecha del laberinto; solo escritorio). Fase 1.5 completada (altura flotante con reacciones); Fase 1.3 completada (color neón único que cambia con el tiempo; la lava se puede dejar atrás y vuelve). Siguiente paso: probar y dar feedback; decidir cómo se ganan las cargas de romper muro.
+**Estado actual:** Fase 2 (primera integración) completada: portales cada 150 m, Pong, poder GIGANTE (8 s) con su cinemática y menú de modo dios. Siguiente paso: nuevos poderes especiales. Pendiente para más adelante: mejorar la interfaz y el funcionamiento del Pong.
 
 ---
 
@@ -69,6 +69,7 @@ Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[?]` propuesta sin
 
 - [x] Modo dios con la tecla K (no se puede morir), solo para desarrollo — D-023
 - [x] Cargas infinitas de romper muro (`dev.infinitePowers`) — D-018
+- [x] Menú de modo dios con K: activar/desactivar invencibilidad, romper muro infinito y cada poder especial; el romper muro infinito deja de estar activo por defecto — D-032
 - [ ] Antes de publicar: poner a `false` todo lo de `CONFIG.dev`
 
 ## Siguiente — Ajuste por juego real
@@ -81,22 +82,38 @@ Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[?]` propuesta sin
 
 No se harán sin el visto bueno del usuario (se evita añadir funcionalidades no pedidas).
 
-- [?] **Cómo se ganan cargas de romper muro** en el juego normal (p. ej. objeto en el laberinto, cada N metros, recompensa de minijuego en la Fase 2). Al decidirlo: `dev.infinitePowers = false` y ajustar `powers.wallBreak.startCharges`
+- [?] **Cómo se ganan cargas de romper muro** en el juego normal (p. ej. objeto en el laberinto, cada N metros, recompensa de minijuego en la Fase 2). Al decidirlo: ajustar `powers.wallBreak.startCharges` (hoy 0; sin cargas solo se rompe con el truco del modo dios, D-032)
 - [?] Incorporar las pruebas al repo como `npm test`: conectividad del generador y fuzzing de movimiento (D-015)
 - [?] Sonido y efectos (comer, energizador, muerte, música)
 - [?] Tecla de pausa
 - ~~Controles táctiles o móvil~~ — descartado: el juego es solo para escritorio (D-026)
+- [?] GIGANTE inmune a la lava (ahora la lava sí le mata, D-031)
+- [?] Puntos por cada muro comido por el GIGANTE
+- [?] Atajo de desarrollo para saltar al siguiente portal
 - [?] Retocar el sprite del protagonista mirando hacia arriba (parado, se lee algo como un corazón)
 
-## Fase 2 — Minijuegos como desafíos (alcance por definir)
+## Fase 2 — Minijuegos como desafíos: portales
 
-Se definirá con el usuario antes de empezar. Esqueleto previsto según la arquitectura actual (D-007):
+Cada cierta distancia aparece una sala amplia con un portal en el centro. Se puede esquivar o entrar. Dentro se juega
+un minijuego retro en una ventana con el laberinto pausado: si se gana, se obtiene un poder especial aleatorio que se
+activa solo; si se pierde, se acaba la partida.
 
-- [ ] Definir con el usuario: qué dispara un desafío (metros, objeto en el laberinto, aleatorio…), qué minijuego va primero y qué recompensas o castigos hay
-- [ ] Sistema de desafíos: escucha `RunState.events`, apila el minijuego con `ModeStack.push` y aplica el resultado
-- [ ] Contrato mínimo de resultado de minijuego (cerrarlo con el primer caso real, sin sobreingeniería)
-- [ ] Primer minijuego
-- [ ] Efectos del resultado sobre la partida: `RunState.modifiers`, `Maze.setTile`, fantasmas y lava
+- [x] Salas con portal cada N metros en el generador (conectividad intacta) — D-028
+- [x] Portal visible y con el nombre del juego; se entra pisándolo; se cierra al usarlo — D-028
+- [x] Contrato de minijuego y registro de juegos (el portal elige uno al azar) — D-029
+- [x] El minijuego se dibuja encima del laberinto pausado (modos superpuestos en `ModeStack`) — D-029
+- [x] Primer minijuego: Pong (primero en llegar a N puntos, rival con IA) — D-030
+- [x] Ganar: poder especial aleatorio que se activa solo. Primer poder: GIGANTE (×3, más rápido, come muros, fantasmas y puntos, 8 s) — D-031
+- [x] Perder: fin de la partida con su propio motivo en el Game Over — D-029
+- [x] Verificación: generador (300 semillas, 2.400 salas, conectividad intacta), equilibrio del Pong por simulación, flujo completo en el navegador (entrar, ganar → gigante, perder → Game Over) y rendimiento
+- [x] Protagonista plano, de grosor uniforme (pensando en animaciones futuras) — D-033
+- [x] Fantasmas algo más planos — D-034
+- [x] Cinemática al recibir un poder especial: sale volando hacia la cámara, hace la acción del poder (GIGANTE: come una cereza y crece en 3 escalones) y cae de golpe dejando humo; ~3–4 s — D-035
+- [ ] El usuario prueba y ajusta: dificultad del Pong, distancia entre portales, duración/tamaño/velocidad del gigante
+- [ ] Mejorar la interfaz y el funcionamiento del Pong (pedido por el usuario; se hará más adelante)
+- [ ] Más poderes especiales (siguiente paso)
+- [ ] Más minijuegos (Tetris, Space Invaders…)
+- [ ] Animaciones de entrada y salida del portal más elaboradas (a petición del usuario, más adelante)
 
 ## Deuda técnica y problemas conocidos
 

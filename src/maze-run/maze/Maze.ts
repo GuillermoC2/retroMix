@@ -10,6 +10,8 @@ export interface Chunk {
   yEnd: number;
   style: string;
   energizers: ReadonlyArray<{ x: number; y: number }>;
+  /** Portales a minijuegos (centro de su sala). */
+  portals: ReadonlyArray<{ x: number; y: number }>;
 }
 
 type MazeEvents = {
@@ -65,6 +67,7 @@ export class Maze {
         yEnd: data.yStart + data.rows.length - 1,
         style: data.style,
         energizers: data.energizers,
+        portals: data.portals,
       };
       this.topY = chunk.yEnd;
       this.chunks.push(chunk);

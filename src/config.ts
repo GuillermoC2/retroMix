@@ -236,12 +236,114 @@ export const CONFIG = {
     },
   },
 
+  /**
+   * Portales a minijuegos: cada cierta distancia el laberinto abre una sala amplia
+   * con un portal en el centro. Se puede esquivar o entrar pisándolo.
+   */
+  portals: {
+    /** Metros a los que aparece la primera sala y separación entre salas. */
+    firstAt: 60,
+    every: 150,
+    /** Columnas de pasillo (índices de `maze.corridorColumns`) entre las que se abre la sala. */
+    plazaColumns: [1, 5],
+    /** Distancia (casillas) al centro del portal para entrar. */
+    enterRadius: 0.45,
+    /** Duración (s) de la absorción por el portal antes de abrir el minijuego. */
+    absorbTime: 0.6,
+  },
+
+  /**
+   * Poderes especiales que se ganan al vencer un minijuego. Se elige uno al azar
+   * de `pool` y se activa automáticamente.
+   */
+  specialPowers: {
+    pool: ['giant'],
+    /**
+     * Cinemática al recibir un poder: el protagonista sale volando hacia la cámara,
+     * hace la acción propia del poder y cae de golpe a su sitio dejando humo. La
+     * partida queda congelada mientras tanto; el tiempo del poder empieza al aterrizar.
+     */
+    cinematic: {
+      /** Subida hacia la cámara (s). */
+      riseTime: 0.7,
+      /** Fracción de la altura de pantalla que ocupa al llegar arriba. */
+      closeUpSize: 0.42,
+      /** Caída (s), y asentamiento tras el golpe (s). */
+      fallTime: 0.3,
+      /**
+       * Vueltas durante la subida y la caída: `disc` sobre su propio eje (como un
+       * disco) y `flip` sobre el eje vertical (como una moneda: se le ve el canto).
+       */
+      riseTurns: { disc: 1, flip: 1 },
+      fallTurns: { disc: 1, flip: 1 },
+      settleTime: 0.3,
+      /** Sacudida de cámara al aterrizar y número de bocanadas de humo. */
+      impactShake: 0.6,
+      smokePuffs: 40,
+    },
+    giant: {
+      name: 'GIGANTE',
+      /** Duración (s), tamaño (×) y multiplicador de velocidad. */
+      duration: 8,
+      scale: 3,
+      speed: 1.3,
+      /** Últimos segundos en los que parpadea para avisar de que se acaba. */
+      warnTime: 1.2,
+      /** Duración (s) de encoger al terminar. */
+      shrinkTime: 0.35,
+      /**
+       * Acción de la cinemática: la cereza entra volando (`cherryTime`), se la come
+       * (`chompTime`) y crece en `growSteps` escalones separados `stepEvery` s,
+       * hasta ocupar `closeUpEndSize` de la pantalla; luego espera `hold` s.
+       */
+      intro: { cherryTime: 0.45, chompTime: 0.35, growSteps: 3, stepEvery: 0.35, closeUpEndSize: 0.72, hold: 0.3 },
+      /** Media anchura (casillas) de lo que come alrededor de su centro (1,45 ≈ 3×3 casillas). */
+      reach: 1.45,
+      /** Sacudida de cámara al comerse muros. */
+      shake: 0.08,
+    },
+  },
+
+  minigames: {
+    pong: {
+      /** Puntos para ganar la partida. */
+      pointsToWin: 3,
+      /** Campo en píxeles lógicos (se escala en pantalla sin suavizado). */
+      width: 160,
+      height: 120,
+      paddleHeight: 22,
+      paddleSpeed: 120,
+      /** Velocidad de la bola: inicial, aumento por golpe (×) y máxima (px/s). */
+      ballSpeed: 90,
+      ballSpeedUp: 1.07,
+      ballMaxSpeed: 200,
+      /** Ángulo máximo de rebote en la pala (grados), según dónde golpee. */
+      maxBounceAngle: 55,
+      /**
+       * Rival: velocidad máxima (px/s), parte del campo (0..1) que debe cruzar la bola
+       * antes de que reaccione, y error de puntería (px) a la velocidad inicial de la
+       * bola. El error se elige en cada golpe y crece en proporción a la velocidad.
+       */
+      aiSpeed: 72,
+      aiReactFrom: 0.4,
+      aiError: 11,
+      /** Cuenta atrás antes de empezar (s) y pausa tras cada punto (s). */
+      countdown: 3,
+      pointPause: 0.9,
+      /** Tiempo (s) que se muestra el resultado antes de volver al laberinto. */
+      resultTime: 2.4,
+    },
+  },
+
   /** Ajustes solo para desarrollo/pruebas. Poner a false para el juego normal. */
   dev: {
-    infinitePowers: true,
-    /** Permite activar/desactivar el modo dios (no se puede morir) con la tecla K. */
-    godModeKey: true,
+    /**
+     * La tecla K abre el menú de modo dios (pausa la partida): invencibilidad,
+     * romper muro infinito y activar/desactivar poderes especiales.
+     */
+    godMenuKey: true,
   },
 } as const;
 
 export type MazeStyle = (typeof CONFIG.maze.styles)[number];
+export type SpecialPowerId = (typeof CONFIG.specialPowers.pool)[number];

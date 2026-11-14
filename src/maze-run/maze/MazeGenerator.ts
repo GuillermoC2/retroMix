@@ -15,6 +15,9 @@ import { Tile } from './grid';
  *    eso garantiza que todos los pasillos están conectados y que SIEMPRE existe
  *    un camino hacia arriba.
  *  - Cada sección elige un estilo (simétrico, retorcido, abierto...) para variar.
+ *  - Cada `portals.every` metros se abre una sala amplia con un portal en el
+ *    centro: dos filas de bloques (y sus tres líneas) se vacían entre dos columnas
+ *    de pasillo. Vaciar solo abre casillas, así que la conectividad se mantiene.
  */
 
 const LEFT = -1;
@@ -114,8 +117,22 @@ export interface GeneratedChunk {
   /** Filas de casillas, de abajo a arriba. rows[0] corresponde a yStart. */
   rows: Uint8Array[];
   energizers: Array<{ x: number; y: number }>;
+  /** Portales (centro de una sala) que caen en esta sección. */
+  portals: Array<{ x: number; y: number }>;
   style: string;
 }
+
+/**
+ * Sala del portal: filas de bloques r0 y r0+1 (de 3 casillas) y sus tres líneas,
+ * vaciadas entre las columnas x0 y x1. Ocupa de la fila y0 a la y0 + 8.
+ */
+interface Plaza {
+  r0: number;
+  y0: number;
+  x0: number;
+  x1: number;
+}
+const PLAZA_ROWS = 9;
 
 export class MazeGenerator {
   readonly width = CONFIG.maze.width;
@@ -135,6 +152,9 @@ export class MazeGenerator {
   private forgottenRows = 0;
   private nextChunk = 0;
   private style!: MazeStyle;
+  /** Sala del portal más reciente (la que se está vaciando) y fila a partir de la cual toca la siguiente. */
+  private plaza: Plaza | null = null;
+  private nextPlazaY = CONFIG.player.startRow + CONFIG.portals.firstAt / CONFIG.scoring.metersPerRow;
 
   constructor(private rng: Rng = new Rng()) {
     this.lineY[0] = 1;
@@ -153,9 +173,18 @@ export class MazeGenerator {
       yStart = 0;
     }
 
+    const portals: Array<{ x: number; y: number }> = [];
     for (let n = 0; n < CONFIG.maze.blockRowsPerChunk; n++) {
       const r = this.nextBlockRow++;
-      const height = this.rng.chance(this.style.tallRowChance) ? 3 : 2;
+      // Sala del portal: sus dos filas de bloques caen en la misma sección (el portal también).
+      if (index > 0 && this.lineY[r] >= this.nextPlazaY && n <= CONFIG.maze.blockRowsPerChunk - 2) {
+        const [c0, c1] = CONFIG.portals.plazaColumns;
+        this.plaza = { r0: r, y0: this.lineY[r], x0: this.cols[c0], x1: this.cols[c1] };
+        portals.push({ x: (this.width - 1) / 2, y: this.lineY[r] + (PLAZA_ROWS - 1) / 2 });
+        this.nextPlazaY += CONFIG.portals.every / CONFIG.scoring.metersPerRow;
+      }
+      const inPlaza = this.plaza !== null && r - this.plaza.r0 <= 1;
+      const height = inPlaza || this.rng.chance(this.style.tallRowChance) ? 3 : 2;
       this.lineY[r + 1] = this.lineY[r] + height + 1;
       for (let c = 0; c < this.nb; c++) this.pieces.add(this.blockId(r, c));
       this.vClosed[r] = new Array(this.nc).fill(false);
@@ -176,7 +205,7 @@ export class MazeGenerator {
       }
     }
 
-    const chunk: GeneratedChunk = { index, yStart, rows, energizers: [], style: this.style.name };
+    const chunk: GeneratedChunk = { index, yStart, rows, energizers: [], portals, style: this.style.name };
     chunk.energizers = this.placeEnergizers(chunk);
     return chunk;
   }
@@ -290,6 +319,8 @@ export class MazeGenerator {
       if (r > 0 && this.hClosed[r][c]) continue;
       for (let x = this.cols[c] + 1; x < this.cols[c + 1]; x++) row[x] = Tile.Open;
     }
+    // Las tres líneas de la sala (abajo, centro y arriba) quedan abiertas de lado a lado.
+    if (this.plaza && r >= this.plaza.r0 && r - this.plaza.r0 <= 2) this.carve(row, this.plaza);
     return row;
   }
 
@@ -298,7 +329,18 @@ export class MazeGenerator {
     for (let i = 0; i < this.nc; i++) {
       if (!this.vClosed[r][i]) row[this.cols[i]] = Tile.Open;
     }
+    if (this.plaza && r >= this.plaza.r0 && r - this.plaza.r0 <= 1) this.carve(row, this.plaza);
     return row;
+  }
+
+  private carve(row: Uint8Array, plaza: Plaza): void {
+    for (let x = plaza.x0; x <= plaza.x1; x++) row[x] = Tile.Open;
+  }
+
+  /** ¿La casilla está dentro de la sala del portal más reciente? (ahí no van energizadores). */
+  private inPlaza(x: number, y: number): boolean {
+    const p = this.plaza;
+    return !!p && x >= p.x0 && x <= p.x1 && y >= p.y0 && y < p.y0 + PLAZA_ROWS;
   }
 
   // ---------------------------------------------------------------------------
@@ -314,7 +356,7 @@ export class MazeGenerator {
 
     for (let k = minK; k < rows.length - 1; k++) {
       for (let x = 0; x < this.width; x++) {
-        if (!open(x, k)) continue;
+        if (!open(x, k) || this.inPlaza(x, yStart + k)) continue;
         const exits = +open(x - 1, k) + +open(x + 1, k) + +open(x, k - 1) + +open(x, k + 1);
         const tile = { x, y: yStart + k };
         if (exits === 1) deadEnds.push(tile);

@@ -1,4 +1,4 @@
-# RetroMix — Fase 1: laberinto infinito
+# RetroMix — laberinto infinito con portales a minijuegos
 
 Arcade retro 2.5D: sube por un laberinto vertical infinito generado proceduralmente, come puntos,
 esquiva fantasmas y escapa de la lava que asciende. El objetivo es llegar lo más alto posible (metros).
@@ -22,9 +22,10 @@ npm run build      # comprobación de tipos + build de producción en dist/
 | --- | --- |
 | WASD / flechas | Mover (la dirección queda en búfer hasta que se pueda girar) |
 | Espacio | Romper el muro de delante (o el de la dirección pulsada si está bloqueada) |
+| W/S o ↑/↓ | Mover la pala en el Pong |
 | C | Cambiar perspectiva: derecha → frontal → izquierda → lateral |
 | Enter / Espacio | Reiniciar tras el Game Over |
-| K | *(desarrollo)* Modo dios: no se puede morir. Requiere `CONFIG.dev.godModeKey`; la partida no guarda récords |
+| K | *(desarrollo)* Menú de modo dios (pausa): trucos (invencible, romper muro infinito) con 1–9 o clic, y poderes especiales con clic (cierra el menú y lanza el poder); K o Esc cierran. Requiere `CONFIG.dev.godMenuKey`; los trucos se recuerdan entre recargas y una partida con trucos no guarda récords |
 
 ## Tecnología
 
@@ -89,7 +90,7 @@ Todas las curvas siguen `start + (max − start) · (1 − e^(−metros / rampDi
 
 `systems/WallBreaker.ts` abre un túnel recto a través de todo el grosor del muro (máx. `powers.wallBreak.maxDepth`).
 El borde exterior es irrompible. La animación de pedazos está en `effects/ShatterEffect.ts`. Funciona por cargas, y
-`dev.infinitePowers` las hace infinitas para pruebas.
+Por defecto se empieza con 0 cargas; el menú de modo dios (K) permite romper sin gastar cargas.
 
 ## Estética neón
 
@@ -97,15 +98,26 @@ Las texturas de los muros son máscaras en escala de grises. El color lo pone `r
 un único color neón que se mantiene unos segundos y funde al siguiente de la paleta. Paleta, duración de cada color y
 duración del fundido en `maze.neon`. La altura de los muros es `maze.wallDepth`.
 
-## Preparado para minijuegos (aún no implementados)
+## Portales y minijuegos
 
-- **Pausar el laberinto y volver**: un minijuego será otro `GameMode`. El laberinto lo apila con
-  `ctx.modes.push(minijuego)` (recibe `pause()`); el minijuego entrega su resultado con un callback y hace
-  `ctx.modes.pop()`; el laberinto recibe `resume()`.
-- **Disparadores**: `RunState.events` emite `meters`, `score`, `energizer` y `died`; un futuro sistema de
-  desafíos puede escucharlos (p. ej. “cada 100 m”).
-- **Efectos del resultado**:
-  - `RunState.modifiers` (`playerSpeed`, `ghostSpeed`, `lavaSpeed`, `scrollSpeed`): multiplicadores que ya aplican los sistemas.
-  - `Maze.setTile()` modifica el laberinto y la vista reconstruye la sección afectada.
-  - `GhostDirector` (asustar, añadir o retirar fantasmas) y `Lava` (su nivel `y`) son accesibles desde el modo.
-- **Récords** separados por juego (`Records.get(id)`).
+Cada `portals.every` metros (la primera a `portals.firstAt`) el generador abre una sala de 13 × 9 casillas con un
+portal en el centro. Pisarlo absorbe al jugador y abre un minijuego en una ventana sobre el laberinto pausado.
+Ganar activa un poder especial aleatorio; perder acaba la partida.
+
+- **Añadir un minijuego:** crear un `GameMode` con `overlay = true` que al terminar haga `ctx.modes.pop()` y llame
+  a `done({ won })`, y registrarlo en `src/minigames/registry.ts`. El portal elige uno al azar.
+- **Pong** (`src/minigames/pong/`): lógica en `PongGame`, ventana y dibujo en `PongMode`. Parámetros en `CONFIG.minigames.pong`.
+- **Poderes especiales** (`systems/SpecialPowers.ts`, `CONFIG.specialPowers`): se elige uno de `pool`. Hoy solo
+  **GIGANTE**: ×3 de tamaño, más rápido, come muros, fantasmas y puntos durante 8 s. Sus reglas se aplican en `MazeRunMode`.
+- **Cinemática de poder** (`effects/PowerCinematic.ts`): al recibir un poder, el protagonista vuela hacia la cámara, hace
+  el acto del poder (GIGANTE: come una cereza y crece en 3 escalones) y cae de golpe dejando humo. Un poder nuevo
+  necesita su acto en `ACTS`. Tiempos en `CONFIG.specialPowers.cinematic` y en el `intro` de cada poder.
+- **Otros enganches:** `RunState.events` (`meters`, `score`, `energizer`, `died`, `portalEntered`, `minigameResult`,
+  `specialPower`…), `RunState.modifiers` (multiplicadores de velocidad), `Maze.setTiles()` y récords por juego (`Records.get(id)`).
+
+```
+src/minigames/
+  types.ts        contrato: MinigameDef y MinigameResult
+  registry.ts     minijuegos disponibles en los portales
+  pong/           PongGame (lógica) y PongMode (ventana, dibujo, teclado)
+```

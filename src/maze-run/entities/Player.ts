@@ -2,6 +2,8 @@ import { CONFIG } from '../../config';
 import type { Maze } from '../maze/Maze';
 import { DX, DY, isHorizontal, opposite, type Dir } from '../maze/grid';
 
+export type Passable = (x: number, y: number) => boolean;
+
 /**
  * Lógica del protagonista: movimiento continuo sobre los ejes de los pasillos.
  * Coordenadas en casillas: un valor entero es el centro de una casilla.
@@ -21,6 +23,7 @@ export class Player {
   /** Distancia recorrida (para animar la boca). */
   travelled = 0;
   speedMultiplier = 1;
+  private passable: Passable = () => false;
 
   constructor(x = CONFIG.player.startColumn, y = CONFIG.player.startRow) {
     this.x = x;
@@ -35,12 +38,17 @@ export class Player {
     return Math.round(this.y);
   }
 
-  update(dt: number, maze: Maze): void {
+  /**
+   * @param passable casillas por las que puede pasar. Por defecto, las abiertas;
+   *   un poder (p. ej. el gigante) puede permitir entrar en muros.
+   */
+  update(dt: number, maze: Maze, passable: Passable = (x, y) => maze.isOpen(x, y)): void {
     if (!this.alive) return;
+    this.passable = passable;
     let remaining = CONFIG.player.speed * this.speedMultiplier * dt;
 
     if (this.wantDir !== null && this.moving && this.wantDir === opposite(this.dir)) this.dir = this.wantDir;
-    this.tryCornerTurn(maze);
+    this.tryCornerTurn();
 
     let guard = 8;
     while (remaining > 1e-6 && guard-- > 0) {
@@ -53,8 +61,8 @@ export class Player {
         // En el centro de una casilla: decidir giro o parada.
         this.x = this.tileX;
         this.y = this.tileY;
-        if (this.wantDir !== null && this.canEnter(maze, this.wantDir)) this.dir = this.wantDir;
-        if (!this.canEnter(maze, this.dir)) {
+        if (this.wantDir !== null && this.canEnter(this.wantDir)) this.dir = this.wantDir;
+        if (!this.canEnter(this.dir)) {
           this.moving = false;
           return;
         }
@@ -73,19 +81,19 @@ export class Player {
   }
 
   /** Giro perpendicular cerca del centro de la casilla: recoloca al centro y gira. */
-  private tryCornerTurn(maze: Maze): void {
+  private tryCornerTurn(): void {
     const want = this.wantDir;
     if (want === null || want === this.dir || want === opposite(this.dir)) return;
     const offset = isHorizontal(this.dir) ? Math.abs(this.x - this.tileX) : Math.abs(this.y - this.tileY);
     if (offset > CONFIG.player.cornerTolerance) return;
-    if (!maze.isOpen(this.tileX + DX[want], this.tileY + DY[want])) return;
+    if (!this.passable(this.tileX + DX[want], this.tileY + DY[want])) return;
     this.x = this.tileX;
     this.y = this.tileY;
     this.dir = want;
     this.moving = true;
   }
 
-  private canEnter(maze: Maze, d: Dir): boolean {
-    return maze.isOpen(this.tileX + DX[d], this.tileY + DY[d]);
+  private canEnter(d: Dir): boolean {
+    return this.passable(this.tileX + DX[d], this.tileY + DY[d]);
   }
 }

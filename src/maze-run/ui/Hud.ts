@@ -44,12 +44,21 @@ export class Hud {
   private keysWideWidth = 0;
   private message = el('div', 'hud-message');
   private god = el('div', 'hud-god', 'MODO DIOS [K]');
+  /** Poder especial activo: nombre y barra de tiempo restante. */
+  private special = el('div', 'hud-special');
+  private specialName = el('div', 'hud-special-name');
+  private specialBar = el('div', 'hud-special-bar');
+  private specialFill = el('div', 'hud-special-fill');
+  private announcer = el('div', 'hud-announce');
 
   constructor(parent: HTMLElement, records: RecordEntry) {
     this.power.label.appendChild(this.charges);
     this.keys.append(this.power.root, this.view.root);
-    this.root.append(this.keys, this.message, this.god);
-    this.setGodMode(false);
+    this.specialBar.appendChild(this.specialFill);
+    this.special.append(this.specialName, this.specialBar);
+    this.root.append(this.keys, this.message, this.god, this.special, this.announcer);
+    this.setGodMode('');
+    this.setSpecial(null);
     parent.appendChild(this.root);
     this.score = new ScoreDisplay(this.root, records.bestScore);
     this.altitude = new AltitudeDisplay(this.root, records.bestDistance);
@@ -88,11 +97,11 @@ export class Hud {
 
   /** Cargas del poder romper muro. */
   setPower(charges: number, devInfinite: boolean): void {
-    const text = `CARGAS ${charges === Infinity ? 'INF' : charges}${devInfinite ? ' (DEV)' : ''}`;
+    const text = devInfinite ? 'CARGAS INF (DIOS)' : `CARGAS ${charges}`;
     if (text === this.chargesShown) return;
     this.chargesShown = text;
     this.charges.textContent = text;
-    this.power.root.classList.toggle('empty', charges <= 0);
+    this.power.root.classList.toggle('empty', !devInfinite && charges <= 0);
   }
 
   /** Se ha pulsado el poder (funcione o no). */
@@ -112,9 +121,34 @@ export class Hud {
     press(this.view.key);
   }
 
-  /** Indicador de modo dios (herramienta de desarrollo). */
-  setGodMode(on: boolean): void {
-    this.god.style.display = on ? '' : 'none';
+  /**
+   * Poder especial activo (o `null` si no hay ninguno).
+   * @param remaining fracción de tiempo restante (1 → 0).
+   * @param warning a punto de acabarse: parpadea.
+   */
+  setSpecial(name: string | null, remaining = 0, warning = false): void {
+    this.special.style.display = name ? '' : 'none';
+    if (!name) return;
+    if (this.specialName.textContent !== name) this.specialName.textContent = name;
+    // La barra baja en escalones de 1/20 (pixel art).
+    this.specialFill.style.width = `${Math.ceil(remaining * 20) * 5}%`;
+    this.special.classList.toggle('warning', warning);
+  }
+
+  /** Texto grande que aparece en el centro y se desvanece (p. ej. al ganar un poder). */
+  announce(text: string, sub = ''): void {
+    this.announcer.innerHTML = '';
+    this.announcer.append(el('div', 'hud-announce-main', text));
+    if (sub) this.announcer.append(el('div', 'hud-announce-sub', sub));
+    this.announcer.classList.remove('show');
+    void this.announcer.offsetWidth;
+    this.announcer.classList.add('show');
+  }
+
+  /** Indicador de trucos de modo dios activos (herramienta de desarrollo); vacío lo oculta. */
+  setGodMode(text: string): void {
+    this.god.textContent = text;
+    this.god.style.display = text ? '' : 'none';
   }
 
   setMessage(text: string, blink = false): void {

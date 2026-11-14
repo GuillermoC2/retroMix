@@ -1,4 +1,7 @@
-export type Action = 'up' | 'down' | 'left' | 'right' | 'camera' | 'confirm' | 'power' | 'god';
+/** `opt1`…`opt9`: teclas numéricas (opciones de menús, p. ej. el de modo dios). */
+export type Action =
+  | 'up' | 'down' | 'left' | 'right' | 'camera' | 'confirm' | 'power' | 'god' | 'back'
+  | `opt${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9}`;
 
 /** Una tecla puede disparar varias acciones; cada modo decide cuáles le importan según su estado. */
 const KEY_MAP: Record<string, readonly Action[]> = {
@@ -14,7 +17,13 @@ const KEY_MAP: Record<string, readonly Action[]> = {
   KeyK: ['god'],
   Enter: ['confirm'],
   Space: ['confirm', 'power'],
+  Escape: ['back'],
 };
+for (let n = 1; n <= 9; n++) {
+  const action = `opt${n}` as Action;
+  KEY_MAP[`Digit${n}`] = [action];
+  KEY_MAP[`Numpad${n}`] = [action];
+}
 
 /**
  * Teclado → acciones abstractas. Guarda las pulsaciones del frame (para eventos

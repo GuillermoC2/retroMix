@@ -118,6 +118,28 @@ export class GhostDirector {
     return { killed: killed && eaten.length === 0, eaten };
   }
 
+  /**
+   * Se come a todos los fantasmas (asustados o no) a menos de `radius` del
+   * jugador. Lo usa el poder GIGANTE.
+   */
+  devour(player: Player, radius: number): GhostHit[] {
+    const eaten: GhostHit[] = [];
+    const scores = CONFIG.ghosts.eatScores;
+    for (const g of this.ghosts) {
+      if (g.state !== 'normal' && g.state !== 'frightened') continue;
+      if ((g.x - player.x) ** 2 + (g.y - player.y) ** 2 > radius * radius) continue;
+      eaten.push({ ghost: g, score: scores[Math.min(this.eatCombo++, scores.length - 1)] });
+      g.home = this.pickSpawnTile(player) ?? { x: g.tileX, y: g.tileY };
+      g.setState('eaten');
+    }
+    return eaten;
+  }
+
+  /** Reinicia la cadena de puntos por fantasmas comidos (p. ej. al empezar un poder). */
+  resetCombo(): void {
+    this.eatCombo = 0;
+  }
+
   // ---------------------------------------------------------------------------
 
   private updateModes(dt: number): void {

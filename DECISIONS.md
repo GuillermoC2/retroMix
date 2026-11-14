@@ -102,7 +102,7 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 - **Consecuencias:** los fantasmas también pueden usar los túneles nuevos. `Maze.setTiles` avisa también a las secciones vecinas para redibujar los contornos en las fronteras. Evento `wallBroken` disponible para futuros sistemas.
 
 ## D-018 · Cargas finitas con interruptor de desarrollo
-- **Fecha:** 2026-11-14 · **Estado:** Vigente
+- **Fecha:** 2026-11-14 · **Estado:** Vigente las cargas; el interruptor `dev.infinitePowers` lo sustituye D-032
 - **Decisión:** el poder funciona por cargas (`WallBreaker.charges`, `grant()` para recompensas futuras). `CONFIG.dev.infinitePowers = true` las hace infinitas para pruebas, y el HUD lo indica con "(DEV)". Cómo se ganan cargas en el juego normal está **pendiente de decidir** (PLAN.md).
 
 ## D-019 · Un único color neón para todo el laberinto, que cambia con el tiempo
@@ -132,7 +132,7 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 - **Consecuencias:** un efecto nuevo es un método en `JuicyText` (cómo) más una regla en `AltitudeDisplay` (cuándo). La cifra crece hacia la izquierda (origen en el lado derecho) y se encoge sola si no cabe junto al laberinto.
 
 ## D-023 · Modo dios para desarrollo (tecla K)
-- **Fecha:** 2026-11-14 · **Estado:** Vigente
+- **Fecha:** 2026-11-14 · **Estado:** Sustituida por D-032 (la regla de no guardar récords sigue vigente)
 - **Decisión:** con `CONFIG.dev.godModeKey = true`, la tecla K activa o desactiva el modo dios: ni los fantasmas ni la lava matan. Los fantasmas asustados se pueden seguir comiendo. Un indicador rosa parpadeante "MODO DIOS [K]" lo deja claro. Una partida en la que se haya activado **no guarda récords**, para no contaminarlos. El laberinto se sigue destruyendo bajo la lava como siempre, aunque el jugador esté dentro; el usuario prefiere no gastar recursos en ese caso, que nadie va a usar.
 - **Consecuencias:** igual que `infinitePowers`, hay que desactivarlo antes de publicar (anotado en PLAN.md).
 
@@ -159,6 +159,71 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
   - **Puntos** (`ScoreDisplay`, con `JuicyText`): la cifra cuenta hacia arriba hasta el valor real (`tallyRate`) en lugar de saltar. Reacciona según lo ganado de golpe: micro-pop por punto, pop y giro por energizador, y pop, giro, temblor, destello cian y chispas por fantasma. Se usan blanco y cian para no confundirse con el amarillo de la altura. Parámetros en `CONFIG.ui.score`.
   - **Ayudas** con icono de tecla en CSS (contorno de esquinas recortadas, bisel y canto inferior). La tecla se hunde al pulsarla. También pasa a ser una ayuda de este tipo el poder de romper muro ("ESPACIO ROMPER MURO" con las cargas debajo), que estaba en el panel. Se deja de mostrar el nombre de la vista actual, como pidió el usuario ("simplemente C Cambiar vista").
   - Si la columna es estrecha, las ayudas ponen el texto bajo la tecla, y las cifras y las ayudas se encogen como último recurso.
+
+## D-028 · Salas con portal cada N metros
+- **Fecha:** 2026-11-14 · **Estado:** Vigente
+- **Contexto:** petición del usuario: cada cierta distancia, una zona más amplia con un portal central que se pueda esquivar con facilidad o tomar si se quiere.
+- **Decisión:** el generador vacía dos filas de bloques (forzadas a 3 casillas de alto) y sus tres líneas entre la 2.ª y la 6.ª columna de pasillo: una sala de 13 × 9 casillas con el portal en el centro exacto (x = 10). Primera sala a los `portals.firstAt` = 60 m y luego cada `portals.every` = 150 m. La sala solo abre casillas, así que la conectividad garantizada (D-005) se mantiene (verificado en 300 semillas, 2.400 salas). Los pasillos de los bordes siguen igual, así que se puede rodear; y dentro, el portal ocupa 1 casilla de 117, así que esquivarlo es fácil. Sin energizadores dentro de la sala ni punto en la casilla del portal.
+- **Entrar:** pisar el centro (`enterRadius` 0,45). El jugador es absorbido (va al centro girando y encogiendo, `absorbTime` 0,6 s) y se abre el minijuego. El portal se cierra tras usarlo.
+- **Aspecto:** remolino en espiral pixelado, anillo octogonal que recorre el arcoíris (para distinguirlo del color único del laberinto, D-019), marca en el suelo, partículas voxel y un cartel con el nombre del juego ("PONG / PORTAL"). Una sola luz compartida para no variar el número de luces de la escena (recompilaría materiales).
+
+## D-029 · Minijuegos como modos superpuestos, con un contrato mínimo
+- **Fecha:** 2026-11-14 · **Estado:** Vigente (cierra el "contrato mínimo" previsto en D-007)
+- **Decisión:** un minijuego es un `MinigameDef` (`id`, `name`, `create(ctx, done)`) en `src/minigames/registry.ts`; el portal elige uno al azar al aparecer (para poder anunciarlo). `create` devuelve un `GameMode` con `overlay = true`: `ModeStack.render()` dibuja también los modos de debajo, así el laberinto se ve pausado detrás de la ventana (y no se queda en negro al redimensionar). El laberinto no recibe `update` mientras tanto: todo (fantasmas, lava, poderes) queda congelado. El resultado es `{ won }`; el minijuego hace `pop()` y llama a `done` una vez.
+- **Resultado:** ganar → poder especial aleatorio (D-031). Perder → muerte con causa `minigame` ("¡HAS PERDIDO AL PONG!" en el Game Over). En modo dios (D-023) perder no mata.
+- **Eventos nuevos** en `RunState`: `portalEntered`, `minigameResult`, `specialPower`.
+
+## D-030 · Pong: primero a 3, rival con IA batible
+- **Fecha:** 2026-11-14 · **Estado:** Vigente (afinable en `CONFIG.minigames.pong`)
+- **Decisión:** ventana con campo de 160 × 120 píxeles lógicos escalado a múltiplo entero, marcador con cifras de 3 × 5 dibujadas a mano y líneas de barrido CRT. W/S o flechas. Cuenta atrás de 3 s, gana el primero a 3 puntos, el resultado se muestra 2,4 s (Enter/Espacio lo salta). El ángulo de rebote depende de dónde golpea la bola en la pala y la bola acelera un 7 % por golpe. Lógica (`PongGame`) separada del dibujo (`PongMode`).
+- **IA:** predice el punto de llegada (con rebotes) pero solo reacciona cuando la bola ha cruzado el 40 % del campo, se mueve más despacio que el jugador (72 frente a 120 px/s) y apunta con un error que **crece con la velocidad de la bola**, así que los peloteos largos la hacen fallar. Con una IA sin esas limitaciones no fallaba nunca.
+- **Medido** (simulación de 400 partidas por nivel contra un jugador automático de habilidad variable): habilidad baja gana ~11 %, media ~33 %, buena ~77 %, alta ~100 %. Partida media ≈ 30–45 s.
+
+## D-031 · Poderes especiales; el primero, GIGANTE
+- **Fecha:** 2026-11-14 · **Estado:** Vigente (valores sujetos a cambio, como indicó el usuario)
+- **Decisión:** `SpecialPowers` guarda el poder activo (uno a la vez); al ganar se elige al azar de `CONFIG.specialPowers.pool` (hoy solo `giant`) y se activa solo, con un anuncio grande "¡GIGANTE! PODER ESPECIAL" y una barra de tiempo arriba en el centro.
+- **GIGANTE** (`specialPowers.giant`): 5 s, tamaño ×3 (crece con rebote, parpadea el último 1,2 s y encoge), velocidad ×1,3. Mientras dura:
+  - Atraviesa muros y **se come todo lo que toca** en ≈ 3 × 3 casillas (`reach` 1,45): muros (con pedazos voxel más gruesos para no saturar el efecto), puntos y energizadores. El borde exterior no se come y su centro no entra en la columna pegada al borde.
+  - Se come a **cualquier fantasma** cercano, asustado o no, con la puntuación en cadena de siempre (la cadena se reinicia al empezar el poder). Los fantasmas no le pueden matar.
+  - **La lava sí sigue matando** (no se pidió lo contrario; anotado como posible cambio).
+  - Comerse muros no da puntos (solo los puntos y fantasmas que se coma).
+- **Rendimiento:** comer muros reconstruye las secciones tocadas; medido sin diferencia apreciable frente al juego normal (render por software).
+- **Cambio (petición del usuario):** la duración de los poderes especiales sube 3 s: GIGANTE pasa de 5 a 8 s (`specialPowers.giant.duration`).
+
+## D-032 · Menú de modo dios con la tecla K
+- **Fecha:** 2026-11-14 · **Estado:** Vigente (sustituye D-023 y el interruptor `dev.infinitePowers` de D-018)
+- **Contexto:** el usuario quiere un modo dios más completo para desarrollar: con K, activar o desactivar habilidades, invencibilidad y poderes especiales, con la estética más simple posible. Pide también quitar el romper muro infinito por defecto.
+- **Decisión:** K abre un menú (`maze-run/dev/GodMenuMode.ts`) que se apila como modo superpuesto y **pausa la partida**; K o Esc lo cierran. Las opciones se cambian con las teclas 1–9: (1) invencible, (2) romper muro infinito, (3…) cada poder de `specialPowers.pool` (activar, o terminar si ya está activo). Se abre en las fases `ready` y `playing`.
+  - Los trucos (invencible y muro infinito) **se recuerdan entre partidas y recargas** (localStorage, `maze-run/dev/GodSettings.ts`), para no tener que activarlos cada vez. Activar un poder desde el menú solo afecta a la partida actual.
+  - "Invencible": ni fantasmas, ni lava, ni perder un minijuego matan (lo que antes hacía el modo dios).
+  - Romper muro: por defecto **0 cargas** (`powers.wallBreak.startCharges`); con el truco, sin gastar cargas ("CARGAS INF (DIOS)").
+  - Mientras haya trucos activos se ve arriba "DIOS: INVENCIBLE · MURO INF [K]". Una partida en la que se ha usado cualquier truco o poder del menú no guarda récords.
+  - Aspecto mínimo a propósito: texto blanco sobre una caja negra.
+- **Configuración:** `CONFIG.dev.godMenuKey` (sustituye a `godModeKey` e `infinitePowers`).
+- **Cambio (mismo día, feedback del usuario):** al activar un poder con la tecla 3, el menú seguía diciendo "NO" porque el poder no empieza hasta acabar la cinemática (D-035). Ahora el menú tiene dos secciones: **TRUCOS** (teclas 1–9 o clic) y **PODERES ESPECIALES** (solo clic): al hacer clic en un poder se cierra el menú y se lanza con su cinemática; si ya está activo, el botón dice "ACTIVO: QUITAR" y lo termina.
+
+## D-033 · Protagonista plano (grosor uniforme)
+- **Fecha:** 2026-11-14 · **Estado:** Vigente
+- **Contexto:** el usuario vio en grande (poder GIGANTE) que el protagonista era una esfera de vóxeles con relieve; lo quiere 3D pero más plano, pensando en animaciones futuras.
+- **Decisión:** el sprite se extruye con grosor uniforme, como una chapa: 3 vóxeles (`HERO_HALF_DEPTH` = 1 en `entities/sprites.ts`) en vez del perfil abombado (hasta 9). De frente se ve igual; en vistas inclinadas muestra un canto recto del color del borde. El ojo sobresale un vóxel por cada cara. Los fantasmas y energizadores mantienen su relieve (no se pidió cambiarlos).
+- **Cómo afinar:** `HERO_HALF_DEPTH` = 0 da un disco de 1 vóxel; 2, uno de 5.
+
+## D-034 · Fantasmas algo más planos
+- **Fecha:** 2026-11-14 · **Estado:** Vigente
+- **Contexto:** petición del usuario, a juego con el protagonista plano (D-033), pero solo "un poco".
+- **Decisión:** se mantiene el perfil redondeado del cuerpo, pero su relieve baja de un máximo de 3 vóxeles de media profundidad a 2 (factor 0,5 → 0,3 en `ghostGeometry`). Ojos y cara siguen sobresaliendo un vóxel.
+
+## D-035 · Cinemática al recibir un poder especial
+- **Fecha:** 2026-11-14 · **Estado:** Vigente (tiempos sujetos a cambio, en `CONFIG.specialPowers.cinematic` y `giant.intro`)
+- **Contexto:** petición del usuario: al recibir un poder, el protagonista sale volando hacia la cámara hasta ocupar gran parte del laberinto, hace algo propio del poder y cae violentamente a su sitio dejando humo. En 3–5 s.
+- **Decisión:** `effects/PowerCinematic.ts` genera una pose del protagonista por fotograma (`PlayerView.applyPose`) sin tocar su lógica; la partida queda congelada en la fase `cinematic` y el poder empieza al aterrizar (así su tiempo no se gasta en la animación). Etapas:
+  1. **Subida** (0,7 s): vuela en línea recta hacia un punto ante la cámara, dando una vuelta sobre sí mismo mientras se orienta de frente a la cámara, hasta ocupar el 42 % del alto de pantalla. La distancia se calcula para el tamaño aparente, así que funciona igual en las 4 vistas.
+  2. **Acto** (propio de cada poder; el tipo obliga a que cada poder nuevo tenga el suyo). GIGANTE (2,15 s): una cereza (pixel art propio) entra en arco desde la derecha, se la come con tres mordiscos y crece en 3 escalones (escala 1 → 1,67 → 2,33 → 3), cada uno con un "pop" que se pasa y se asienta y una sacudida de cámara creciente, hasta ocupar el 72 % de la pantalla.
+  3. **Caída** (0,3 s): acelera (curva cúbica) hasta su sitio, con la boca abierta y volviendo a mirar en su dirección.
+  4. **Golpe** (0,3 s): sacudida fuerte, anillo de 40 bocanadas de humo voxel (`effects/SmokeEffect.ts`) por encima de los muros (a ras de suelo los muros lo tapaban) y aplastamiento con rebote. Después, el anuncio "¡GIGANTE!" y empieza el poder.
+- **Total GIGANTE:** ≈ 3,45 s. La animación de crecer dentro de la partida desaparece (ya crece en la cinemática); se mantienen el parpadeo final y el encogimiento (`giant.shrinkTime`).
+- **También desde el menú de modo dios** (D-032): activar un poder reproduce la cinemática, útil para afinarla.
+- **Cambio (mismo día, petición del usuario):** en la subida y en la caída, además de girar sobre su propio eje (como un disco), da una vuelta sobre el eje vertical (como una moneda: a mitad de vuelta se le ve el canto). Antes la caída no giraba. Vueltas en `cinematic.riseTurns` y `fallTurns` (`disc` y `flip`; 1 y 1 por defecto). En la caída el giro sigue la misma curva acelerada, así que se concentra al final.
 
 ## D-015 · Pruebas fuera del repositorio (provisional)
 - **Fecha:** 2026-11-13 · **Estado:** En revisión

@@ -15,7 +15,8 @@ const cached = (key: string, build: () => THREE.BufferGeometry) => {
 };
 
 // -----------------------------------------------------------------------------
-// Protagonista: esfera pixelada que "come", con ojo y borde sombreado.
+// Protagonista: disco plano pixelado que "come", con ojo y borde sombreado.
+// Grosor uniforme (como una chapa): de frente es el sprite, de lado un canto recto.
 // -----------------------------------------------------------------------------
 
 const HERO_SIZE = 15;
@@ -23,6 +24,10 @@ const HERO_YELLOW = 0xffd51a;
 const HERO_RIM = 0xe89a00;
 const HERO_EYE = 0x2a1a00;
 export const HERO_VOXEL = 0.88 / HERO_SIZE;
+/** Diámetro del protagonista en casillas (a escala 1). */
+export const HERO_DIAMETER = HERO_VOXEL * HERO_SIZE;
+/** Mitad del grosor en vóxeles: 1 → 3 vóxeles de grosor. El ojo sobresale uno más por cada cara. */
+const HERO_HALF_DEPTH = 1;
 
 /**
  * @param mouth apertura total de la boca en radianes (0 = cerrada, 2π = desaparecido).
@@ -40,20 +45,18 @@ export function heroGeometry(mouth: number): THREE.BufferGeometry {
       if (dx === 0 && dy === 0) return deg < 350;
       return Math.abs(Math.atan2(dy, dx)) > half;
     };
+    const isEye = (x: number, y: number) => x === c + 1 && y === c + 4 && half < 1.2;
     const sprite: VoxelSprite = {
       width: HERO_SIZE,
       height: HERO_SIZE,
       color: (x, y) => {
         if (!inside(x, y)) return null;
-        if (x === c + 1 && y === c + 4 && half < 1.2) return HERO_EYE;
+        if (isEye(x, y)) return HERO_EYE;
         const rim = !inside(x - 1, y) || !inside(x + 1, y) || !inside(x, y - 1) || !inside(x, y + 1);
         const dist = Math.hypot(x - c, y - c);
         return rim && dist > r - 1.5 ? HERO_RIM : HERO_YELLOW;
       },
-      halfDepth: (x, y) => {
-        const d2 = (x - c) ** 2 + (y - c) ** 2;
-        return Math.round(Math.sqrt(Math.max(0, r * r - d2)) * 0.6);
-      },
+      halfDepth: (x, y) => HERO_HALF_DEPTH + (isEye(x, y) ? 1 : 0),
     };
     return buildVoxelGeometry(sprite, HERO_VOXEL);
   });
@@ -129,7 +132,8 @@ export function ghostGeometry(look: GhostLook): THREE.BufferGeometry {
     const palette: Record<string, number> = { W: EYE_WHITE, P: PUPIL, F: look.faceColor ?? SCARED_FACE };
     if (look.body !== null) palette.B = look.body;
     const width = 14;
-    const bodyDepth = (x: number) => Math.round(Math.sqrt(Math.max(0, 49 - (x - 6.5) ** 2)) * 0.5);
+    // Relieve suave (máx. 2 vóxeles de media profundidad; antes 3), a juego con el protagonista plano.
+    const bodyDepth = (x: number) => Math.round(Math.sqrt(Math.max(0, 49 - (x - 6.5) ** 2)) * 0.3);
     const sprite = spriteFromRows(
       rows.map((r) => r.join('')),
       palette,
@@ -161,5 +165,34 @@ export function energizerGeometry(): THREE.BufferGeometry {
       halfDepth: (x, y) => Math.round(Math.sqrt(Math.max(0, 10.5 - (x - c) ** 2 - (y - c) ** 2))),
     };
     return buildVoxelGeometry(sprite, 0.065);
+  });
+}
+
+// -----------------------------------------------------------------------------
+// Cereza (la come el protagonista en la cinemática del poder GIGANTE)
+// -----------------------------------------------------------------------------
+
+const CHERRY = [
+  '.......gLLL.',
+  '.......g.LL.',
+  '......g.g...',
+  '.....g...g..',
+  '....g....g..',
+  '...g.....g..',
+  '.RRR....RRR.',
+  'RRhRR..RRhRR',
+  'RhRRR..RhRRR',
+  'RRRRR..RRRRR',
+  'RRRRD..RRRRD',
+  '.RDD....RDD.',
+];
+export const CHERRY_VOXEL = 0.05;
+
+export function cherryGeometry(): THREE.BufferGeometry {
+  return cached('cherry', () => {
+    const palette = { R: 0xff2e3a, h: 0xffd0d0, D: 0xa0101e, g: 0x8a6a1a, L: 0x39d65a };
+    const fruit = new Set(['R', 'h', 'D']);
+    const sprite = spriteFromRows(CHERRY, palette, (x, y) => (fruit.has(CHERRY[CHERRY.length - 1 - y][x]) ? 1 : 0));
+    return buildVoxelGeometry(sprite, CHERRY_VOXEL);
   });
 }

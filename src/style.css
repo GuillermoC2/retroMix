@@ -225,3 +225,161 @@ html, body {
 .unsupported-title { font-size: 26px; color: var(--yellow); margin-bottom: 24px; }
 .unsupported p { font-size: 14px; color: #ff2e3a; margin: 0 0 20px; }
 .unsupported p.unsupported-hint { font-size: 9px; color: #9aa3ff; }
+
+/* --- Portales: cartel con el nombre del minijuego --- */
+.portal-labels { position: absolute; inset: 0; }
+.portal-label {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-shadow: var(--shadow);
+  animation: portal-bob 1.2s steps(4) infinite alternate;
+}
+.portal-label-game { font-size: 14px; color: #ff5ad8; animation: portal-hue 1.6s steps(6) infinite; }
+.portal-label-hint { font-size: 7px; color: #c4c8f4; letter-spacing: 2px; }
+@keyframes portal-bob { to { margin-top: -6px; } }
+@keyframes portal-hue {
+  0% { color: #ff5ad8; }
+  33% { color: #3ae8ff; }
+  66% { color: #ffd51a; }
+}
+
+/* --- Poder especial activo: nombre y barra de tiempo --- */
+.hud-special {
+  position: absolute;
+  top: 46px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  text-shadow: var(--shadow);
+}
+.hud-special-name { font-size: 14px; color: var(--yellow); margin-bottom: 8px; letter-spacing: 2px; }
+.hud-special-bar { width: 160px; height: 10px; background: #12123a; box-shadow: 0 0 0 3px #000; }
+.hud-special-fill { height: 100%; background: var(--yellow); box-shadow: inset 0 -3px 0 #e89a00; }
+.hud-special.warning { animation: blink 0.25s steps(2, jump-none) infinite; }
+
+/* --- Anuncio grande en el centro (p. ej. poder conseguido) --- */
+.hud-announce {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  opacity: 0;
+  white-space: nowrap;
+}
+.hud-announce.show { animation: announce 1.6s steps(16) forwards; }
+.hud-announce-main {
+  font-size: 44px;
+  color: var(--yellow);
+  --edge: #2a1400;
+  text-shadow:
+    -4px 0 var(--edge), 4px 0 var(--edge), 0 -4px var(--edge), 0 4px var(--edge),
+    -4px -4px var(--edge), 4px -4px var(--edge), -4px 4px var(--edge), 4px 4px var(--edge),
+    7px 9px 0 rgba(0, 0, 0, 0.65);
+}
+.hud-announce-sub { font-size: 11px; color: #3ae8ff; margin-top: 16px; text-shadow: var(--shadow); letter-spacing: 3px; }
+@keyframes announce {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(0.3) rotate(-8deg); }
+  12% { opacity: 1; transform: translate(-50%, -50%) scale(1.25) rotate(4deg); }
+  22% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+  75% { opacity: 1; transform: translate(-50%, -60%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -80%) scale(1); }
+}
+
+/* --- Minijuego: ventana sobre el laberinto pausado --- */
+.mg-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 8, 0.62);
+  animation: fade-in 0.25s steps(3);
+}
+.mg-window {
+  padding: 14px 18px 16px;
+  border: 4px solid #ff5ad8;
+  background: #05051a;
+  box-shadow: 0 0 0 4px #000, 10px 10px 0 4px rgba(0, 0, 0, 0.7);
+  text-shadow: var(--shadow);
+  animation: mg-open 0.3s steps(4);
+}
+@keyframes mg-open { from { transform: scale(0.2, 0.05); } 50% { transform: scale(1, 0.05); } }
+.mg-titlebar { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+.mg-title { font-size: 22px; color: var(--white); letter-spacing: 6px; }
+.mg-side { font-size: 10px; width: 70px; }
+.mg-you { color: var(--yellow); }
+.mg-rival { color: #ff2e6d; text-align: right; }
+.mg-screen { position: relative; line-height: 0; box-shadow: 0 0 0 3px #000, 0 0 0 6px #2a2f6a; }
+.mg-canvas { image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
+/* Líneas de barrido tipo monitor CRT. */
+.mg-screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0) 0 2px, rgba(0, 0, 0, 0.22) 2px 4px);
+}
+.mg-big, .mg-small {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  line-height: 1.4;
+  text-align: center;
+  white-space: nowrap;
+  z-index: 1;
+}
+.mg-big { top: 36%; font-size: calc(var(--mg-scale, 3) * 7px); color: var(--white); }
+.mg-big[data-tone='good'] { color: var(--yellow); }
+.mg-big[data-tone='bad'] { color: #ff2e6d; }
+.mg-big.mg-pop { animation: bump 0.2s steps(2); }
+.mg-small { top: 62%; font-size: 10px; color: #3ae8ff; }
+.mg-footer { margin-top: 14px; font-size: 9px; color: #c4c8f4; line-height: 2; text-align: center; }
+.mg-footer .key { min-width: 0; margin: 0 6px 8px; padding: 6px 7px 4px; font-size: 9px; text-shadow: none; }
+.mg-stakes { color: #9aa3ff; font-size: 8px; }
+.mg-screen.mg-hit { animation: mg-hit 0.12s steps(1); }
+.mg-screen.mg-scored, .mg-screen.mg-conceded { animation: mg-shake 0.3s steps(6); }
+@keyframes mg-hit { 0% { box-shadow: 0 0 0 3px #000, 0 0 0 6px #ffffff; } }
+@keyframes mg-shake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-4px, 2px); }
+  40% { transform: translate(4px, -2px); }
+  60% { transform: translate(-3px, -1px); }
+  80% { transform: translate(2px, 2px); }
+}
+
+/* --- Menú de modo dios (solo desarrollo; aspecto mínimo a propósito) --- */
+.god-menu {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 16px 20px;
+  font-size: 11px;
+  line-height: 2;
+  color: #fff;
+  background: #000;
+  border: 3px solid #ff5ad8;
+  pointer-events: auto;
+}
+.god-title { margin-bottom: 8px; }
+.god-section { margin-top: 10px; color: #ff5ad8; }
+.god-foot { margin-top: 12px; color: #9aa3ff; }
+.god-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 32px;
+  width: 100%;
+  padding: 2px 6px;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+}
+.god-row:hover { background: #2a2a4a; }
+.god-row b { font-weight: normal; color: var(--yellow); }

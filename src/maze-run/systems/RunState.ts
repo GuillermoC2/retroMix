@@ -1,8 +1,12 @@
 import { CONFIG } from '../../config';
 import { Emitter } from '../../core/Events';
 
-export type RunPhase = 'ready' | 'playing' | 'dying' | 'over';
-export type DeathCause = 'ghost' | 'lava';
+/**
+ * `portal`: el jugador está siendo absorbido por un portal (o jugando el minijuego, con el modo en pausa).
+ * `cinematic`: animación de recibir un poder especial (la partida está congelada).
+ */
+export type RunPhase = 'ready' | 'playing' | 'portal' | 'cinematic' | 'dying' | 'over';
+export type DeathCause = 'ghost' | 'lava' | 'minigame';
 
 export type RunEvents = {
   /** Se han sumado puntos en una posición del laberinto (casillas). */
@@ -13,6 +17,12 @@ export type RunEvents = {
   /** Se ha abierto un túnel en un muro (casillas abiertas). */
   wallBroken: { tiles: ReadonlyArray<{ x: number; y: number }> };
   died: { cause: DeathCause };
+  /** Se ha entrado en un portal hacia el minijuego indicado. */
+  portalEntered: { game: string };
+  /** Resultado del minijuego al volver al laberinto. */
+  minigameResult: { game: string; won: boolean };
+  /** Empieza o termina un poder especial. */
+  specialPower: { id: string; active: boolean };
 };
 
 /**

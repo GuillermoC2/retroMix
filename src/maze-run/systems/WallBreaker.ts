@@ -14,12 +14,10 @@ export type BreakResult =
  * romper solo una dejaría un hueco ciego. El borde exterior es irrompible.
  */
 export class WallBreaker {
-  charges: number = CONFIG.dev.infinitePowers ? Infinity : CONFIG.powers.wallBreak.startCharges;
+  charges: number = CONFIG.powers.wallBreak.startCharges;
+  /** Truco de desarrollo (menú de modo dios): romper sin gastar cargas. */
+  infinite = false;
   private cooldown = 0;
-
-  get infinite(): boolean {
-    return this.charges === Infinity;
-  }
 
   update(dt: number): void {
     this.cooldown = Math.max(0, this.cooldown - dt);
@@ -34,7 +32,7 @@ export class WallBreaker {
   tryBreak(maze: Maze, x: number, y: number, dir: Dir): BreakResult {
     const fx = x + DX[dir];
     const fy = y + DY[dir];
-    if (this.charges <= 0) return { ok: false, reason: 'no-charges', x: fx, y: fy };
+    if (!this.infinite && this.charges <= 0) return { ok: false, reason: 'no-charges', x: fx, y: fy };
     if (this.cooldown > 0) return { ok: false, reason: 'cooldown', x: fx, y: fy };
 
     const tiles: Array<{ x: number; y: number }> = [];
@@ -52,7 +50,7 @@ export class WallBreaker {
     if (!tiles.length) return { ok: false, reason: 'no-wall', x: fx, y: fy };
 
     maze.setTiles(tiles, Tile.Open);
-    this.charges -= 1;
+    if (!this.infinite) this.charges -= 1;
     this.cooldown = CONFIG.powers.wallBreak.cooldown;
     return { ok: true, tiles, dir };
   }
