@@ -123,11 +123,16 @@ export class GhostDirector {
    * jugador. Lo usa el poder GIGANTE.
    */
   devour(player: Player, radius: number): GhostHit[] {
+    return this.devourAt(player.x, player.y, radius, player);
+  }
+
+  /** Como `devour`, pero alrededor de cualquier punto (p. ej. la punta de un tentáculo del GHOUL). */
+  devourAt(x: number, y: number, radius: number, player: Player): GhostHit[] {
     const eaten: GhostHit[] = [];
     const scores = CONFIG.ghosts.eatScores;
     for (const g of this.ghosts) {
       if (g.state !== 'normal' && g.state !== 'frightened') continue;
-      if ((g.x - player.x) ** 2 + (g.y - player.y) ** 2 > radius * radius) continue;
+      if ((g.x - x) ** 2 + (g.y - y) ** 2 > radius * radius) continue;
       eaten.push({ ghost: g, score: scores[Math.min(this.eatCombo++, scores.length - 1)] });
       g.home = this.pickSpawnTile(player) ?? { x: g.tileX, y: g.tileY };
       g.setState('eaten');

@@ -29,34 +29,56 @@ export const HERO_DIAMETER = HERO_VOXEL * HERO_SIZE;
 /** Mitad del grosor en vóxeles: 1 → 3 vóxeles de grosor. El ojo sobresale uno más por cada cara. */
 const HERO_HALF_DEPTH = 1;
 
+/** Aspecto del protagonista: normal o gris oscuro con el ojo rojo (poder GHOUL). */
+export type HeroLook = 'normal' | 'ghoul';
+
+/** Aspecto del poder GHOUL: cuerpo gris oscuro, ojo de esclerótica negra e iris rojo y venas rojas alrededor. */
+const GHOUL = {
+  body: 0x3b3b46,
+  rim: 0x23232b,
+  sclera: 0x050508,
+  iris: 0xff1f2e,
+  vein: 0xc8102a,
+};
+
 /**
  * @param mouth apertura total de la boca en radianes (0 = cerrada, 2π = desaparecido).
+ * @param look aspecto normal o con máscara.
  */
-export function heroGeometry(mouth: number): THREE.BufferGeometry {
+export function heroGeometry(mouth: number, look: HeroLook = 'normal'): THREE.BufferGeometry {
   const deg = Math.round((mouth * 180) / Math.PI);
-  return cached(`hero:${deg}`, () => {
+  return cached(`hero:${deg}:${look}`, () => {
     const c = (HERO_SIZE - 1) / 2;
     const r = HERO_SIZE / 2 + 0.1;
     const half = (deg * Math.PI) / 360;
-    const inside = (x: number, y: number) => {
+    const ghoul = look === 'ghoul';
+    const inCircle = (x: number, y: number) => (x - c) ** 2 + (y - c) ** 2 <= r * r;
+    const inMouth = (x: number, y: number) => {
       const dx = x - c;
       const dy = y - c;
-      if (dx * dx + dy * dy > r * r) return false;
-      if (dx === 0 && dy === 0) return deg < 350;
-      return Math.abs(Math.atan2(dy, dx)) > half;
+      if (dx === 0 && dy === 0) return deg >= 350;
+      return Math.abs(Math.atan2(dy, dx)) <= half;
     };
-    const isEye = (x: number, y: number) => x === c + 1 && y === c + 4 && half < 1.2;
+    const inside = (x: number, y: number) => inCircle(x, y) && !inMouth(x, y);
+    const isEye = (x: number, y: number) => !ghoul && x === c + 1 && y === c + 4 && half < 1.2;
+    // Ojo del GHOUL: 3×3 (esclerótica negra con iris rojo en el centro).
+    const ghoulEye = (x: number, y: number) => ghoul && half < 1.2 && x >= c && x <= c + 2 && y >= c + 3 && y <= c + 5;
+    const veins = new Set([`${c + 3},${c + 5}`, `${c + 4},${c + 6}`, `${c + 3},${c + 2}`, `${c - 1},${c + 5}`, `${c - 2},${c + 6}`, `${c + 1},${c + 6}`]);
     const sprite: VoxelSprite = {
       width: HERO_SIZE,
       height: HERO_SIZE,
       color: (x, y) => {
         if (!inside(x, y)) return null;
         if (isEye(x, y)) return HERO_EYE;
+        if (ghoulEye(x, y)) return x === c + 1 && y === c + 4 ? GHOUL.iris : GHOUL.sclera;
+        if (ghoul && veins.has(`${x},${y}`)) return GHOUL.vein;
         const rim = !inside(x - 1, y) || !inside(x + 1, y) || !inside(x, y - 1) || !inside(x, y + 1);
         const dist = Math.hypot(x - c, y - c);
-        return rim && dist > r - 1.5 ? HERO_RIM : HERO_YELLOW;
+        const edge = rim && dist > r - 1.5;
+        if (ghoul) return edge ? GHOUL.rim : GHOUL.body;
+        return edge ? HERO_RIM : HERO_YELLOW;
       },
-      halfDepth: (x, y) => HERO_HALF_DEPTH + (isEye(x, y) ? 1 : 0),
+      halfDepth: (x, y) => HERO_HALF_DEPTH + (isEye(x, y) || ghoulEye(x, y) ? 1 : 0),
     };
     return buildVoxelGeometry(sprite, HERO_VOXEL);
   });

@@ -108,7 +108,9 @@ Ganar activa un poder especial aleatorio; perder acaba la partida.
   a `done({ won })`, y registrarlo en `src/minigames/registry.ts`. El portal elige uno al azar.
 - **Pong** (`src/minigames/pong/`): lógica en `PongGame`, ventana y dibujo en `PongMode`. Parámetros en `CONFIG.minigames.pong`.
 - **Poderes especiales** (`systems/SpecialPowers.ts`, `CONFIG.specialPowers`): se elige uno de `pool`. Hoy solo
-  **GIGANTE**: ×3 de tamaño, más rápido, come muros, fantasmas y puntos durante 8 s. Sus reglas se aplican en `MazeRunMode`.
+  **GIGANTE**: ×6 de tamaño, más rápido, come muros, fantasmas y puntos durante 8 s.
+  **GHOUL**: ×2,6, gris con el ojo rojo, 10 s caminando sobre 4 tentáculos de vóxeles por encima de los muros; rompe los bloques que pisa y pisotea fantasmas
+  (`systems/GhoulLegs.ts`, `effects/TentacleView.ts`). Las reglas de cada poder se aplican en `MazeRunMode`.
 - **Cinemática de poder** (`effects/PowerCinematic.ts`): al recibir un poder, el protagonista vuela hacia la cámara, hace
   el acto del poder (GIGANTE: come una cereza y crece en 3 escalones) y cae de golpe dejando humo. Un poder nuevo
   necesita su acto en `ACTS`. Tiempos en `CONFIG.specialPowers.cinematic` y en el `intro` de cada poder.

@@ -257,7 +257,7 @@ export const CONFIG = {
    * de `pool` y se activa automáticamente.
    */
   specialPowers: {
-    pool: ['giant'],
+    pool: ['giant', 'ghoul'],
     /**
      * Cinemática al recibir un poder: el protagonista sale volando hacia la cámara,
      * hace la acción propia del poder y cae de golpe a su sitio dejando humo. La
@@ -285,22 +285,63 @@ export const CONFIG = {
       name: 'GIGANTE',
       /** Duración (s), tamaño (×) y multiplicador de velocidad. */
       duration: 8,
-      scale: 3,
+      scale: 6,
       speed: 1.3,
       /** Últimos segundos en los que parpadea para avisar de que se acaba. */
       warnTime: 1.2,
-      /** Duración (s) de encoger al terminar. */
-      shrinkTime: 0.35,
+      /** Duración (s) de la animación de salida (encoger). */
+      outroTime: 0.35,
       /**
        * Acción de la cinemática: la cereza entra volando (`cherryTime`), se la come
        * (`chompTime`) y crece en `growSteps` escalones separados `stepEvery` s,
        * hasta ocupar `closeUpEndSize` de la pantalla; luego espera `hold` s.
        */
       intro: { cherryTime: 0.45, chompTime: 0.35, growSteps: 3, stepEvery: 0.35, closeUpEndSize: 0.72, hold: 0.3 },
-      /** Media anchura (casillas) de lo que come alrededor de su centro (1,45 ≈ 3×3 casillas). */
-      reach: 1.45,
+      /** Media anchura (casillas) de lo que come alrededor de su centro (2,9 ≈ 6×6 casillas). */
+      reach: 2.9,
       /** Sacudida de cámara al comerse muros. */
       shake: 0.08,
+    },
+    /**
+     * GHOUL: le salen 4 tentáculos rojos con los que camina por encima de los muros.
+     * Los bloques que pisa un tentáculo se rompen y los fantasmas cercanos son
+     * pisoteados. Puede ir por encima de cualquier casilla salvo el borde exterior.
+     */
+    ghoul: {
+      name: 'GHOUL',
+      duration: 10,
+      /** Tamaño (×, casi como el GIGANTE original) y multiplicador de velocidad. */
+      scale: 2.6,
+      speed: 1.2,
+      warnTime: 1.5,
+      /** Duración (s) de la salida: recoge los tentáculos, encoge y baja al suelo. */
+      outroTime: 0.45,
+      /** Altura extra (casillas) del cuerpo: va por encima de los muros. */
+      lift: 1.05,
+      /** Posición de reposo de cada pie respecto al cuerpo (casillas, ±x, ±y). */
+      footOffset: [2.4, 2.0],
+      /** Distancia a su reposo a partir de la cual un pie da un paso, duración (s) y altura del paso. */
+      stride: 1.5,
+      stepTime: 0.14,
+      stepHeight: 1.4,
+      /** Cuánto adelanta el pie según la velocidad (s): más adelanto, menos se quedan atrás. */
+      stepLead: 0.22,
+      /** Grosor de los tentáculos en la base y en la punta (radio, casillas). */
+      thickness: [0.36, 0.09],
+      /** Fantasmas a menos de esta distancia del cuerpo reciben un pisotón (rápido, `stompTime` s). */
+      stompRange: 3.8,
+      stompTime: 0.13,
+      /** Radio (casillas) del pisotón alrededor de la punta del tentáculo. */
+      stompRadius: 1.3,
+      /** Sacudida de cámara por paso que rompe un bloque. */
+      shake: 0.07,
+      /**
+       * Acto de la cinemática: se oscurece parpadeando (`darkenTime`), crece de golpe
+       * (`growTime`) hasta ocupar `closeUpEndSize` de la pantalla, le brotan los
+       * tentáculos uno a uno (`tentacleEvery`, cada uno crece en `tentacleGrow`) y
+       * espera `hold` s.
+       */
+      intro: { darkenTime: 0.5, growTime: 0.3, closeUpEndSize: 0.55, tentacleEvery: 0.22, tentacleGrow: 0.2, hold: 0.5 },
     },
   },
 

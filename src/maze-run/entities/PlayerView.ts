@@ -3,7 +3,7 @@ import { CONFIG } from '../../config';
 import { Dir } from '../maze/grid';
 import { ACTOR_Z, worldX } from '../world';
 import type { Player } from './Player';
-import { heroGeometry } from './sprites';
+import { heroGeometry, type HeroLook } from './sprites';
 
 const MAX_MOUTH = (80 * Math.PI) / 180;
 /** Fotogramas de boca (pocos, como un sprite arcade). */
@@ -24,6 +24,7 @@ export interface HeroPose {
   scale: THREE.Vector3;
   /** Apertura de la boca, de 0 (cerrada) a 1 (máxima). */
   mouth: number;
+  look: HeroLook;
 }
 
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
@@ -33,12 +34,16 @@ export class PlayerView {
   readonly mesh: THREE.Mesh;
   private deathTime = -1;
 
-  /** Pose "en su sitio" (posición en el laberinto, orientación según su dirección y escala). */
-  static restPose(player: Player, scale: number, out: HeroPose): HeroPose {
-    out.position.set(worldX(player.x), player.y, ACTOR_Z + Math.max(0, scale - 1) * GROW_LIFT);
+  /**
+   * Pose "en su sitio" (posición en el laberinto, orientación según su dirección y escala).
+   * @param lift altura extra (p. ej. el GHOUL camina por encima de los muros).
+   */
+  static restPose(player: Player, scale: number, out: HeroPose, lift = 0): HeroPose {
+    out.position.set(worldX(player.x), player.y, ACTOR_Z + Math.max(0, scale - 1) * GROW_LIFT + lift);
     out.quaternion.setFromAxisAngle(Z_AXIS, player.dir === Dir.Up ? Math.PI / 2 : player.dir === Dir.Down ? -Math.PI / 2 : 0);
     out.scale.set(player.dir === Dir.Left ? -scale : scale, scale, scale);
     out.mouth = 0.5;
+    out.look = 'normal';
     return out;
   }
 
@@ -50,7 +55,7 @@ export class PlayerView {
     this.mesh.visible = true;
     this.mesh.castShadow = false;
     const frame = Math.round(Math.max(0, Math.min(1, pose.mouth)) * (MOUTH_FRAMES - 1)) / (MOUTH_FRAMES - 1);
-    this.mesh.geometry = heroGeometry(frame * MAX_MOUTH);
+    this.mesh.geometry = heroGeometry(frame * MAX_MOUTH, pose.look);
   }
 
   constructor() {
@@ -65,11 +70,13 @@ export class PlayerView {
   /**
    * @param scale tamaño (1 = normal; el poder GIGANTE lo aumenta, el portal lo reduce).
    * @param spin giro extra en radianes (al ser absorbido por un portal).
+   * @param lift altura extra (casillas).
+   * @param look aspecto (máscara del GHOUL).
    */
-  update(dt: number, player: Player, scale = 1, spin = 0): void {
+  update(dt: number, player: Player, scale = 1, spin = 0, lift = 0, look: HeroLook = 'normal'): void {
     this.mesh.castShadow = true;
     // Al crecer, se eleva para que no se hunda en el suelo: asoma por encima de los muros.
-    this.mesh.position.set(worldX(player.x), player.y, ACTOR_Z + Math.max(0, scale - 1) * GROW_LIFT);
+    this.mesh.position.set(worldX(player.x), player.y, ACTOR_Z + Math.max(0, scale - 1) * GROW_LIFT + lift);
 
     if (this.deathTime >= 0) {
       this.deathTime += dt;
@@ -95,7 +102,7 @@ export class PlayerView {
       open = 1 - Math.abs(phase * 2 - 1); // triángulo 0→1→0
     }
     const frame = Math.round(open * (MOUTH_FRAMES - 1)) / (MOUTH_FRAMES - 1);
-    this.mesh.geometry = heroGeometry(frame * MAX_MOUTH);
+    this.mesh.geometry = heroGeometry(frame * MAX_MOUTH, look);
   }
 
   dispose(): void {

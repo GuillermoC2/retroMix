@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { CONFIG, type SpecialPowerId } from '../../config';
 import type { Player } from '../entities/Player';
 import { PlayerView, type HeroPose } from '../entities/PlayerView';
-import { HERO_DIAMETER, cherryGeometry } from '../entities/sprites';
+import { HERO_DIAMETER, cherryGeometry, type HeroLook } from '../entities/sprites';
+import { TENTACLE_COUNT, type TentacleView } from './TentacleView';
 
 type Stage = 'idle' | 'rise' | 'act' | 'fall' | 'settle';
 
@@ -14,14 +15,26 @@ interface ActFrame {
   size: number;
   /** Apertura de la boca (0–1). */
   mouth: number;
+  look: HeroLook;
 }
+
+type DecorStage = 'act' | 'fall';
 
 /** Parte central de la cinemática, propia de cada poder. */
 interface PowerAct {
   readonly duration: number;
   /** Escala con la que cae y aterriza. */
   readonly finalScale: number;
+  /** Altura extra con la que aterriza (el GHOUL queda por encima de los muros). */
+  readonly finalLift: number;
+  /** Aspecto con el que cae y aterriza. */
+  readonly finalLook: HeroLook;
   update(t: number, stage: ActStage): ActFrame;
+  /**
+   * Elementos que acompañan al protagonista durante el acto y la caída (p. ej.
+   * los tentáculos), colocados según su pose. Devuelve si ha dibujado algo.
+   */
+  decorate?(stage: DecorStage, t: number, pose: HeroPose, s: ActStage): boolean;
   end(): void;
 }
 
@@ -38,12 +51,20 @@ interface ActStage {
   halfWidthAt(scale: number, size: number): number;
   shake(amount: number): void;
   props: THREE.Group;
+  tentacles: TentacleView;
 }
 
 const DEG = Math.PI / 180;
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 const ONE = new THREE.Vector3(1, 1, 1);
+const newPose = (): HeroPose => ({
+  position: new THREE.Vector3(),
+  quaternion: new THREE.Quaternion(),
+  scale: new THREE.Vector3(),
+  mouth: 0.5,
+  look: 'normal',
+});
 const easeInOut = (k: number) => (k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2);
 
 /** Rebote de "pop": se pasa del objetivo y se asienta. */
@@ -58,6 +79,8 @@ class GiantAct implements PowerAct {
   private intro = this.cfg.intro;
   readonly duration = this.intro.cherryTime + this.intro.chompTime + this.intro.growSteps * this.intro.stepEvery + this.intro.hold;
   readonly finalScale = this.cfg.scale;
+  readonly finalLift = 0;
+  readonly finalLook = 'normal';
   private cherry: THREE.Mesh;
   private stepsDone = 0;
   private from = new THREE.Vector3();
@@ -83,14 +106,14 @@ class GiantAct implements PowerAct {
       this.cherry.position.lerpVectors(this.from, this.to, easeInOut(k)).addScaledVector(s.up, Math.sin(k * Math.PI) * 0.35);
       this.cherry.quaternion.copy(s.cameraQuat).multiply(this.spin.setFromAxisAngle(Z_AXIS, -k * Math.PI * 3));
       this.cherry.visible = true;
-      return { scale: 1, size: startSize, mouth: 0.5 + 0.5 * k };
+      return { scale: 1, size: startSize, mouth: 0.5 + 0.5 * k, look: 'normal' };
     }
     this.cherry.visible = false;
 
     // 2. Mordiscos.
     const tc = t - cherryTime;
     if (tc < chompTime) {
-      return { scale: 1, size: startSize * pop(tc, 0.08), mouth: Math.abs(Math.cos((tc / chompTime) * Math.PI * 3)) };
+      return { scale: 1, size: startSize * pop(tc, 0.08), mouth: Math.abs(Math.cos((tc / chompTime) * Math.PI * 3)), look: 'normal' };
     }
 
     // 3. Crece en escalones.
@@ -106,6 +129,7 @@ class GiantAct implements PowerAct {
       scale: 1 + (this.finalScale - 1) * f,
       size: (startSize + (closeUpEndSize - startSize) * f) * pop(tau, 0.2),
       mouth: tau < 0.12 ? 0.9 : 0.15,
+      look: 'normal',
     };
   }
 
@@ -115,9 +139,112 @@ class GiantAct implements PowerAct {
   }
 }
 
+/**
+ * GHOUL: se oscurece parpadeando entre su color y el gris (y se le enciende el ojo
+ * rojo), crece de golpe y le brotan cuatro tentáculos de vóxeles de la espalda,
+ * uno tras otro con sacudida. Los tentáculos se agitan y le acompañan en la caída.
+ */
+class GhoulAct implements PowerAct {
+  private cfg = CONFIG.specialPowers.ghoul;
+  private intro = this.cfg.intro;
+  private tentaclesAt = this.intro.darkenTime + this.intro.growTime + 0.1;
+  readonly duration = this.tentaclesAt + TENTACLE_COUNT * this.intro.tentacleEvery + this.intro.hold;
+  readonly finalScale = this.cfg.scale;
+  readonly finalLift = this.cfg.lift;
+  readonly finalLook = 'ghoul';
+  private shaken = new Set<string>();
+  private clock = 0;
+  private lastT = 0;
+  private points = Array.from({ length: 5 }, () => new THREE.Vector3());
+  private curve = new THREE.CatmullRomCurve3(this.points, false, 'centripetal');
+  private dir = new THREE.Vector3();
+
+  private once(key: string, s: ActStage, amount: number): void {
+    if (this.shaken.has(key)) return;
+    this.shaken.add(key);
+    s.shake(amount);
+  }
+
+  update(t: number, s: ActStage): ActFrame {
+    const { darkenTime, growTime, closeUpEndSize, tentacleEvery } = this.intro;
+    const startSize = CONFIG.specialPowers.cinematic.closeUpSize;
+
+    // 1. Se oscurece: parpadea entre su color y el gris, cada vez más tiempo en gris.
+    if (t < darkenTime) {
+      const k = t / darkenTime;
+      const flick = Math.floor(t * 22) % 4;
+      const dark = flick < Math.round(k * 4);
+      if (k > 0.5) this.once('darken', s, 0.1);
+      return { scale: 1, size: startSize, mouth: 0.9, look: dark ? 'ghoul' : 'normal' };
+    }
+
+    // 2. Crece de golpe hasta su tamaño de GHOUL.
+    const tg = t - darkenTime;
+    if (tg < growTime) {
+      this.once('grow', s, 0.3);
+      const k = tg / growTime;
+      const e = 1 - (1 - k) ** 3;
+      return {
+        scale: 1 + (this.cfg.scale - 1) * e,
+        size: startSize + (closeUpEndSize - startSize) * e,
+        mouth: 1,
+        look: 'ghoul',
+      };
+    }
+
+    // 3. Le brotan los tentáculos (cada uno con su sacudida); ruge y luego cierra la boca.
+    for (let i = 0; i < TENTACLE_COUNT; i++) {
+      if (t >= this.tentaclesAt + i * tentacleEvery) this.once(`t${i}`, s, 0.14);
+    }
+    const tau = tg - growTime;
+    const allOut = t >= this.tentaclesAt + TENTACLE_COUNT * tentacleEvery;
+    return {
+      scale: this.cfg.scale,
+      size: closeUpEndSize * pop(tau, 0.15),
+      mouth: allOut ? 0.25 : 0.9,
+      look: 'ghoul',
+    };
+  }
+
+  decorate(stage: DecorStage, t: number, pose: HeroPose, s: ActStage): boolean {
+    const { tentacleEvery, tentacleGrow } = this.intro;
+    this.clock += stage === 'act' ? Math.max(0, t - this.lastT) : 1 / 60;
+    this.lastT = t;
+    const scale = Math.abs(pose.scale.y);
+    const [r0, r1] = this.cfg.thickness;
+    const k0 = scale / this.cfg.scale;
+    // El protagonista mira a la derecha: los tentáculos salen de la espalda (izquierda), en abanico.
+    const base = [118, 160, 202, 244];
+    let drawn = false;
+    for (let i = 0; i < TENTACLE_COUNT; i++) {
+      const k = stage === 'act' ? (t - this.tentaclesAt - i * tentacleEvery) / tentacleGrow : 1;
+      if (k <= 0) continue;
+      // Brota pasándose un poco de largo y vuelve.
+      const grow = k >= 1 ? 1 : Math.min(1.2, k * 1.2);
+      const len = 1.05 * scale * grow;
+      // Detrás del cuerpo (más lejos de la cámara) para que el cuerpo quede delante.
+      const behind = r0 * k0 + 0.2;
+      this.points.forEach((pt, n) => {
+        const u = n / (this.points.length - 1);
+        const a = (base[i] + u * 35 * (i % 2 ? 1 : -1)) * DEG + Math.sin(this.clock * 3 + i * 1.7 + u * 3) * 0.22 * u;
+        const r = 0.3 * scale + u * len;
+        this.dir.copy(s.right).multiplyScalar(Math.cos(a)).addScaledVector(s.up, Math.sin(a));
+        pt.copy(pose.position).addScaledVector(this.dir, r).addScaledVector(s.forward, behind + 0.05 * scale * u);
+      });
+      this.curve.updateArcLengths();
+      s.tentacles.set(i, this.curve, r0 * k0, r1 * k0, 1);
+      drawn = true;
+    }
+    return drawn;
+  }
+
+  end(): void {}
+}
+
 /** Acto de cada poder. Un poder nuevo necesita el suyo (lo exige el tipo). */
 const ACTS: Record<SpecialPowerId, (props: THREE.Group) => PowerAct> = {
   giant: (props) => new GiantAct(props),
+  ghoul: () => new GhoulAct(),
 };
 
 export interface CinematicCallbacks {
@@ -130,7 +257,8 @@ export interface CinematicCallbacks {
 /**
  * Cinemática al recibir un poder especial:
  *  1. subida: sale del laberinto girando y vuela hasta quedar ante la cámara;
- *  2. acto: lo propio de cada poder (GIGANTE: come una cereza y crece);
+ *  2. acto: lo propio de cada poder (GIGANTE: come una cereza y crece; GHOUL:
+ *     se oscurece, crece y le brotan los tentáculos);
  *  3. caída: baja acelerando a su sitio, mirando otra vez en su dirección;
  *  4. golpe y asentamiento: aplastamiento con rebote (el humo y la sacudida los
  *     pone quien escucha `onImpact`).
@@ -142,16 +270,18 @@ export class PowerCinematic {
   private time = 0;
   private act: PowerAct | null = null;
   private callbacks: CinematicCallbacks | null = null;
-  private pose: HeroPose = { position: new THREE.Vector3(), quaternion: new THREE.Quaternion(), scale: new THREE.Vector3(), mouth: 0.5 };
-  private start = { position: new THREE.Vector3(), quaternion: new THREE.Quaternion(), scale: new THREE.Vector3(), mouth: 0.5 };
-  private rest: HeroPose = { position: new THREE.Vector3(), quaternion: new THREE.Quaternion(), scale: new THREE.Vector3(), mouth: 0.5 };
+  private pose: HeroPose = newPose();
+  private start: HeroPose = newPose();
+  private rest: HeroPose = newPose();
+  /** El acto ha dibujado sus acompañantes (tentáculos) en este fotograma. */
+  decorated = false;
   private top = new THREE.Vector3();
   private stageInfo: ActStage;
   private camera: THREE.PerspectiveCamera | null = null;
   private shakeFn: (amount: number) => void = () => {};
   private tmpQ = new THREE.Quaternion();
 
-  constructor() {
+  constructor(tentacles: TentacleView) {
     const self = this;
     this.stageInfo = {
       right: new THREE.Vector3(),
@@ -167,6 +297,7 @@ export class PowerCinematic {
       },
       shake: (amount) => this.shakeFn(amount),
       props: this.group,
+      tentacles,
     };
   }
 
@@ -175,15 +306,22 @@ export class PowerCinematic {
   }
 
   /**
-   * @param currentScale escala actual del protagonista (por si ya era grande).
+   * @param current escala, altura y aspecto actuales del protagonista (por si ya tenía otro poder).
    * @param shake sacudida de cámara para los momentos fuertes del acto.
    */
-  play(id: SpecialPowerId, player: Player, currentScale: number, shake: (amount: number) => void, callbacks: CinematicCallbacks): void {
+  play(
+    id: SpecialPowerId,
+    player: Player,
+    current: { scale: number; lift: number; look: HeroLook },
+    shake: (amount: number) => void,
+    callbacks: CinematicCallbacks,
+  ): void {
     this.act?.end();
     this.act = ACTS[id](this.group);
     this.callbacks = callbacks;
     this.shakeFn = shake;
-    PlayerView.restPose(player, currentScale, this.start);
+    PlayerView.restPose(player, current.scale, this.start, current.lift);
+    this.start.look = current.look;
     this.stage = 'rise';
     this.time = 0;
   }
@@ -201,6 +339,7 @@ export class PowerCinematic {
     const cfg = CONFIG.specialPowers.cinematic;
     const p = this.pose;
     this.time += dt;
+    this.decorated = false;
 
     if (this.stage === 'rise') {
       const k = Math.min(1, this.time / cfg.riseTime);
@@ -212,6 +351,7 @@ export class PowerCinematic {
       this.applyTurns(p.quaternion, e, cfg.riseTurns);
       p.scale.lerpVectors(this.start.scale, ONE, e);
       p.mouth = 0.5;
+      p.look = this.start.look;
       if (k >= 1) this.next('act');
     } else if (this.stage === 'act') {
       const frame = this.act.update(Math.min(this.time, this.act.duration), s);
@@ -219,6 +359,8 @@ export class PowerCinematic {
       p.quaternion.copy(s.cameraQuat);
       p.scale.setScalar(frame.scale);
       p.mouth = frame.mouth;
+      p.look = frame.look;
+      this.decorated = this.act.decorate?.('act', this.time, p, s) ?? false;
       if (this.time >= this.act.duration) {
         this.start.position.copy(p.position);
         this.start.quaternion.copy(p.quaternion);
@@ -228,19 +370,22 @@ export class PowerCinematic {
       const k = Math.min(1, this.time / cfg.fallTime);
       const e = k * k * k; // acelera: caída violenta
       const scale = this.act.finalScale;
-      PlayerView.restPose(player, scale, this.rest);
+      PlayerView.restPose(player, scale, this.rest, this.act.finalLift);
       p.position.lerpVectors(this.start.position, this.rest.position, e);
       p.quaternion.slerpQuaternions(this.start.quaternion, this.rest.quaternion, e);
       this.applyTurns(p.quaternion, e, cfg.fallTurns);
       p.scale.set(scale, scale, scale).lerp(this.rest.scale, e);
       p.mouth = 1;
+      p.look = this.act.finalLook;
+      this.decorated = this.act.decorate?.('fall', this.time, p, s) ?? false;
       if (k >= 1) {
         this.callbacks?.onImpact(this.rest.position, scale);
         this.next('settle');
       }
     } else if (this.stage === 'settle') {
       const scale = this.act.finalScale;
-      PlayerView.restPose(player, scale, p);
+      PlayerView.restPose(player, scale, p, this.act.finalLift);
+      p.look = this.act.finalLook;
       // Aplastamiento con rebote al tocar el suelo.
       const squash = 0.32 * Math.exp(-this.time * 9) * Math.cos(this.time * 24);
       p.scale.x *= 1 + squash;

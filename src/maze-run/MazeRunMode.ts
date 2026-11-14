@@ -11,6 +11,9 @@ import { PlayerView } from './entities/PlayerView';
 import { ShatterEffect } from './effects/ShatterEffect';
 import { PowerCinematic } from './effects/PowerCinematic';
 import { SmokeEffect } from './effects/SmokeEffect';
+import { TENTACLE_COUNT, TentacleView } from './effects/TentacleView';
+import { GhoulLegs, type FootPlant, type GroundZ } from './systems/GhoulLegs';
+import { escapeTiles } from './maze/escape';
 import { Maze } from './maze/Maze';
 import { MazeView } from './maze/MazeView';
 import { DX, DY, Dir, Tile } from './maze/grid';
@@ -62,7 +65,17 @@ export class MazeRunMode implements GameMode {
   private portals = new Portals(this.maze, this.rng);
   private portalsView = new PortalsView(this.portals);
   private powers = new SpecialPowers();
-  private cinematic = new PowerCinematic();
+  private tentacles = new TentacleView();
+  private cinematic = new PowerCinematic(this.tentacles);
+  private legs = new GhoulLegs();
+  /** Patas del GHOUL visibles al aterrizar, antes de que empiece el poder. */
+  private legsLanding = false;
+  /** El GHOUL estaba en vigor el fotograma anterior (para detectar cuándo acaba). */
+  private wasGhoul = false;
+  private legCurves = Array.from({ length: TENTACLE_COUNT }, () => {
+    const pts = Array.from({ length: 4 }, () => new THREE.Vector3());
+    return { pts, curve: new THREE.CatmullRomCurve3(pts, false, 'centripetal') };
+  });
   private smoke = new SmokeEffect();
   /** Fase a la que se vuelve al acabar la cinemática de un poder. */
   private phaseAfterCinematic: 'ready' | 'playing' = 'playing';
@@ -96,7 +109,7 @@ export class MazeRunMode implements GameMode {
     scene.background = new THREE.Color(0x03030a);
     scene.add(new THREE.AmbientLight(0xffffff, 0.8), new THREE.HemisphereLight(0xffffff, 0x181020, 0.5));
     scene.add(this.cameraRig.light, this.cameraRig.light.target);
-    scene.add(this.mazeView.group, this.pelletsView.group, this.playerView.mesh, this.ghostsView.group, this.lavaView.group, this.shatter.group, this.portalsView.group, this.cinematic.group, this.smoke.group);
+    scene.add(this.mazeView.group, this.pelletsView.group, this.playerView.mesh, this.ghostsView.group, this.lavaView.group, this.shatter.group, this.portalsView.group, this.cinematic.group, this.smoke.group, this.tentacles.group);
 
     this.maze.ensureGenerated(this.player.tileY + CONFIG.maze.generateAhead);
     this.cameraRig.snap(this.scroll.y);
@@ -130,6 +143,7 @@ export class MazeRunMode implements GameMode {
     this.shatter.dispose();
     this.cinematic.dispose();
     this.smoke.dispose();
+    this.tentacles.dispose();
     this.cameraRig.light.dispose();
   }
 
@@ -202,9 +216,13 @@ export class MazeRunMode implements GameMode {
     const ended = this.powers.update(dt);
     if (ended) state.events.emit('specialPower', { id: ended, active: false });
     const giant = this.powers.giant;
+    const ghoul = this.powers.ghoul;
+    if (this.wasGhoul && !ghoul) this.endGhoul();
+    this.wasGhoul = ghoul;
 
-    player.speedMultiplier = state.modifiers.playerSpeed * (giant ? CONFIG.specialPowers.giant.speed : 1);
-    player.update(dt, maze, giant ? this.giantPassable : undefined);
+    const boost = giant ? CONFIG.specialPowers.giant.speed : ghoul ? CONFIG.specialPowers.ghoul.speed : 1;
+    player.speedMultiplier = state.modifiers.playerSpeed * boost;
+    player.update(dt, maze, giant ? this.giantPassable : ghoul ? this.ghoulPassable : undefined);
     state.reachRow(player.tileY);
 
     if (giant) this.giantEat();
@@ -217,6 +235,8 @@ export class MazeRunMode implements GameMode {
     if (giant) {
       const radius = CONFIG.ghosts.hitRadius + CONFIG.specialPowers.giant.reach - 0.5;
       for (const { ghost, score } of this.ghosts.devour(player, radius)) state.addScore(score, ghost.x, ghost.y, true);
+    } else if (ghoul) {
+      this.ghoulWalk(dt);
     } else {
       const hit = this.ghosts.checkPlayer(player);
       for (const { ghost, score } of hit.eaten) state.addScore(score, ghost.x, ghost.y, true);
@@ -248,10 +268,13 @@ export class MazeRunMode implements GameMode {
   // ---------------------------------------------------------------------------
 
   /** El gigante puede entrar en muros, salvo en el borde exterior y en la columna pegada a él. */
-  private readonly giantPassable: Passable = (x, y) =>
-    this.maze.isOpen(x, y) || (this.maze.tile(x, y) !== undefined && x >= 2 && x <= this.maze.width - 3);
+  private readonly giantPassable: Passable = (x, y) => {
+    // Su centro no entra en muros tan cerca del borde que el cuerpo lo atravesaría.
+    const margin = 1 + Math.floor(CONFIG.specialPowers.giant.reach);
+    return this.maze.isOpen(x, y) || (this.maze.tile(x, y) !== undefined && x >= margin && x <= this.maze.width - 1 - margin);
+  };
 
-  /** Come muros y puntos alrededor de su centro (≈ 3×3 casillas). El borde exterior no se come. */
+  /** Come muros y puntos alrededor de su centro (≈ 6×6 casillas). El borde exterior no se come. */
   private giantEat(): void {
     const { player, maze } = this;
     const { reach, shake } = CONFIG.specialPowers.giant;
@@ -269,6 +292,106 @@ export class MazeRunMode implements GameMode {
     this.shatter.burst(walls, player.dir, this.mazeView.neon.color, true);
     this.cameraRig.shake(shake);
     this.state.events.emit('wallBroken', { tiles: walls });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Poder GHOUL
+  // ---------------------------------------------------------------------------
+
+  /** El GHOUL camina por encima de cualquier casilla salvo el borde exterior. */
+  private readonly ghoulPassable: Passable = (x, y) => this.maze.tile(x, y) !== undefined && x >= 1 && x <= this.maze.width - 2;
+
+  /** Altura del suelo bajo un pie: 0 si se clava (pasillo o bloque que se rompe); la tapa si es irrompible. */
+  private readonly groundZ: GroundZ = (x, y) => {
+    const tx = Math.round(x);
+    const tile = this.maze.tile(tx, Math.round(y));
+    const breakable = tx >= 1 && tx <= this.maze.width - 2;
+    return tile === undefined || (tile === Tile.Wall && !breakable) ? CONFIG.maze.wallDepth : 0;
+  };
+
+  /** Pasos de los tentáculos: rompen los bloques que pisan y pisotean fantasmas; el cuerpo también los mata. */
+  private ghoulWalk(dt: number): void {
+    const { player, state } = this;
+    const speed = player.moving ? CONFIG.player.speed * player.speedMultiplier : 0;
+    const plants = this.legs.update(dt, player.x, player.y, DX[player.dir] * speed, DY[player.dir] * speed, this.ghosts.ghosts, this.groundZ);
+    plants.forEach((p) => this.plantFoot(p));
+    // El cuerpo (grande) también mata al tocar.
+    const bodyRadius = CONFIG.ghosts.hitRadius + (HERO_DIAMETER / 2) * (this.powers.playerScale - 1);
+    for (const { ghost, score } of this.ghosts.devourAt(player.x, player.y, bodyRadius, player)) {
+      state.addScore(score, ghost.x, ghost.y, true);
+    }
+  }
+
+  private plantFoot(p: FootPlant): void {
+    const { maze, state } = this;
+    const cfg = CONFIG.specialPowers.ghoul;
+    const tx = Math.round(p.x);
+    const ty = Math.round(p.y);
+    if (tx >= 1 && tx <= maze.width - 2 && maze.tile(tx, ty) === Tile.Wall) {
+      const tiles = [{ x: tx, y: ty }];
+      maze.setTiles(tiles, Tile.Open);
+      this.shatter.burst(tiles, this.player.dir, this.mazeView.neon.color, true);
+      this.cameraRig.shake(cfg.shake);
+      state.events.emit('wallBroken', { tiles });
+    }
+    // Polvillo pequeño en cada pisada (más en los pisotones).
+    this.smoke.ring(worldX(p.x), p.y, 0.25, 0.2, p.stomp ? 7 : 3, 0.4);
+    for (const { ghost, score } of this.ghosts.devourAt(p.x, p.y, cfg.stompRadius, this.player)) {
+      state.addScore(score, ghost.x, ghost.y, true);
+      this.cameraRig.shake(cfg.shake * 2);
+    }
+  }
+
+  /**
+   * Fin del GHOUL: baja al suelo. Si queda encima de un muro (o en un agujero
+   * aislado), se abre el camino más corto hasta los pasillos para no quedar atrapado.
+   */
+  private endGhoul(): void {
+    const { player, maze } = this;
+    const here = { x: player.tileX, y: player.tileY };
+    // Si va entre dos casillas, terminará en la siguiente: también cuenta.
+    const next = { x: Math.round(player.x + DX[player.dir] * 0.5), y: Math.round(player.y + DY[player.dir] * 0.5) };
+    const inner = (t: { x: number; y: number }) => t.x >= 1 && t.x <= maze.width - 2;
+    const walls = [here, next].filter((t, i, all) => inner(t) && maze.tile(t.x, t.y) === Tile.Wall && all.findIndex((o) => o.x === t.x && o.y === t.y) === i);
+    if (walls.length) maze.setTiles(walls, Tile.Open);
+    const path = escapeTiles(maze, next.x, next.y);
+    if (path.length) maze.setTiles(path, Tile.Open);
+    const broken = [...walls, ...path];
+    if (broken.length) {
+      this.shatter.burst(broken, player.dir, this.mazeView.neon.color, true);
+      this.cameraRig.shake(0.2);
+      this.state.events.emit('wallBroken', { tiles: broken });
+    }
+  }
+
+  /**
+   * Tentáculos como patas: salen del borde del cuerpo por debajo de él (para que el
+   * cuerpo quede siempre a la vista, encima) y bajan en arco hasta cada pie.
+   */
+  private drawLegs(extent: number): void {
+    const body = this.playerView.mesh.position;
+    const t = this.state.phaseTime;
+    // A escala del cuerpo (encoge con él al acabar el poder).
+    const k = Math.abs(this.playerView.mesh.scale.y) / CONFIG.specialPowers.ghoul.scale;
+    this.legs.feet.forEach((f, i) => {
+      const { pts, curve } = this.legCurves[i];
+      const fx = worldX(f.x);
+      const dx = fx - body.x;
+      const dy = f.y - body.y;
+      const dist = Math.hypot(dx, dy) || 1;
+      const ux = dx / dist;
+      const uy = dy / dist;
+      const [r0, r1] = CONFIG.specialPowers.ghoul.thickness;
+      const below = body.z - r0 * k - 0.15;
+      const bodyR = (HERO_DIAMETER / 2) * Math.abs(this.playerView.mesh.scale.y);
+      const wobble = Math.sin(t * 5 + i * 1.9) * 0.15 * k;
+      pts[0].set(body.x + ux * bodyR * 0.6, body.y + uy * bodyR * 0.6, below);
+      pts[1].set(body.x + ux * Math.max(bodyR, dist * 0.5), body.y + uy * Math.max(bodyR, dist * 0.5) + wobble, below + 0.1 * k);
+      pts[2].set(body.x + dx * 0.82, body.y + dy * 0.82, f.z + 0.7 * k);
+      pts[3].set(fx, f.y, f.z);
+      curve.updateArcLengths();
+      this.tentacles.set(i, curve, r0 * k, r1 * Math.max(0.6, k), extent);
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -307,13 +430,24 @@ export class MazeRunMode implements GameMode {
     this.phaseAfterCinematic = state.phase === 'ready' ? 'ready' : 'playing';
     state.setPhase('cinematic');
     const { impactShake, smokePuffs } = CONFIG.specialPowers.cinematic;
-    this.cinematic.play(id, this.player, this.powers.playerScale, (amount) => this.cameraRig.shake(amount), {
+    const current = { scale: this.powers.playerScale, lift: this.powers.ghoulLift, look: this.powers.look };
+    // Un poder nuevo sustituye al anterior sin su animación de salida.
+    if (this.powers.ghoul) this.endGhoul();
+    this.powers.clear();
+    this.wasGhoul = false;
+    this.cinematic.play(id, this.player, current, (amount) => this.cameraRig.shake(amount), {
       onImpact: (at, scale) => {
         this.cameraRig.shake(impactShake);
         // Por encima de los muros, para que no lo tapen.
         this.smoke.ring(at.x, at.y, CONFIG.maze.wallDepth + 0.15, (HERO_DIAMETER / 2) * scale + 0.2, smokePuffs);
+        // El GHOUL aterriza clavando los cuatro tentáculos.
+        if (id === 'ghoul') {
+          this.legsLanding = true;
+          this.legs.reset(this.player.x, this.player.y, this.groundZ).forEach((p) => this.plantFoot(p));
+        }
       },
       onDone: () => {
+        this.legsLanding = false;
         state.setPhase(this.phaseAfterCinematic);
         this.powers.activate(id);
         this.ghosts.resetCombo();
@@ -439,13 +573,18 @@ export class MazeRunMode implements GameMode {
     }
     const pose = state.phase === 'cinematic' ? this.cinematic.update(dt, this.cameraRig.camera, this.player) : null;
     if (pose) this.playerView.applyPose(pose);
-    else this.playerView.update(dt, this.player, scale, spin);
+    else this.playerView.update(dt, this.player, scale, spin, this.powers.ghoulLift, this.powers.look);
     this.ghostsView.update(dt, this.ghosts);
     // Como en el clásico, los fantasmas desaparecen durante la animación de muerte.
     this.ghostsView.group.visible = !(dying && (state.phase === 'over' || state.phaseTime > 0.4));
     this.lavaView.update(dt, this.lava);
     this.shatter.update(dt);
     this.smoke.update(dt);
+    // Los tentáculos los coloca la cinemática (acto y caída) o, como patas, el poder.
+    if (!(pose && this.cinematic.decorated) && (this.powers.active?.id === 'ghoul' || this.legsLanding)) {
+      this.drawLegs(1 - this.powers.outro);
+    }
+    this.tentacles.flush();
     this.hud.setValues(state.meters, state.score);
     this.hud.update(dt);
     this.hud.setPower(this.wallBreaker.charges, godSettings.infiniteWallBreak);

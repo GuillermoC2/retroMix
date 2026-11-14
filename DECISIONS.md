@@ -225,6 +225,31 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 - **También desde el menú de modo dios** (D-032): activar un poder reproduce la cinemática, útil para afinarla.
 - **Cambio (mismo día, petición del usuario):** en la subida y en la caída, además de girar sobre su propio eje (como un disco), da una vuelta sobre el eje vertical (como una moneda: a mitad de vuelta se le ve el canto). Antes la caída no giraba. Vueltas en `cinematic.riseTurns` y `fallTurns` (`disc` y `flip`; 1 y 1 por defecto). En la caída el giro sigue la misma curva acelerada, así que se concentra al final.
 
+## D-036 · Poder GHOUL: tentáculos para caminar por encima del laberinto
+- **Fecha:** 2026-11-14 · **Estado:** Vigente la mecánica; aspecto, tamaño, tentáculos y cinemática sustituidos por D-037
+- **Contexto:** petición del usuario: cuatro tentáculos rojos gruesos con venas más brillantes; el protagonista camina con ellos por encima de los bloques, los bloques que pisa se rompen y los fantasmas cercanos son pisoteados; 10 s, velocidad ×1,2. En la cinemática le salen los tentáculos, un ojo rojo y una máscara.
+- **Máscara:** el usuario dio como referencia la de un personaje de anime con copyright. No se copia ese diseño: se hace una **máscara propia** con la misma idea, un bozal negro sobre la mitad delantera de abajo con correa hacia la nuca, la boca en negro (sin dientes, como pidió), un ojo de esclerótica negra e iris rojo y venas rojas en la piel. En el juego el poder se llama "GHOUL".
+- **Juego:**
+  - Va por encima de cualquier casilla salvo el borde exterior, con el cuerpo a +1,05 de altura (por encima de los muros). No rompe nada al pasar, solo donde pisa.
+  - **Patas** (`systems/GhoulLegs.ts`): cuatro pies con reposo en diagonal alrededor del cuerpo. Un pie da un paso (0,13 s, en arco) cuando se aleja `stride` de su reposo, adelantado según la velocidad. Las dos parejas diagonales se turnan, y un pie muy rezagado pisa igualmente. *(Primera versión: una pareja acaparaba los turnos y la otra se quedaba a 8–10 casillas por detrás; corregido y medido.)*
+  - **Cada pisada** rompe el bloque de debajo (si no es el borde), con pedazos, una sacudida pequeña y polvillo, y mata a los fantasmas a menos de `stompRadius` de la punta.
+  - **Pisotón:** si un fantasma entra a menos de `stompRange` (2,8) del cuerpo, el pie libre más cercano lo persigue y lo pisa (0,13 s). Tocar el cuerpo también lo mata. Los fantasmas no le hacen daño; la lava sí.
+  - **Al acabar** baja al suelo y recoge los tentáculos (0,4 s). Si queda encima de un muro o en un agujero aislado hecho por una pisada, se abre el camino que atraviesa menos muros hasta los pasillos (`maze/escape.ts`: BFS 0-1 hasta una zona abierta de 40 casillas o más), así nunca queda atrapado.
+  - Puede haber agujeros sueltos de pisadas dentro de los muros (huecos sin salida). Se aceptan: son decorativos y el final del poder nunca deja al jugador en uno.
+- **Tentáculos** (`effects/TentacleView.ts`): tubos facetados que se estrechan hacia la punta (radio 0,24 → 0,06), rojo oscuro con bandas y tres venas que serpentean y brillan (mapa de emisión). Se reconstruyen cada fotograma a lo largo de una curva. Como patas, se arquean desde la espalda hacia arriba y bajan hasta cada pie.
+- **Cinemática** (acto en `PowerCinematic`, ≈ 2,1 s): con un rugido le brotan los cuatro tentáculos de la espalda en abanico, uno cada 0,24 s y con sacudida, y se agitan. A los 1,2 s aparecen la máscara y el ojo con un golpe. Los tentáculos le acompañan en la caída y, al aterrizar, se clavan alrededor rompiendo los bloques de debajo.
+- **Cambios generales:** `SpecialPowers` pasa a ser genérico (`isOn`, `outro`, `look`, `ghoulLift`; `giant.shrinkTime` pasa a `outroTime`, común a todos los poderes). Un poder nuevo sustituye al activo sin su animación de salida. `GhostDirector.devourAt` mata fantasmas alrededor de cualquier punto. Ganar un minijuego elige al azar entre GIGANTE y GHOUL.
+
+## D-037 · GHOUL revisado y GIGANTE al doble
+- **Fecha:** 2026-11-14 · **Estado:** Vigente
+- **Contexto:** al usuario le convencen la mecánica y el movimiento de los tentáculos, pero no su aspecto (demasiado curvos y lisos) ni la animación. Pide descartar la máscara, un protagonista gris oscuro con el ojo rojo, más grande (casi como el GIGANTE) y, para diferenciarlos, el GIGANTE al doble.
+- **Tentáculos de vóxeles** (`effects/TentacleView.ts`, reescrito): en lugar de tubos lisos, cubos alineados con una rejilla y sin girar, colocados a lo largo de la curva y cada vez más pequeños hacia la punta. El cuerpo es rojo oscuro con variaciones por cubo; las venas son cubitos en la superficie, por los ejes de la rejilla, sin sombreado para que brillen. Dos `InstancedMesh`; se rellenan cada fotograma (`set` por tentáculo y `flush` al final).
+- **Aspecto:** sin máscara. Cuerpo gris oscuro con borde más oscuro, ojo de esclerótica negra e iris rojo, venas rojas alrededor y la boca normal.
+- **Tamaño:** GHOUL ×2,6 (y todo a escala: reposo de los pies ±2,4 × ±2,0, zancada 1,5, altura de paso 1,4, alcance del pisotón 3,8, radio 1,3, tentáculos de radio 0,36 → 0,09). El cuerpo grande también mata al tocar. Encoge al acabar.
+- **Patas bajo el cuerpo:** salen del borde del cuerpo por debajo de él y bajan en arco a cada pie. *(Al arquearlas por encima, en la primera prueba tapaban el cuerpo por completo y solo se veía una X roja.)* En la cinemática quedan detrás del cuerpo.
+- **Nueva cinemática** (≈ 2,3 s de acto): (1) se oscurece parpadeando entre amarillo y gris, cada vez más gris, y se le enciende el ojo; (2) crece de golpe (0,3 s, con sacudida) hasta ×2,6; (3) le brotan los cuatro tentáculos de vóxeles uno a uno y se agitan; luego cae como siempre y aterriza clavándolos.
+- **GIGANTE ×6** (antes ×3): come el doble de ancho (`reach` 2,9 ≈ 6×6 casillas). Su centro no entra en muros a menos de 3 columnas del borde, para que el cuerpo no lo atraviese.
+
 ## D-015 · Pruebas fuera del repositorio (provisional)
 - **Fecha:** 2026-11-13 · **Estado:** En revisión
 - **Decisión actual:** el test de conectividad del generador, el fuzzing de movimiento y las capturas con Edge headless + `puppeteer-core` se ejecutaron desde un directorio temporal, sin añadir dependencias al proyecto.

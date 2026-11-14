@@ -111,7 +111,9 @@ activa solo; si se pierde, se acaba la partida.
 - [x] Cinemática al recibir un poder especial: sale volando hacia la cámara, hace la acción del poder (GIGANTE: come una cereza y crece en 3 escalones) y cae de golpe dejando humo; ~3–4 s — D-035
 - [ ] El usuario prueba y ajusta: dificultad del Pong, distancia entre portales, duración/tamaño/velocidad del gigante
 - [ ] Mejorar la interfaz y el funcionamiento del Pong (pedido por el usuario; se hará más adelante)
-- [ ] Más poderes especiales (siguiente paso)
+- [x] Poder GHOUL: 4 tentáculos rojos con venas, camina por encima de los muros rompiendo los que pisa y pisa a los fantasmas; máscara original y ojo rojo; 10 s, ×1,2 — D-036
+- [x] GHOUL revisado: tentáculos de vóxeles, sin máscara (gris oscuro con ojo rojo), más grande (×2,6), nueva animación; GIGANTE al doble (×6) — D-037
+- [ ] Más poderes especiales
 - [ ] Más minijuegos (Tetris, Space Invaders…)
 - [ ] Animaciones de entrada y salida del portal más elaboradas (a petición del usuario, más adelante)
 

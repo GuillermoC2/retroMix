@@ -44,19 +44,20 @@ export class SmokeEffect {
    * Anillo de humo alrededor de (x, y) a la altura z.
    * @param radius radio inicial del anillo (casillas).
    * @param count número de bocanadas.
+   * @param size multiplicador del tamaño de las bocanadas (y de su velocidad).
    */
-  ring(x: number, y: number, z: number, radius: number, count: number): void {
+  ring(x: number, y: number, z: number, radius: number, count: number, size = 1): void {
     for (let n = 0; n < count; n++) {
       const a = (n / count) * Math.PI * 2 + rand(-0.2, 0.2);
       const r = radius * rand(0.8, 1.15);
-      const speed = rand(2.5, 6);
+      const speed = rand(2.5, 6) * size;
       const i = this.next;
       this.next = (this.next + 1) % MAX_PUFFS;
       const p = this.puffs[i];
       p.alive = true;
       p.pos.set(x + Math.cos(a) * r, y + Math.sin(a) * r, z + rand(-0.2, 0.3));
       p.vel.set(Math.cos(a) * speed, Math.sin(a) * speed, rand(0.6, 2));
-      p.size = rand(0.45, 0.9) * Math.max(1, radius / 1.4);
+      p.size = rand(0.45, 0.9) * Math.max(1, radius / 1.4) * size;
       p.age = 0;
       p.life = rand(0.7, 1.2);
       this.mesh.setColorAt(i, this.color.setHex(GRAYS[n % GRAYS.length]));
