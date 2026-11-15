@@ -66,6 +66,11 @@ export class Pellets {
     this.events.emit('chunkCleared', chunk);
   }
 
+  /** Tipo del punto que queda en la casilla, si hay alguno. */
+  typeAt(x: number, y: number): PelletType | null {
+    return this.byTile.get(key(x, y))?.type ?? null;
+  }
+
   /** Come el punto de la casilla si existe y lo devuelve. */
   eatAt(x: number, y: number): Pellet | null {
     const p = this.byTile.get(key(x, y));

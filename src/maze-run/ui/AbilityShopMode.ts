@@ -2,15 +2,15 @@ import { CONFIG } from '../../config';
 import type { GameContext } from '../../core/Game';
 import type { Action } from '../../core/Input';
 import type { GameMode } from '../../core/ModeStack';
-import type { AbilityDef, PixelIcon } from '../abilities/catalog';
+import { abilityName, type AbilityDef, type PixelIcon } from '../abilities/catalog';
 import type { ShopSlot } from '../systems/Abilities';
 
 export interface ShopHooks {
   slots: ShopSlot[];
   /** Puntos disponibles ahora mismo. */
   points: () => number;
-  /** Copias que ya tiene el jugador de una habilidad. */
-  owned: (ability: AbilityDef) => number;
+  /** Nivel que ya tiene el jugador de una habilidad (0 = no la tiene; si la tiene, se ofrece su mejora). */
+  level: (ability: AbilityDef) => number;
   /** Intenta comprar la casilla (descuenta los puntos y la concede). @returns si se ha comprado. */
   buy: (slot: ShopSlot) => boolean;
   /** La tienda se ha cerrado (este modo ya se ha retirado); `bought` es lo comprado, si algo. */
@@ -118,13 +118,13 @@ export class AbilityShopMode implements GameMode {
     card.append(el('div', 'shop-tier', tier.name), el('div', 'shop-key', String(index + 1)));
     const a = slot.ability;
     if (a) {
-      const owned = this.hooks.owned(a);
+      const level = this.hooks.level(a);
+      const upgrade = level > 0;
       card.append(
         iconCanvas(a.icon),
-        el('div', 'shop-name', a.name),
-        el('div', 'shop-badge', a.badge),
-        el('div', 'shop-desc', a.description),
-        el('div', 'shop-owned', owned ? `YA TIENES ${owned}` : ''),
+        el('div', 'shop-name', abilityName(a, level + 1)),
+        el('div', 'shop-desc', upgrade && a.upgradeDescription ? a.upgradeDescription : a.description),
+        el('div', 'shop-owned', upgrade ? 'MEJORA' : ''),
       );
     } else {
       card.classList.add('empty');

@@ -28,7 +28,11 @@ import { PortalsView } from './systems/PortalsView';
 import { Gates, gateCenterY, type Gate } from './systems/Gates';
 import { GatesView } from './systems/GatesView';
 import { Abilities, type ShopSlot } from './systems/Abilities';
-import type { AbilityDef } from './abilities/catalog';
+import { ABILITIES, abilityName, maxLevel, type AbilityDef } from './abilities/catalog';
+import { Pickups, type Pickup } from './systems/Pickups';
+import { PickupsView } from './systems/PickupsView';
+import { Laser, type LaserBeam } from './systems/Laser';
+import { LaserView } from './systems/LaserView';
 import { AbilityShopMode } from './ui/AbilityShopMode';
 import { SpecialPowers } from './systems/SpecialPowers';
 import { RunState, type DeathCause } from './systems/RunState';
@@ -91,6 +95,13 @@ export class MazeRunMode implements GameMode {
   private gates = new Gates(this.maze, this.rng);
   private gatesView = new GatesView(this.gates);
   private abilities = new Abilities();
+  /** Objetos de las habilidades (cubitos de hielo, bolas del láser). */
+  private pickups = new Pickups(this.maze, this.pellets, this.portals, this.rng);
+  private pickupsView = new PickupsView(this.pickups);
+  private laser = new Laser();
+  private laserView = new LaserView();
+  /** Rayo del láser de este fotograma (null si no dispara). */
+  private beam: LaserBeam | null = null;
   private powers = new SpecialPowers();
   private tentacles = new TentacleView();
   private cinematic = new PowerCinematic(this.tentacles);
@@ -137,7 +148,7 @@ export class MazeRunMode implements GameMode {
     scene.background = new THREE.Color(0x03030a);
     scene.add(new THREE.AmbientLight(0xffffff, 0.8), new THREE.HemisphereLight(0xffffff, 0x181020, 0.5));
     scene.add(this.cameraRig.light, this.cameraRig.light.target);
-    scene.add(this.mazeView.group, this.pelletsView.group, this.playerView.mesh, this.ghostsView.group, this.lavaView.group, this.shatter.group, this.portalsView.group, this.gatesView.group, this.cinematic.group, this.smoke.group, this.tentacles.group);
+    scene.add(this.mazeView.group, this.pelletsView.group, this.playerView.mesh, this.ghostsView.group, this.lavaView.group, this.shatter.group, this.portalsView.group, this.gatesView.group, this.pickupsView.group, this.laserView.group, this.cinematic.group, this.smoke.group, this.tentacles.group);
 
     this.maze.ensureGenerated(this.player.tileY + CONFIG.maze.generateAhead);
     this.cameraRig.snap(this.scroll.y);
@@ -167,6 +178,9 @@ export class MazeRunMode implements GameMode {
     this.portalsView.dispose();
     this.gates.dispose();
     this.gatesView.dispose();
+    this.pickups.dispose();
+    this.pickupsView.dispose();
+    this.laserView.dispose();
     this.mazeView.dispose();
     this.pelletsView.dispose();
     this.playerView.dispose();
@@ -268,6 +282,7 @@ export class MazeRunMode implements GameMode {
     if (gate) return this.enterGate(gate);
 
     this.ghosts.update(dt, player, state.meters, this.lava.y, state.modifiers.ghostSpeed);
+    this.fireLaser(dt);
     if (giant) {
       const radius = CONFIG.ghosts.hitRadius + CONFIG.specialPowers.giant.reach - 0.5;
       for (const { ghost, score } of this.ghosts.devour(player, radius)) state.addScore(score, ghost.x, ghost.y, true);
@@ -287,15 +302,49 @@ export class MazeRunMode implements GameMode {
 
     maze.ensureGenerated(player.tileY + CONFIG.maze.generateAhead);
     maze.destroyBelow(Math.floor(this.lava.y) - CONFIG.maze.destroyBelowLava);
+    // Objetos de habilidad (HIELO, LASER): empiezan a aparecer un poco por delante en cuanto se tiene la habilidad.
+    for (const kind of this.abilities.pickups) this.pickups.enable(kind, player.y);
+    this.pickups.update(this.lava.y);
   }
 
   private eatPelletAt(x: number, y: number): void {
     const { state } = this;
+    const pickup = this.pickups.takeAt(x, y);
+    if (pickup) this.takePickup(pickup);
     const pellet = this.pellets.eatAt(x, y);
     if (pellet?.type === PelletType.Dot) state.addScore(CONFIG.pellets.dotScore, pellet.x, pellet.y);
     if (pellet?.type === PelletType.Energizer) {
       state.addScore(CONFIG.pellets.energizerScore, pellet.x, pellet.y, true);
       state.events.emit('energizer', { duration: this.ghosts.frighten(state.meters, this.abilities.frightBonus) });
+    }
+  }
+
+  /** Objeto de habilidad cogido: cubito de hielo (congela a los fantasmas) o bola del láser (dispara). */
+  private takePickup(p: Pickup): void {
+    if (p.kind === 'ice') {
+      const { freezeTime } = CONFIG.abilities.ice;
+      this.ghosts.freeze(freezeTime);
+      this.popupAt('HIELO', p.x, p.y);
+      this.cameraRig.shake(0.15);
+      this.state.events.emit('ghostsFrozen', { duration: freezeTime });
+    } else {
+      const duration = this.abilities.laserDuration || CONFIG.abilities.laser.duration;
+      this.laser.fire(duration);
+      this.popupAt('LASER', p.x, p.y);
+      this.cameraRig.shake(0.2);
+      this.state.events.emit('laserFired', { duration });
+    }
+  }
+
+  /** Láser: el rayo sale por la boca hacia donde mira el protagonista y se come a los fantasmas que toca. */
+  private fireLaser(dt: number): void {
+    const { player, state } = this;
+    this.laser.update(dt);
+    this.beam = this.laser.active ? this.laser.beam(this.maze, player.x, player.y, player.dir) : null;
+    if (!this.beam) return;
+    const { x0, y0, x1, y1 } = this.beam;
+    for (const { ghost, score } of this.ghosts.zap(x0, y0, x1, y1, CONFIG.abilities.laser.hitHalfWidth, player)) {
+      state.addScore(score, ghost.x, ghost.y, true);
     }
   }
 
@@ -546,10 +595,10 @@ export class MazeRunMode implements GameMode {
       new AbilityShopMode(this.ctx, {
         slots: this.abilities.offer(this.rng),
         points: () => state.score,
-        owned: (a) => this.abilities.count(a),
+        level: (a) => this.abilities.level(a),
         buy: (slot: ShopSlot) => {
           const price = CONFIG.abilities.tiers[slot.tier].price;
-          if (!slot.ability || !state.spend(price)) return false;
+          if (!slot.ability || !this.abilities.canBuy(slot.ability) || !state.spend(price)) return false;
           this.abilities.add(slot.ability);
           state.events.emit('abilityBought', { id: slot.ability.id, tier: slot.tier, price });
           return true;
@@ -568,14 +617,15 @@ export class MazeRunMode implements GameMode {
     this.shatter.burst(this.gates.tiles(gate).filter((t) => t.x % 2 === 1), Dir.Up, color, true);
     this.cameraRig.shake(0.4);
     this.state.setPhase('playing');
-    this.refreshAbilities(bought?.name);
-    if (bought) this.hud.announce(`¡${bought.name}!`, 'HABILIDAD COMPRADA');
-    else this.hud.announce('¡ADELANTE!', 'MURO SUPERADO');
+    const name = bought ? abilityName(bought, this.abilities.level(bought)) : '';
+    this.refreshAbilities(name);
+    // Comprar no muestra anuncio (es de los poderes especiales): salta su etiqueta en el HUD.
+    if (!bought) this.hud.announce('¡ADELANTE!', 'MURO SUPERADO');
   }
 
   /** Lista de habilidades compradas en el HUD. */
   private refreshAbilities(highlight = ''): void {
-    const items = [...this.abilities.owned].map(([a, count]) => ({ name: a.name, count, color: CONFIG.abilities.tiers[a.tier].color }));
+    const items = [...this.abilities.owned].map(([a, level]) => ({ name: abilityName(a, level), color: CONFIG.abilities.tiers[a.tier].color }));
     this.hud.setAbilities(items, highlight);
   }
 
@@ -683,8 +733,19 @@ export class MazeRunMode implements GameMode {
         },
       },
     ];
+    const abilities = ABILITIES.map((a) => ({
+      label: `${abilityName(a, Math.min(maxLevel(a), this.abilities.level(a) + 1))} (${CONFIG.abilities.tiers[a.tier].name})`,
+      button: () => (this.abilities.canBuy(a) ? 'DAR' : 'MAX'),
+      run: () => {
+        if (!this.abilities.add(a)) return;
+        this.usedCheats = true;
+        const name = abilityName(a, this.abilities.level(a));
+        this.refreshAbilities(name);
+      },
+    }));
     return [
       { title: 'TELETRANSPORTE', color: '#5aff8a', actions: teleports },
+      { title: 'HABILIDADES', color: '#b04bff', actions: abilities },
       { title: 'PODERES ESPECIALES', color: '#ff5ad8', actions: powers },
       { title: 'PRUEBAS', color: '#ffc21a', actions: tests },
     ];
@@ -756,6 +817,7 @@ export class MazeRunMode implements GameMode {
     player.moving = false;
     this.state.reachRow(player.tileY);
     this.ghosts.clear();
+    this.laser.clear();
     this.lava.y = player.y + CONFIG.lava.startOffset;
     this.scroll.y = player.y + CONFIG.camera.lookAhead;
     this.cameraRig.snap(this.scroll.y);
@@ -836,6 +898,8 @@ export class MazeRunMode implements GameMode {
     this.updateWallColor();
     this.mazeView.update(dt, this.cameraRig.focus.y);
     this.pelletsView.update(dt);
+    this.pickupsView.update(dt);
+    this.laserView.update(dt, this.state.phase === 'playing' ? this.beam : null, this.laser.warning);
     this.portalsView.update(dt, this.cameraRig.focus.y);
     this.gatesView.update(dt, this.cameraRig.focus.y);
 

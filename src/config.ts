@@ -272,9 +272,13 @@ export const CONFIG = {
    * perder acaba la partida.
    */
   gates: {
-    /** Metros del primer muro y separación entre muros. */
-    firstAt: 500,
-    every: 500,
+    /**
+     * Separación (metros) hasta cada muro, al azar entre `gap[0]` y `gap[1]` (también
+     * la del primero). Cada muro que se cruza alarga `growth` metros la siguiente:
+     * la del muro k (0 = primero) es azar(gap) + k × growth.
+     */
+    gap: [300, 350],
+    growth: 10,
     /** Grosor del muro (casillas). */
     rows: 3,
     /** Las salas con portal se apartan al menos estas filas de un muro. */
@@ -295,8 +299,45 @@ export const CONFIG = {
       epic: { name: 'EPICA', price: 10000, color: '#b04bff' },
       legendary: { name: 'LEGENDARIA', price: 20000, color: '#ffc21a' },
     },
-    /** SUSTO LARGO (básica): segundos extra del susto de los energizadores, por cada copia. */
+    /** SUSTO LARGO (básica): segundos extra del susto de los energizadores, por cada nivel (máx. 2: SUSTO LARGO +). */
     longFright: { frightBonus: 2 },
+    /**
+     * HIELO (épica): aparecen cubitos de hielo por el laberinto; al coger uno los
+     * fantasmas se congelan (ni matan ni se pueden comer) y luego se descongelan.
+     */
+    ice: {
+      /** Segundos que quedan congelados. */
+      freezeTime: 5,
+      /** Últimos segundos de la congelación en los que tiemblan y parpadean (aviso). */
+      thawWarning: 1.2,
+      /** Metros entre cubitos. */
+      every: 70,
+      /** Filas por delante del jugador del primer cubito tras comprar la habilidad. */
+      firstAhead: 8,
+      /** Filas de la franja en la que se elige la casilla de cada cubito. */
+      band: 10,
+    },
+    /**
+     * LASER (legendaria, mejora LASER +): aparecen bolas de energía naranjas; al
+     * comer una, el protagonista dispara un láser continuo por la boca que se come
+     * a los fantasmas que toca. Se para en los muros.
+     */
+    laser: {
+      /** Segundos que dura el láser. */
+      duration: 5,
+      /** Segundos extra de LASER +. */
+      plusBonus: 3,
+      /** Últimos segundos en los que el rayo parpadea (aviso). */
+      warning: 1,
+      /** Casillas como mucho que alcanza el rayo. */
+      maxReach: 30,
+      /** Medio grosor (casillas) de la zona del rayo que se come a los fantasmas. */
+      hitHalfWidth: 0.45,
+      /** Metros entre bolas, franja de filas y filas por delante de la primera tras comprar. */
+      every: 80,
+      band: 10,
+      firstAhead: 14,
+    },
     shop: {
       /** Tiempo (s) antes de aceptar teclas (evita compras sin querer al salir del minijuego). */
       inputDelay: 0.6,

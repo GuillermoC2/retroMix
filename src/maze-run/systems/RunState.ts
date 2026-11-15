@@ -27,6 +27,10 @@ export type RunEvents = {
   gateEntered: { game: string };
   /** Se ha comprado una habilidad en la tienda (los puntos ya se han descontado). */
   abilityBought: { id: string; tier: string; price: number };
+  /** Se ha cogido un cubito de hielo: fantasmas congelados durante `duration` segundos. */
+  ghostsFrozen: { duration: number };
+  /** Se ha comido una bola del láser: dispara durante `duration` segundos. */
+  laserFired: { duration: number };
 };
 
 /**

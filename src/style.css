@@ -573,7 +573,6 @@ html, body {
 .shop-icon { width: min(13vh, 8vw); image-rendering: pixelated; image-rendering: crisp-edges; margin-top: 1vh; filter: drop-shadow(5px 6px 0 rgba(0, 0, 0, 0.6)); }
 .shop-icon-empty { height: min(13vh, 8vw); display: grid; place-items: center; font-size: min(10vh, 6vw); color: color-mix(in srgb, var(--tier) 45%, #222); }
 .shop-name { font-size: clamp(12px, 2.2vh, 20px); color: var(--white); text-align: center; line-height: 1.4; }
-.shop-badge { font-size: clamp(20px, 4.4vh, 40px); color: var(--tier); text-shadow: -3px 0 #000, 3px 0 #000, 0 -3px #000, 0 3px #000, 5px 6px 0 rgba(0, 0, 0, 0.6); }
 .shop-desc { font-size: clamp(8px, 1.25vh, 11px); line-height: 1.9; color: #c4c8f4; text-align: center; }
 .shop-owned { font-size: 9px; color: #3ae8ff; min-height: 9px; }
 .shop-price { margin-top: auto; font-size: clamp(14px, 2.6vh, 24px); color: var(--yellow); padding: 1vh 1vw; background: #000; box-shadow: 0 0 0 3px var(--tier); }

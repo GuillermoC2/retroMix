@@ -26,6 +26,13 @@ export class GhostDirector {
   private modeTimer = 0;
   scatter = true;
   frightTimer = 0;
+  /**
+   * Congelación (cubito de hielo): mientras dura, los fantasmas no se mueven ni
+   * matan. Se pueden comer igual que sin congelar (asustados, con un poder
+   * especial o con el láser). El susto y el ciclo dispersión/persecución se
+   * detienen y siguen al descongelarse. Los ojos (comidos) siguen volviendo a casa.
+   */
+  freezeTimer = 0;
   private eatCombo = 0;
   private spawnCooldown = 0;
   private playerField = new DistanceField();
@@ -43,8 +50,19 @@ export class GhostDirector {
     return this.frightTimer > 0;
   }
 
+  get frozen(): boolean {
+    return this.freezeTimer > 0;
+  }
+
+  /** Congela a todos los fantasmas (y a los que aparezcan mientras dura). */
+  freeze(duration: number): void {
+    this.freezeTimer = Math.max(this.freezeTimer, duration);
+  }
+
   update(dt: number, player: Player, meters: number, lavaY: number, speedMultiplier: number): void {
-    this.updateModes(dt);
+    const frozen = this.frozen;
+    if (frozen) this.freezeTimer = Math.max(0, this.freezeTimer - dt);
+    else this.updateModes(dt);
     this.updatePlayerField(dt, player, lavaY);
     this.burned.length = 0;
 
@@ -64,9 +82,11 @@ export class GhostDirector {
           if (g.stateTime >= SPAWN_TIME) g.setState('normal');
           break;
         case 'normal':
+          if (frozen) break;
           g.move(ghostSpeed(meters) * speedMultiplier * dt, this.maze, (opts) => this.chooseNormal(g, opts, ctx), blocked);
           break;
         case 'frightened':
+          if (frozen) break;
           g.move(CONFIG.ghosts.frightenedSpeed * dt, this.maze, (opts) => this.rng.pick(opts), blocked);
           break;
         case 'eaten':
@@ -110,7 +130,7 @@ export class GhostDirector {
     const r2 = CONFIG.ghosts.hitRadius ** 2;
     for (const g of this.ghosts) {
       if ((g.x - player.x) ** 2 + (g.y - player.y) ** 2 > r2) continue;
-      if (g.state === 'normal') killed = true;
+      if (g.state === 'normal') killed ||= !this.frozen;
       else if (g.state === 'frightened') {
         const scores = CONFIG.ghosts.eatScores;
         eaten.push({ ghost: g, score: scores[Math.min(this.eatCombo++, scores.length - 1)] });
@@ -131,11 +151,30 @@ export class GhostDirector {
 
   /** Como `devour`, pero alrededor de cualquier punto (p. ej. la punta de un tentáculo del GHOUL). */
   devourAt(x: number, y: number, radius: number, player: Player): GhostHit[] {
+    return this.devourWhere((g) => (g.x - x) ** 2 + (g.y - y) ** 2 <= radius * radius, player);
+  }
+
+  /**
+   * Se come a los fantasmas que toca el rayo del láser: el segmento (x0,y0)–(x1,y1)
+   * con `halfWidth` de grosor a cada lado.
+   */
+  zap(x0: number, y0: number, x1: number, y1: number, halfWidth: number, player: Player): GhostHit[] {
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const len2 = dx * dx + dy * dy || 1;
+    return this.devourWhere((g) => {
+      const t = Math.max(0, Math.min(1, ((g.x - x0) * dx + (g.y - y0) * dy) / len2));
+      return (g.x - x0 - dx * t) ** 2 + (g.y - y0 - dy * t) ** 2 <= halfWidth * halfWidth;
+    }, player);
+  }
+
+  /** Se come a los fantasmas activos (asustados o no, congelados o no) que cumplen `hit`. */
+  private devourWhere(hit: (g: Ghost) => boolean, player: Player): GhostHit[] {
     const eaten: GhostHit[] = [];
     const scores = CONFIG.ghosts.eatScores;
     for (const g of this.ghosts) {
       if (g.state !== 'normal' && g.state !== 'frightened') continue;
-      if ((g.x - x) ** 2 + (g.y - y) ** 2 > radius * radius) continue;
+      if (!hit(g)) continue;
       eaten.push({ ghost: g, score: scores[Math.min(this.eatCombo++, scores.length - 1)] });
       g.home = this.pickSpawnTile(player) ?? { x: g.tileX, y: g.tileY };
       g.setState('eaten');
@@ -241,6 +280,7 @@ export class GhostDirector {
   clear(): void {
     [...this.ghosts].forEach((g) => this.remove(g));
     this.frightTimer = 0;
+    this.freezeTimer = 0;
   }
 
   private remove(g: Ghost): void {

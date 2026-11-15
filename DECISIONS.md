@@ -275,6 +275,7 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 - **Verificación:** capturas a 1280×720, 1920×1080 y 1024×768 con la lista vacía y con 4 récords.
 
 ## D-041 · Muros portal cada 500 m
+- **Cambio (D-048):** ahora cada 300–350 m, +10 m por cada muro anterior.
 - **Fecha:** 2026-11-15 · **Estado:** Vigente (valores y aspecto sujetos a cambio, como indicó el usuario)
 - **Contexto:** petición del usuario: cada unos 500 m, un muro portal que obstaculiza al jugador sin dejarle avanzar; al tocarlo entra en un minijuego aleatorio, cuyo nombre se ve ya en el muro. Diseño de entrada o portal a elección.
 - **Generación** (`MazeGenerator`, `gates` en `config.ts`): la fila de bloques que cae en `gates.firstAt` (500 m) y luego cada `gates.every` (500 m) se fuerza a 3 casillas y todas sus casillas (salvo el borde) pasan a ser un tipo nuevo, `Tile.Gate`. Las líneas de pasillo de debajo y de encima se abren de lado a lado. Así se mantiene la conectividad: cualquier camino entre dos casillas de debajo que pasara por arriba tiene que cruzar la línea inferior, que ya las une; igual por arriba con la superior. Las salas con portal (D-028) se mueven a 24 filas o más de un muro (`plazaClearance`), así que la de 510 m pasa a ~528 m.
@@ -288,8 +289,8 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 ## D-042 · Tienda de habilidades tras superar un muro portal
 - **Fecha:** 2026-11-15 · **Estado:** Vigente (sujeta a cambios)
 - **Contexto:** petición del usuario: al superar el minijuego, elegir entre 3 habilidades con precio en puntos: marco azul 5.000, morado 10.000 y amarillo dorado 20.000; flotando, ocupando toda la pantalla; se compra si se tienen los puntos. Niveles: básicas, épicas y legendarias.
-- **Datos:** niveles, precios y colores en `CONFIG.abilities.tiers`. Las habilidades se definen en `maze-run/abilities/catalog.ts` (nivel, nombre, efecto resumido, descripción, icono pixel art y efectos). `systems/Abilities.ts` guarda las compradas (con copias) y prepara la oferta: una casilla por nivel con una habilidad al azar de ese nivel, o vacía si no hay ninguna (hoy épica y legendaria salen vacías: "VACIA · PROXIMAMENTE").
-- **Interfaz** (`ui/AbilityShopMode.ts`, modo superpuesto con el laberinto en pausa detrás): "¡MURO SUPERADO! ELIGE UNA HABILIDAD" y los puntos arriba; tres cartas grandes que entran desde abajo una tras otra y flotan balanceándose; marco grueso del color del nivel con halo; la legendaria con un destello dorado que la cruza. Cada carta: nivel, icono, nombre, efecto grande, descripción, copias que ya se tienen y precio. Sin puntos suficientes, la carta se oscurece, el precio sale en rojo con "FALTAN N" y tiembla si se intenta comprar.
+- **Datos:** niveles, precios y colores en `CONFIG.abilities.tiers`. Las habilidades se definen en `maze-run/abilities/catalog.ts` (nivel, nombre, descripción, icono pixel art y efectos). `systems/Abilities.ts` guarda las compradas (con copias) y prepara la oferta: una casilla por nivel con una habilidad al azar de ese nivel, o vacía si no hay ninguna (hoy épica y legendaria salen vacías: "VACIA · PROXIMAMENTE").
+- **Interfaz** (`ui/AbilityShopMode.ts`, modo superpuesto con el laberinto en pausa detrás): "¡MURO SUPERADO! ELIGE UNA HABILIDAD" y los puntos arriba; tres cartas grandes que entran desde abajo una tras otra y flotan balanceándose; marco grueso del color del nivel con halo; la legendaria con un destello dorado que la cruza. Cada carta: nivel, icono, nombre, descripción, "MEJORA" si es una mejora y precio. (Antes llevaba también el efecto en grande, p. ej. "+2 S"; quitado a petición del usuario.) Sin puntos suficientes, la carta se oscurece, el precio sale en rojo con "FALTAN N" y tiembla si se intenta comprar.
 - **Control:** ←/→ (o A/D) elegir, Enter/Espacio comprar, 1–3 comprar directamente, ↓ o Esc salir sin comprar; también con el ratón. Empieza elegida la carta más cara que se pueda pagar (o "CONTINUAR SIN COMPRAR"). Las teclas se ignoran los primeros 0,6 s para no comprar sin querer al salir del Pong con Enter.
 - **Una compra por muro:** "el jugador elegirá qué habilidad comprar" se interpreta como una sola. Tras comprar, la carta salta con "¡COMPRADA!", la cifra de puntos baja contando y a los 1,1 s se vuelve al laberinto con el anuncio "¡SUSTO LARGO! HABILIDAD COMPRADA".
 - **Los puntos se gastan:** comprar resta de la puntuación de la partida (`RunState.spend`), y la puntuación final (y su récord) es la que queda. Es lo más directo con lo pedido; queda como `[?]` en PLAN.md llevar aparte puntos gastables y totales.
@@ -300,6 +301,7 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 - **Contexto:** petición del usuario: una habilidad básica que haga durar 2 s más el efecto de los puntos blancos grandes (energizadores) en los fantasmas.
 - **Decisión:** `GhostDirector.frighten(meters, bonus)` suma los segundos de las habilidades a la duración normal del susto (que decrece con la distancia, D-009). El parpadeo de aviso sigue siendo los últimos 2 s. Valor en `CONFIG.abilities.longFright.frightBonus`. Icono propio: fantasma asustado con un reloj.
 - **Acumulable:** cada copia comprada suma otros 2 s. Si no, tras la primera compra la casilla básica quedaría sin nada útil mientras sea la única habilidad básica. Anotado como `[?]` poner un límite.
+- **Cambio (D-045):** se puede comprar como mucho 2 veces; la segunda es "SUSTO LARGO +".
 
 ## D-044 · Menú de modo dios más ancho: teletransporte y saltar minijuegos
 - **Fecha:** 2026-11-15 · **Estado:** Vigente (amplía D-032; sustituye su "aspecto mínimo")
@@ -308,6 +310,40 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 - **SALTAR MINIJUEGOS** (truco 3, se recuerda como los demás): NO → GANAR → PERDER. Con GANAR o PERDER, al entrar en un portal o un muro portal no se abre el minijuego y se aplica directamente ese resultado (poder especial / tienda, o muerte). GANAR cuenta como truco (sin récords); PERDER no, porque no da ventaja. En el HUD: "MG GANADOS" / "MG PERDIDOS".
 - **TELETRANSPORTE** (clic): siguiente portal (unas casillas por debajo, en su sala), siguiente muro portal (justo debajo, como antes estaba en PRUEBAS), y avanzar 100, 500 y 1000 m (salta los muros que haya en medio). Siempre a la casilla abierta más cercana, con la lava detrás, sin fantasmas ni poderes y la cámara colocada. Cuenta como truco.
 - **PRUEBAS** queda con "SUMAR 10000 PUNTOS".
+
+## D-045 · Habilidades únicas por partida, con mejoras "+"
+- **Fecha:** 2026-11-15 · **Estado:** Vigente (sustituye el "acumulable sin límite" de D-043)
+- **Contexto:** el usuario avisa de que habrá bastantes habilidades. Una habilidad no se puede repetir en la misma partida, salvo las que tienen mejora "+". SUSTO LARGO se puede tener 2 veces y la segunda sale como "SUSTO LARGO +".
+- **Decisión:** cada `AbilityDef` tiene `maxLevel` (por defecto 1). `Abilities` guarda el nivel de cada una. La tienda solo ofrece las que no están al máximo; si en un nivel no queda ninguna, la casilla sale vacía.
+  - Nombre por nivel (`abilityName`): "SUSTO LARGO", "SUSTO LARGO +", "SUSTO LARGO ++"… En la carta de una mejora se ve el nombre con "+", la etiqueta "MEJORA" y `upgradeDescription` (en SUSTO LARGO: "OTROS 2 S MAS DE SUSTO: +4 S EN TOTAL").
+  - Cada nivel vuelve a sumar los `effects` de la habilidad.
+  - En el HUD, una etiqueta por habilidad con su nombre de nivel (desaparece el "X2").
+- **Modo dios:** nueva sección HABILIDADES (morada) en el menú K: "DAR" sube un nivel de la habilidad sin pagar ("MAX" si ya está al máximo). Cuenta como truco.
+- **Sin anuncio al obtenerla** (feedback del usuario): el anuncio grande ("¡NOMBRE! …") es de los poderes especiales. Al comprar o recibir una habilidad solo salta su etiqueta en el HUD. Si se sale de la tienda sin comprar se mantiene "¡ADELANTE! MURO SUPERADO".
+
+## D-046 · Habilidad épica HIELO
+- **Fecha:** 2026-11-15 · **Estado:** Vigente (sujeta a cambios)
+- **Contexto:** petición del usuario: habilidad épica que hace aparecer un poder nuevo en forma de cubito de hielo; al tocarlo, los fantasmas quedan congelados 5 s: no te pueden matar, pero tampoco te los puedes comer; luego se descongelan.
+- **Cubitos** (`systems/IceCubes.ts`, `IceCubesView.ts`): con la habilidad, aparece uno cada 70 m en una casilla de pasillo al azar dentro de una franja de 10 filas (nunca en un energizador ni junto a un portal). El primero, unas 8 filas por delante del punto de compra (justo pasado el muro). Comparten casilla con el punto que haya y se cogen al pasar (también siendo GIGANTE). Desaparecen bajo la lava. Aspecto: bloque voxel azul hielo que flota y se balancea mirando a cámara.
+- **Congelación** (`GhostDirector.freeze`): todos los fantasmas se quedan quietos, incluidos los que aparecen mientras dura, y no matan. **Cambio (mismo día, feedback del usuario):** sí se pueden comer: con GIGANTE, GHOUL o cualquier poder especial, con el láser, y tocándolos si estaban asustados (se ven asustados dentro del hielo). Antes no se podían comer de ninguna forma. Los ojos de los ya comidos siguen volviendo a casa. El susto de un energizador y el ciclo dispersión/persecución se detienen y continúan al descongelarse. Coger otro cubito reinicia los 5 s (no se suman).
+- **Aspecto:** fantasma azul hielo, quieto, dentro de un bloque translúcido con aristas blancas. En el último 1,2 s tiembla y parpadea con su color: aviso de que se suelta.
+- **Al cogerlo:** "HIELO" flotante y una pequeña sacudida (sin el anuncio grande, que es de los poderes especiales). Evento `ghostsFrozen`.
+- **Configuración:** `CONFIG.abilities.ice` (`freezeTime`, `thawWarning`, `every`, `firstAhead`, `band`). Los cubitos los gestiona `systems/Pickups.ts`, común con las bolas del láser (D-047).
+
+## D-047 · Habilidad legendaria LASER (y LASER +)
+- **Fecha:** 2026-11-15 · **Estado:** Vigente (sujeta a cambios)
+- **Contexto:** petición del usuario: aparecen bolas naranjas rojizas; al comerlas, el protagonista dispara por la boca un láser naranja continuo durante 5 s. LASER + suma 3 s.
+- **Nivel:** el usuario no lo indicó; se elige **legendaria** (20.000), porque es la más potente hasta ahora y llena la casilla dorada, que estaba vacía. Se cambia con `tier` en el catálogo.
+- **Bolas:** como los cubitos de hielo (`systems/Pickups.ts`, ahora común a los dos tipos): una cada 80 m en una franja de 10 filas, la primera unas 14 filas por delante. Nunca en un energizador, junto a un portal ni junto a otro objeto. Bola voxel naranja con brillo y borde rojo, que gira y late.
+- **Láser** (`systems/Laser.ts`, `LaserView.ts`): sale de la boca hacia donde mira el protagonista y llega hasta la cara del primer muro (máx. 30 casillas); no rompe muros. Se come a los fantasmas que toca, asustados o no, congelados o no, con la misma cadena de puntos que comerlos. Dura 5 s (LASER +: 8 s). Comer otra bola mientras dispara vuelve a llenar el tiempo, sin sumarlo. En el último segundo parpadea. Funciona también con GIGANTE y GHOUL.
+- **Aspecto:** haz naranja con núcleo claro que vibra a saltos, destellos que corren de la boca al muro, fogonazo en la boca, y chispas y luz naranja en el punto de impacto. Al comer la bola, "LASER" flotante y una pequeña sacudida (sin anuncio grande). Evento `laserFired`.
+- **Configuración:** `CONFIG.abilities.laser` (`duration`, `plusBonus`, `warning`, `maxReach`, `hitHalfWidth`, `every`, `band`, `firstAhead`).
+
+## D-048 · Muros portal más a menudo y cada vez más separados
+- **Fecha:** 2026-11-15 · **Estado:** Vigente (sustituye la separación fija de 500 m de D-041)
+- **Contexto:** petición del usuario: muros cada 300–350 m, con 10 m más cada vez que se cruza uno.
+- **Decisión:** la separación hasta el muro k (0 = el primero, contada desde la salida) es un número al azar entre 300 y 350 m más k × 10 m. Ejemplo: 308, 650, 995 y 1337 m. Se mide desde donde ha caído de verdad el muro anterior (cae en la primera línea de pasillo a partir de su fila). El generador calcula los muros por adelantado con un azar propio, para que las salas con portal se aparten de ellos sin alterar el laberinto. `CONFIG.gates.gap` = [300, 350] y `growth` = 10.
+- **Verificación:** 300 semillas y 2.100 muros: separaciones dentro del margen, forma correcta, ninguna sala cerca y cada tramo conectado.
 
 ## D-015 · Pruebas fuera del repositorio (provisional)
 - **Fecha:** 2026-11-13 · **Estado:** En revisión

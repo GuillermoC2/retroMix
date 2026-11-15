@@ -218,3 +218,58 @@ export function cherryGeometry(): THREE.BufferGeometry {
     return buildVoxelGeometry(sprite, CHERRY_VOXEL);
   });
 }
+
+// -----------------------------------------------------------------------------
+// Cubito de hielo (habilidad HIELO) y fantasma congelado
+// -----------------------------------------------------------------------------
+
+const ICE_CUBE = [
+  '.HHHHHHH.',
+  'HWWIIIIIH',
+  'HWIIIIIIH',
+  'HIIIIIIDH',
+  'HIIIIIIDH',
+  'HIIIIIDDH',
+  'HIIIIDDDH',
+  'HIDDDDDDH',
+  '.HHHHHHH.',
+];
+export const ICE_COLOR = 0x7fd8ff;
+/** Cuerpo de un fantasma congelado. */
+export const ICE_BODY = 0xb4ecff;
+
+export function iceCubeGeometry(): THREE.BufferGeometry {
+  return cached('ice-cube', () => {
+    const palette = { H: 0xa8e8ff, W: 0xffffff, I: 0x4cc4ff, D: 0x1f7fd8 };
+    const sprite = spriteFromRows(ICE_CUBE, palette, () => 3);
+    return buildVoxelGeometry(sprite, 0.08);
+  });
+}
+
+// -----------------------------------------------------------------------------
+// Bola de energía (habilidad LASER)
+// -----------------------------------------------------------------------------
+
+export const LASER_COLOR = 0xff6a1a;
+
+export function laserOrbGeometry(): THREE.BufferGeometry {
+  return cached('laser-orb', () => {
+    const n = 9;
+    const c = (n - 1) / 2;
+    const r2 = 4.6 ** 2;
+    const sprite: VoxelSprite = {
+      width: n,
+      height: n,
+      color: (x, y) => {
+        const d2 = (x - c) ** 2 + (y - c) ** 2;
+        if (d2 > r2) return null;
+        // Brillo arriba a la izquierda, borde rojo oscuro abajo a la derecha.
+        if ((x - 2.6) ** 2 + (y - 5.6) ** 2 <= 1.6) return 0xffd9a0;
+        if (d2 > 3.4 ** 2 && x + (n - 1 - y) > n) return 0xc0280e;
+        return d2 < 2.2 ** 2 ? 0xff8a2a : LASER_COLOR;
+      },
+      halfDepth: (x, y) => Math.round(Math.sqrt(Math.max(0, r2 - (x - c) ** 2 - (y - c) ** 2)) * 0.8),
+    };
+    return buildVoxelGeometry(sprite, 0.07);
+  });
+}

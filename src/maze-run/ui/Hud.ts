@@ -139,7 +139,7 @@ export class Hud {
    * Habilidades compradas: nombre, copias y color de su nivel.
    * @param highlight nombre de la recién comprada (salta un momento).
    */
-  setAbilities(items: ReadonlyArray<{ name: string; count: number; color: string }>, highlight = ''): void {
+  setAbilities(items: ReadonlyArray<{ name: string; color: string }>, highlight = ''): void {
     this.abilities.innerHTML = '';
     this.abilities.style.display = items.length ? '' : 'none';
     if (!items.length) return;
@@ -147,7 +147,6 @@ export class Hud {
     for (const item of items) {
       const chip = el('div', `ability-chip${item.name === highlight ? ' new' : ''}`, item.name);
       chip.style.setProperty('--tier', item.color);
-      if (item.count > 1) chip.append(el('b', '', `X${item.count}`));
       this.abilities.append(chip);
     }
   }

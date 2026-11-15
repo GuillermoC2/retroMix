@@ -18,7 +18,7 @@ import { Tile } from './grid';
  *  - Cada `portals.every` metros se abre una sala amplia con un portal en el
  *    centro: dos filas de bloques (y sus tres líneas) se vacían entre dos columnas
  *    de pasillo. Vaciar solo abre casillas, así que la conectividad se mantiene.
- *  - Cada `gates.every` metros, un muro portal: una fila de bloques entera pasa a
+ *  - Cada 300–350 m (más 10 m por cada muro anterior, `CONFIG.gates`), un muro portal: una fila de bloques entera pasa a
  *    ser `Tile.Gate` (barrera de lado a lado) y las líneas de debajo y de encima
  *    se abren de lado a lado. Así, todo lo de debajo sigue conectado entre sí por
  *    la línea inferior y todo lo de encima por la superior.
@@ -165,13 +165,31 @@ export class MazeGenerator {
   private style!: MazeStyle;
   /** Sala del portal más reciente (la que se está vaciando) y fila a partir de la cual toca la siguiente. */
   private plaza: Plaza | null = null;
-  private nextPlazaY = this.awayFromGates(CONFIG.player.startRow + CONFIG.portals.firstAt / CONFIG.scoring.metersPerRow);
-  /** Muro portal más reciente y fila a partir de la cual toca el siguiente. */
+  private nextPlazaY: number;
+  /** Muro portal más reciente. */
   private gate: GateRow | null = null;
-  private nextGateY = CONFIG.player.startRow + CONFIG.gates.firstAt / CONFIG.scoring.metersPerRow;
+  /** Filas a partir de las cuales toca cada muro (se van calculando según hacen falta) y el siguiente por colocar. */
+  private gateYs: number[] = [];
+  private nextGate = 0;
+  /** Azar propio de la separación entre muros (las salas consultan muros futuros sin alterar el laberinto). */
+  private gateRng: Rng;
 
   constructor(private rng: Rng = new Rng()) {
     this.lineY[0] = 1;
+    this.gateRng = new Rng(rng.int(0, 2 ** 31));
+    this.nextPlazaY = this.awayFromGates(CONFIG.player.startRow + CONFIG.portals.firstAt / CONFIG.scoring.metersPerRow);
+  }
+
+  /** Fila a partir de la cual va el muro `k` (0 = el primero). */
+  private gateY(k: number): number {
+    const { gap, growth } = CONFIG.gates;
+    while (this.gateYs.length <= k) {
+      const i = this.gateYs.length;
+      const prev = i === 0 ? CONFIG.player.startRow : this.gateYs[i - 1];
+      const meters = this.gateRng.int(gap[0], gap[1]) + i * growth;
+      this.gateYs.push(prev + Math.round(meters / CONFIG.scoring.metersPerRow));
+    }
+    return this.gateYs[k];
   }
 
   /** Genera la siguiente sección del laberinto (hacia arriba). */
@@ -191,11 +209,14 @@ export class MazeGenerator {
     const gates: Array<{ y0: number; y1: number }> = [];
     for (let n = 0; n < CONFIG.maze.blockRowsPerChunk; n++) {
       const r = this.nextBlockRow++;
-      const isGate = index > 0 && this.lineY[r] >= this.nextGateY;
+      const isGate = index > 0 && this.lineY[r] >= this.gateY(this.nextGate);
       if (isGate) {
         this.gate = { r };
         gates.push({ y0: this.lineY[r] + 1, y1: this.lineY[r] + CONFIG.gates.rows });
-        this.nextGateY += CONFIG.gates.every / CONFIG.scoring.metersPerRow;
+        // El muro cae en la primera línea a partir de su fila prevista: los siguientes se miden desde donde ha caído.
+        const drift = this.lineY[r] - this.gateY(this.nextGate);
+        for (let k = this.nextGate; k < this.gateYs.length; k++) this.gateYs[k] += drift;
+        this.nextGate++;
       } else if (index > 0 && this.lineY[r] >= this.nextPlazaY && n <= CONFIG.maze.blockRowsPerChunk - 2) {
         // Sala del portal: sus dos filas de bloques caen en la misma sección (el portal también).
         const [c0, c1] = CONFIG.portals.plazaColumns;
@@ -232,12 +253,12 @@ export class MazeGenerator {
 
   /** Si la fila `y` queda demasiado cerca de un muro portal, la lleva justo después de él (para salas con portal). */
   private awayFromGates(y: number): number {
-    const { firstAt, every, plazaClearance } = CONFIG.gates;
-    const first = CONFIG.player.startRow + firstAt / CONFIG.scoring.metersPerRow;
-    const step = every / CONFIG.scoring.metersPerRow;
-    const k = Math.max(0, Math.round((y - first) / step));
-    const gateY = first + k * step;
-    return Math.abs(y - gateY) < plazaClearance ? gateY + plazaClearance : y;
+    const { plazaClearance } = CONFIG.gates;
+    for (let k = 0; ; k++) {
+      const gateY = this.gateY(k);
+      if (gateY > y + plazaClearance) return y;
+      if (Math.abs(y - gateY) < plazaClearance) return gateY + plazaClearance;
+    }
   }
 
   private blockId(r: number, c: number): number {

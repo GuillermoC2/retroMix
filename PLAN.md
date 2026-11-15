@@ -94,7 +94,6 @@ No se harán sin el visto bueno del usuario (se evita añadir funcionalidades no
 - [?] GIGANTE inmune a la lava (ahora la lava sí le mata, D-031)
 - [?] Puntos por cada muro comido por el GIGANTE
 - [?] Gastar puntos en la tienda baja también la puntuación final y su récord (D-042). Alternativa: llevar aparte los puntos gastables y los totales
-- [?] Limitar cuántas veces se puede comprar la misma habilidad (hoy se acumulan sin límite, D-043)
 - [?] Que perder el minijuego de un muro portal no acabe la partida (p. ej. reintentar pagando puntos o perder una habilidad)
 - [?] Mostrar en la tienda las habilidades que ya se tienen y sus efectos sumados
 - [?] Lista de récords que reacciona en directo: al superar una distancia de la lista durante la partida, esa fila salta y se marca como superada
@@ -129,7 +128,7 @@ activa solo; si se pierde, se acaba la partida.
 
 ## Fase 3 — Muros portal y tienda de habilidades (2026-11-15)
 
-Cada ~500 m un muro portal corta el laberinto de lado a lado. No se puede romper ni rodear: al tocarlo se entra en un
+Cada 300–350 m (+10 m por muro, D-048) un muro portal corta el laberinto de lado a lado. No se puede romper ni rodear: al tocarlo se entra en un
 minijuego al azar (su nombre ya aparece sobre el muro). Si se gana, se abre una tienda con 3 habilidades permanentes
 (básica azul 5.000, épica morada 10.000, legendaria dorada 20.000 puntos) y luego el muro se abre; si se pierde, fin de la
 partida. Todo sujeto a cambios hasta que guste al usuario.
@@ -142,11 +141,18 @@ partida. Todo sujeto a cambios hasta que guste al usuario.
 - [x] Ganar → tienda de habilidades con 3 cartas flotantes a pantalla completa; perder → Game Over — D-042
 - [x] Tienda: teclado (flechas, Enter, 1–3, Esc) y ratón; cartas bloqueadas si faltan puntos; casillas vacías; se compra una como mucho — D-042
 - [x] Habilidades: catálogo por niveles (básica, épica, legendaria) y lista de compradas en el HUD — D-042
-- [x] Primera habilidad básica: SUSTO LARGO (+2 s al susto de los energizadores, acumulable) — D-043
+- [x] Primera habilidad básica: SUSTO LARGO (+2 s al susto de los energizadores) — D-043
+- [x] Habilidades únicas por partida; algunas con mejora "+" (SUSTO LARGO hasta 2: SUSTO LARGO +); menú K: sección HABILIDADES para darlas — D-045
+- [x] Habilidad épica HIELO: cubitos de hielo cada 70 m; al cogerlo, fantasmas congelados 5 s (no matan; sí se comen asustados, con poderes o con el láser) — D-046
+- [x] Habilidad legendaria LASER (y LASER +): bolas naranjas cada 80 m; al comer una, láser por la boca 5 s (8 s con +) que se come a los fantasmas — D-047
+- [x] Sin anuncio grande al obtener una habilidad (es de los poderes especiales) — D-045
+- [x] Muros portal cada 300–350 m, +10 m por cada muro cruzado — D-048
 - [x] Verificación: generador (300 semillas, 1.200 muros: posición, forma, sin salas cerca y cada tramo entre muros conectado), flujo completo en el navegador (saltar al muro, entrar, ganar, comprar, abrir y seguir; perder → Game Over; tienda sin puntos), muro irrompible e impasable con los poderes, capturas a 1024×768, 1280×720 y 1920×1080
 - [ ] El usuario prueba y ajusta: distancia entre muros, aspecto del muro, tienda, precios
 - [ ] Más habilidades (básicas, épicas y legendarias)
 - [ ] Más minijuegos para los muros (y los portales)
+- [?] Mostrar en el HUD el tiempo que queda de congelación (HIELO) y de láser
+- [?] LASER es legendaria por elección propia (el usuario no indicó el nivel, D-047)
 
 ## Deuda técnica y problemas conocidos
 
