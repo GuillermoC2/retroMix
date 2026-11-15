@@ -15,9 +15,11 @@ import { Tile } from './grid';
  *    eso garantiza que todos los pasillos están conectados y que SIEMPRE existe
  *    un camino hacia arriba.
  *  - Cada sección elige un estilo (simétrico, retorcido, abierto...) para variar.
- *  - Cada `portals.every` metros se abre una sala amplia con un portal en el
- *    centro: dos filas de bloques (y sus tres líneas) se vacían entre dos columnas
- *    de pasillo. Vaciar solo abre casillas, así que la conectividad se mantiene.
+ *  - En algunos tramos entre muros portal (`CONFIG.portals`: el primero y luego uno
+ *    de cada dos, con alguna excepción al azar) se abre, hacia la mitad, una sala
+ *    amplia con un portal en el centro: dos filas de bloques (y sus tres líneas) se
+ *    vacían entre dos columnas de pasillo. Vaciar solo abre casillas, así que la
+ *    conectividad se mantiene.
  *  - Cada 100–150 m (más 20 m por cada muro anterior, `CONFIG.gates`), un muro portal: una fila de bloques entera pasa a
  *    ser `Tile.Gate` (barrera de lado a lado) y las líneas de debajo y de encima
  *    se abren de lado a lado. Así, todo lo de debajo sigue conectado entre sí por
@@ -163,9 +165,12 @@ export class MazeGenerator {
   private forgottenRows = 0;
   private nextChunk = 0;
   private style!: MazeStyle;
-  /** Sala del portal más reciente (la que se está vaciando) y fila a partir de la cual toca la siguiente. */
+  /** Sala del portal más reciente (la que se está vaciando). */
   private plaza: Plaza | null = null;
-  private nextPlazaY: number;
+  /** Fila de la sala de cada tramo entre muros (null = ese tramo no tiene) y último tramo con sala ya colocada. */
+  private plazaYs = new Map<number, number | null>();
+  private plazaPlacedGap = -1;
+  private plazaRng: Rng;
   /** Muro portal más reciente. */
   private gate: GateRow | null = null;
   /** Filas a partir de las cuales toca cada muro (se van calculando según hacen falta) y el siguiente por colocar. */
@@ -177,7 +182,24 @@ export class MazeGenerator {
   constructor(private rng: Rng = new Rng()) {
     this.lineY[0] = 1;
     this.gateRng = new Rng(rng.int(0, 2 ** 31));
-    this.nextPlazaY = this.awayFromGates(CONFIG.player.startRow + CONFIG.portals.firstAt / CONFIG.scoring.metersPerRow);
+    this.plazaRng = new Rng(rng.int(0, 2 ** 31));
+  }
+
+  /**
+   * Fila a partir de la cual va la sala con portal del tramo `k` (el que acaba en el
+   * muro k; el 0 empieza en la salida), o null si ese tramo no lleva sala. Se decide
+   * la primera vez que se pregunta, cuando el muro anterior ya está colocado.
+   */
+  private plazaY(k: number): number | null {
+    if (!this.plazaYs.has(k)) {
+      const { everyGates, bonusChance, placeIn } = CONFIG.portals;
+      const has = k % everyGates === 0 || this.plazaRng.chance(bonusChance);
+      const from = k === 0 ? CONFIG.player.startRow : this.gateY(k - 1);
+      const to = this.gateY(k);
+      const f = placeIn[0] + this.plazaRng.next() * (placeIn[1] - placeIn[0]);
+      this.plazaYs.set(k, has ? Math.round(from + (to - from) * f) : null);
+    }
+    return this.plazaYs.get(k)!;
   }
 
   /** Fila a partir de la cual va el muro `k` (0 = el primero). */
@@ -217,12 +239,12 @@ export class MazeGenerator {
         const drift = this.lineY[r] - this.gateY(this.nextGate);
         for (let k = this.nextGate; k < this.gateYs.length; k++) this.gateYs[k] += drift;
         this.nextGate++;
-      } else if (index > 0 && this.lineY[r] >= this.nextPlazaY && n <= CONFIG.maze.blockRowsPerChunk - 2) {
+      } else if (index > 0 && this.isPlazaRow(r) && n <= CONFIG.maze.blockRowsPerChunk - 2) {
         // Sala del portal: sus dos filas de bloques caen en la misma sección (el portal también).
         const [c0, c1] = CONFIG.portals.plazaColumns;
         this.plaza = { r0: r, y0: this.lineY[r], x0: this.cols[c0], x1: this.cols[c1] };
         portals.push({ x: (this.width - 1) / 2, y: this.lineY[r] + (PLAZA_ROWS - 1) / 2 });
-        this.nextPlazaY = this.awayFromGates(this.nextPlazaY + CONFIG.portals.every / CONFIG.scoring.metersPerRow);
+        this.plazaPlacedGap = this.nextGate;
       }
       const inPlaza = this.plaza !== null && r - this.plaza.r0 <= 1;
       const height = isGate ? CONFIG.gates.rows : inPlaza || this.rng.chance(this.style.tallRowChance) ? 3 : 2;
@@ -251,14 +273,12 @@ export class MazeGenerator {
     return chunk;
   }
 
-  /** Si la fila `y` queda demasiado cerca de un muro portal, la lleva justo después de él (para salas con portal). */
-  private awayFromGates(y: number): number {
-    const { plazaClearance } = CONFIG.gates;
-    for (let k = 0; ; k++) {
-      const gateY = this.gateY(k);
-      if (gateY > y + plazaClearance) return y;
-      if (Math.abs(y - gateY) < plazaClearance) return gateY + plazaClearance;
-    }
+  /** ¿Empieza en la fila de bloques `r` la sala con portal del tramo actual (si lo tiene y aún no se ha puesto)? */
+  private isPlazaRow(r: number): boolean {
+    const gap = this.nextGate;
+    if (this.plazaPlacedGap === gap) return false;
+    const y = this.plazaY(gap);
+    return y !== null && this.lineY[r] >= y;
   }
 
   private blockId(r: number, c: number): number {

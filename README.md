@@ -104,7 +104,8 @@ duración del fundido en `maze.neon`. La altura de los muros es `maze.wallDepth`
 
 ## Portales y minijuegos
 
-Cada `portals.every` metros (la primera a `portals.firstAt`) el generador abre una sala de 13 × 9 casillas con un
+Antes del primer muro portal y luego en uno de cada dos tramos entre muros (`CONFIG.portals`; a veces también en los
+demás) el generador abre, hacia la mitad del tramo, una sala de 13 × 9 casillas con un
 portal en el centro. Pisarlo absorbe al jugador y abre un minijuego en una ventana sobre el laberinto pausado.
 Ganar activa un poder especial aleatorio; perder acaba la partida.
 

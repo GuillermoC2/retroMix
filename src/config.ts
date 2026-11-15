@@ -256,9 +256,17 @@ export const CONFIG = {
    * con un portal en el centro. Se puede esquivar o entrar pisándolo.
    */
   portals: {
-    /** Metros a los que aparece la primera sala y separación entre salas. */
-    firstAt: 60,
-    every: 150,
+    /**
+     * Las salas con portal van en los tramos entre muros portal (el tramo k es el que
+     * acaba en el muro k; el 0 va desde la salida). Llevan sala el tramo 0 y luego uno
+     * de cada `everyGates`: portal, muro, muro, portal, muro, muro, portal...
+     * Cada tramo que no le toca la lleva igualmente con probabilidad `bonusChance`
+     * (excepción poco común: un portal entre dos muros seguidos).
+     */
+    everyGates: 2,
+    bonusChance: 0.2,
+    /** Dónde cae la sala dentro de su tramo (fracción entre un muro y el siguiente, al azar en este margen). */
+    placeIn: [0.4, 0.6],
     /** Columnas de pasillo (índices de `maze.corridorColumns`) entre las que se abre la sala. */
     plazaColumns: [1, 5],
     /** Distancia (casillas) al centro del portal para entrar. */
@@ -283,8 +291,6 @@ export const CONFIG = {
     growth: 20,
     /** Grosor del muro (casillas). */
     rows: 3,
-    /** Las salas con portal se apartan al menos estas filas de un muro. */
-    plazaClearance: 24,
     /** Duración (s) de la absorción al tocar el muro y de su apertura. */
     absorbTime: 0.6,
     openTime: 0.7,

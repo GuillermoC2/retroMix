@@ -169,6 +169,7 @@ partida. Todo sujeto a cambios hasta que guste al usuario.
 - [x] Verificación: generador (300 semillas, 1.200 muros: posición, forma, sin salas cerca y cada tramo entre muros conectado), flujo completo en el navegador (saltar al muro, entrar, ganar, comprar, abrir y seguir; perder → Game Over; tienda sin puntos), muro irrompible e impasable con los poderes, capturas a 1024×768, 1280×720 y 1920×1080
 - [ ] El usuario prueba y ajusta: distancia entre muros, aspecto del muro, tienda, precios
 - [ ] Más habilidades (básicas, épicas y legendarias)
+- [x] Portales especiales en uno de cada dos tramos entre muros (portal, muro, muro, portal…), con un 20 % de excepciones en los demás tramos — D-057
 - [ ] Más minijuegos para los muros (y los portales)
 - [?] Mostrar en el HUD el tiempo que queda de congelación (HIELO) y de láser
 - [?] Si el mapa se queda corto de objetos de habilidad: acortar su intervalo con cada muro superado (p. ej. 100 m, −8 % por muro, mínimo 35–40 m). Por ahora el usuario prefiere el intervalo fijo: el mapa se llenará al añadir habilidades
