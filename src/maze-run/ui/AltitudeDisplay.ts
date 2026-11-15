@@ -1,5 +1,6 @@
 import { CONFIG } from '../../config';
 import { JuicyText } from '../../ui/JuicyText';
+import { sectionHead } from './Hud';
 
 /**
  * Cifra de altura flotante en la columna del HUD (a la derecha del laberinto),
@@ -23,6 +24,7 @@ export class AltitudeDisplay {
     const cfg = CONFIG.ui.altitude;
     this.root.className = 'altitude';
     parent.appendChild(this.root);
+    this.root.appendChild(sectionHead('ALTURA'));
     this.number = new JuicyText(this.root, {
       className: 'altitude-number',
       swayAmplitude: cfg.swayAmplitude,
@@ -32,8 +34,8 @@ export class AltitudeDisplay {
       origin: 'center',
     });
     this.number.body.style.fontSize = `${cfg.fontSize}px`;
-    this.record.className = 'altitude-record';
-    this.record.textContent = `RECORD ${bestDistance} M`;
+    this.record.className = 'hud-best';
+    this.record.innerHTML = `RECORD <b>${bestDistance} M</b>`;
     this.root.appendChild(this.record);
     this.setMeters(0);
   }

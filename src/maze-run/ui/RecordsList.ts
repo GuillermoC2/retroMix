@@ -1,6 +1,7 @@
 import { CONFIG } from '../../config';
 import { TOP_DISTANCES } from '../../core/Records';
 import { JuicyText } from '../../ui/JuicyText';
+import { sectionHead } from './Hud';
 
 interface Row {
   root: HTMLDivElement;
@@ -19,9 +20,8 @@ export class RecordsList {
   constructor(parent: HTMLElement, distances: number[]) {
     const cfg = CONFIG.ui.records;
     this.root.className = 'records';
-    const title = document.createElement('div');
-    title.className = 'records-title';
-    title.textContent = 'RECORDS';
+    const title = sectionHead('RECORDS');
+    title.classList.add('records-title');
     this.root.appendChild(title);
 
     for (let i = 0; i < TOP_DISTANCES; i++) {

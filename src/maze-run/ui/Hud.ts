@@ -4,6 +4,9 @@ import { AltitudeDisplay } from './AltitudeDisplay';
 import { RecordsList } from './RecordsList';
 import { ScoreDisplay } from './ScoreDisplay';
 
+/** Segmentos de la barra de tiempo del poder especial. */
+const SPECIAL_SEGMENTS = 20;
+
 const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text = '') => {
   const e = document.createElement(tag);
   e.className = className;
@@ -27,11 +30,17 @@ function press(key: HTMLElement): void {
   key.classList.add('pressed');
 }
 
+/** Cabecera de sección: rótulo entre dos líneas de píxeles (la misma en todo el HUD). */
+export function sectionHead(text: string): HTMLDivElement {
+  return el('div', 'hud-head', text);
+}
+
 /**
  * Marcadores en pantalla, sin cajas, en una columna a la derecha del laberinto:
- * altura arriba, puntos en el centro y ayudas de control abajo. A la izquierda,
- * la lista de récords de distancia. Las columnas se calculan proyectando los
- * bordes del laberinto a pantalla.
+ * altura arriba, puntos debajo y, abajo, habilidades y controles. A la izquierda,
+ * la lista de récords de distancia. Cada sección lleva la misma cabecera (rótulo
+ * entre líneas) y un fondo oscuro suave detrás de cada columna las separa del
+ * escenario. Las columnas se calculan proyectando los bordes del laberinto a pantalla.
  */
 export class Hud {
   readonly root = el('div', 'hud');
@@ -62,31 +71,46 @@ export class Hud {
   private view = keyHint('C', 'CAMBIAR VISTA');
   /** Anchura de las ayudas en dos columnas (tecla | texto), medida mientras se muestran así. */
   private keysWideWidth = 0;
-  private message = el('div', 'hud-message');
+  /** Aviso de inicio: teclas de dirección y "PARA EMPEZAR". */
+  private startHint = el('div', 'hud-start');
   private god = el('div', 'hud-god', 'MODO DIOS [K]');
-  /** Poder especial activo: nombre y barra de tiempo restante. */
+  /** Poder especial activo: nombre, barra de tiempo por segmentos y segundos que quedan. */
   private special = el('div', 'hud-special');
   private specialName = el('div', 'hud-special-name');
   private specialBar = el('div', 'hud-special-bar');
   private specialFill = el('div', 'hud-special-fill');
+  private specialTime = el('b', 'hud-special-time');
   private announcer = el('div', 'hud-announce');
+  /** Fondos oscuros suaves detrás de cada columna (para que se lean sobre el escenario). */
+  private scrimLeft = el('div', 'hud-scrim left');
+  private scrimRight = el('div', 'hud-scrim right');
 
   constructor(parent: HTMLElement, records: RecordEntry) {
     this.power.label.classList.add('with-count');
     this.power.label.replaceChildren(this.powerName, this.charges);
     this.action.label.classList.add('with-count');
     this.action.label.replaceChildren(this.actionName, this.actionTime);
-    this.keys.append(this.abilities, this.power.root, this.action.root, this.view.root);
+    const controls = sectionHead('CONTROLES');
+    controls.classList.add('hud-keys-head');
+    this.keys.append(this.abilities, controls, this.power.root, this.action.root, this.view.root);
     this.setAction(null);
     this.setAbilities([]);
     this.specialBar.appendChild(this.specialFill);
-    this.special.append(this.specialName, this.specialBar);
-    this.root.append(this.keys, this.message, this.god, this.special, this.announcer);
+    const specialRow = el('div', 'hud-special-row');
+    specialRow.append(this.specialBar, this.specialTime);
+    this.special.append(this.specialName, specialRow);
+    for (const dir of ['up', 'left', 'down', 'right']) this.startHint.append(el('span', `key arrow ${dir}`));
+    this.startHint.append(el('span', 'hud-start-text', 'PARA EMPEZAR'));
+    this.root.append(this.scrimLeft, this.scrimRight, this.keys, this.startHint, this.god, this.special, this.announcer);
     this.setGodMode('');
     this.setSpecial(null);
+    this.setStartHint(false);
     // Al acabar, el anuncio se retira del todo: si se quedara con `show`, al volver a mostrar la
     // interfaz (tras un minijuego o el menú K) el navegador repetiría la animación con el texto viejo.
-    this.announcer.addEventListener('animationend', () => this.clearAnnounce());
+    // (Solo la animación del propio anuncio: las de sus letras también llegan aquí.)
+    this.announcer.addEventListener('animationend', (e) => {
+      if (e.target === this.announcer) this.clearAnnounce();
+    });
     parent.appendChild(this.root);
     this.score = new ScoreDisplay(this.root, records.bestScore);
     this.altitude = new AltitudeDisplay(this.root, records.bestDistance);
@@ -112,9 +136,17 @@ export class Hud {
   anchor(mazeRightPx: number, mazeLeftPx: number): void {
     const { padding } = CONFIG.ui.layout;
     const W = window.innerWidth;
+    this.scrimLeft.style.width = `${Math.max(0, Math.round(mazeLeftPx))}px`;
+    this.scrimRight.style.width = `${Math.max(0, Math.round(W - mazeRightPx))}px`;
+    // Anuncios y avisos van centrados en el laberinto y la banda del anuncio lo cruza de lado a lado.
+    this.root.style.setProperty('--maze-x', `${Math.round((mazeLeftPx + mazeRightPx) / 2)}px`);
+    this.root.style.setProperty('--maze-w', `${Math.round(mazeRightPx - mazeLeftPx)}px`);
     this.records.anchor(mazeLeftPx / 2, Math.max(0, mazeLeftPx - 2 * padding));
     const x = (mazeRightPx + W) / 2;
     const available = Math.max(0, W - mazeRightPx - 2 * padding);
+    // Ancho útil de cada columna: cabeceras y listas no lo sobrepasan.
+    this.root.style.setProperty('--col-right', `${Math.round(available)}px`);
+    this.root.style.setProperty('--col-left', `${Math.round(Math.max(0, mazeLeftPx - 2 * padding))}px`);
     this.altitude.anchor(x, available);
     this.score.anchor(x, this.altitude.bottom + CONFIG.ui.score.gapBelowAltitude, available);
     this.keys.style.left = `${Math.round(x)}px`;
@@ -196,12 +228,14 @@ export class Hud {
     this.abilities.innerHTML = '';
     this.abilities.style.display = items.length ? '' : 'none';
     if (!items.length) return;
-    this.abilities.append(el('div', 'hud-abilities-title', 'HABILIDADES'));
+    this.abilities.append(sectionHead('HABILIDADES'));
+    const list = el('div', 'hud-abilities-list');
     for (const item of items) {
       const chip = el('div', `ability-chip${item.name === highlight ? ' new' : ''}`, item.name);
       chip.style.setProperty('--tier', item.color);
-      this.abilities.append(chip);
+      list.append(chip);
     }
+    this.abilities.append(list);
   }
 
   /** Se ha cambiado de vista. */
@@ -213,20 +247,38 @@ export class Hud {
    * Poder especial activo (o `null` si no hay ninguno).
    * @param remaining fracción de tiempo restante (1 → 0).
    * @param warning a punto de acabarse: parpadea.
+   * @param seconds segundos que quedan (se muestran junto a la barra).
+   * @param color color del poder (CSS).
    */
-  setSpecial(name: string | null, remaining = 0, warning = false): void {
+  setSpecial(name: string | null, remaining = 0, warning = false, seconds = 0, color = ''): void {
     this.special.style.display = name ? '' : 'none';
     if (!name) return;
-    if (this.specialName.textContent !== name) this.specialName.textContent = name;
-    // La barra baja en escalones de 1/20 (pixel art).
-    this.specialFill.style.width = `${Math.ceil(remaining * 20) * 5}%`;
+    if (this.specialName.textContent !== name) {
+      this.specialName.textContent = name;
+      if (color) this.special.style.setProperty('--c', color);
+    }
+    // La barra baja por segmentos (pixel art).
+    this.specialFill.style.width = `${Math.ceil(remaining * SPECIAL_SEGMENTS) * (100 / SPECIAL_SEGMENTS)}%`;
+    const time = String(Math.ceil(seconds));
+    if (this.specialTime.textContent !== time) this.specialTime.textContent = time;
     this.special.classList.toggle('warning', warning);
   }
 
-  /** Texto grande que aparece en el centro y se desvanece (p. ej. al ganar un poder). */
-  announce(text: string, sub = ''): void {
+  /**
+   * Anuncio grande (p. ej. al ganar un poder): una banda oscura cruza el laberinto,
+   * el texto cae letra a letra y debajo sale una etiqueta con el subtítulo.
+   * @param color color del anuncio (CSS).
+   */
+  announce(text: string, sub = '', color = ''): void {
     this.announcer.innerHTML = '';
-    this.announcer.append(el('div', 'hud-announce-main', text));
+    this.announcer.style.setProperty('--c', color || 'var(--yellow)');
+    const main = el('div', 'hud-announce-main');
+    [...text].forEach((ch, i) => {
+      const letter = el('span', 'hud-announce-char', ch);
+      letter.style.setProperty('--i', String(i));
+      main.append(letter);
+    });
+    this.announcer.append(el('div', 'hud-announce-band'), main);
     if (sub) this.announcer.append(el('div', 'hud-announce-sub', sub));
     this.announcer.classList.remove('show');
     void this.announcer.offsetWidth;
@@ -239,10 +291,9 @@ export class Hud {
     this.god.style.display = text ? '' : 'none';
   }
 
-  setMessage(text: string, blink = false): void {
-    this.message.textContent = text;
-    this.message.classList.toggle('blink', blink);
-    this.message.style.display = text ? '' : 'none';
+  /** Aviso de inicio ("pulsa una dirección para empezar") con las teclas dibujadas. */
+  setStartHint(visible: boolean): void {
+    this.startHint.style.display = visible ? '' : 'none';
   }
 
   setVisible(visible: boolean): void {

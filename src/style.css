@@ -35,8 +35,31 @@ html, body {
 
 /* --- HUD: columna sin cajas a la derecha del laberinto --- */
 
+/* Fondo oscuro suave detrás de cada columna: separa los marcadores del escenario sin encajonarlos. */
+.hud-scrim { position: absolute; top: 0; bottom: 0; pointer-events: none; }
+.hud-scrim.left { left: 0; background: linear-gradient(to right, rgba(3, 3, 10, 0.8), rgba(3, 3, 10, 0.55) 70%, rgba(3, 3, 10, 0)); }
+.hud-scrim.right { right: 0; background: linear-gradient(to left, rgba(3, 3, 10, 0.8), rgba(3, 3, 10, 0.55) 70%, rgba(3, 3, 10, 0)); }
+/* Cabecera de sección: rótulo entre dos líneas de píxeles. */
+.hud-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-left: 4px; /* compensa el espaciado de la última letra */
+  font-size: 10px;
+  letter-spacing: 4px;
+  color: #8f98ff;
+  text-shadow: var(--shadow);
+  white-space: nowrap;
+}
+.hud-head::before, .hud-head::after { content: ''; flex: 1; min-width: 22px; height: 2px; background: currentColor; box-shadow: 2px 2px 0 #000; opacity: 0.55; }
+/* Mejor marca bajo cada cifra. */
+.hud-best { margin-top: 16px; font-size: 9px; letter-spacing: 2px; color: #6f78c8; text-shadow: var(--shadow); white-space: nowrap; }
+.hud-best b { font-weight: normal; color: #c4c8f4; margin-left: 6px; }
+
 /* --- Altura flotante --- */
-.altitude { position: absolute; transform: translate(-50%, -50%); text-align: center; }
+.altitude { position: absolute; transform: translate(-50%, -50%); text-align: center; min-width: min(200px, var(--col-right, 200px)); }
 .juicy { position: relative; }
 .juicy-body { display: inline-block; white-space: nowrap; will-change: transform; }
 .juicy-char { display: inline-block; }
@@ -50,7 +73,6 @@ html, body {
 }
 .altitude-unit { font-size: 0.45em; margin-left: 0.15em; }
 .juicy-flash .juicy-char { color: #ffffff; }
-.altitude-record { font-size: 9px; color: #9aa3ff; margin-top: 18px; text-shadow: var(--shadow); }
 .juicy-spark {
   position: absolute;
   width: 8px;
@@ -68,10 +90,24 @@ html, body {
 }
 
 /* --- Lista de récords de distancia (izquierda del laberinto) --- */
-.records { position: absolute; transform-origin: top center; display: grid; grid-template-columns: auto auto; column-gap: 18px; row-gap: 22px; align-items: center; width: max-content; }
-.records-title { grid-column: 1 / -1; justify-self: center; font-size: 14px; color: var(--blue); letter-spacing: 4px; margin-bottom: 6px; text-shadow: var(--shadow); }
+.records { position: absolute; transform-origin: top center; display: grid; grid-template-columns: auto auto; column-gap: 18px; row-gap: 20px; align-items: center; width: max-content; min-width: min(220px, var(--col-left, 220px)); }
+.records-title { grid-column: 1 / -1; margin-bottom: 6px; }
 .records-row { display: contents; }
-.records-rank { justify-self: end; font-size: 20px; color: #9aa3ff; text-shadow: var(--shadow); }
+/* Puesto: insignia cuadrada con el color de su medalla. */
+.records-rank {
+  justify-self: end;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 2px 0 0 2px;
+  font-size: 14px;
+  color: #9aa3ff;
+  background: #07061c;
+  border: 3px solid currentColor;
+  box-shadow: 0 0 0 3px #000, 4px 5px 0 3px rgba(0, 0, 0, 0.5);
+  text-shadow: 2px 2px 0 #000;
+}
 .records-number { justify-self: end; text-align: right; color: #c4c8f4; --edge: #0b0b3a; }
 .records-number .juicy-body {
   text-shadow:
@@ -82,15 +118,17 @@ html, body {
 .rank-1 .records-number { color: var(--yellow); --edge: #2a1400; }
 .rank-1 .records-rank { color: var(--yellow); }
 .rank-2 .records-number { color: #e4e8ff; }
+.rank-2 .records-rank { color: #e4e8ff; }
 .rank-3 .records-number { color: #ff9a4a; --edge: #2a0e00; }
 .rank-3 .records-rank { color: #ff9a4a; }
-.records-row.empty .records-number { color: #3a3f78; }
+.records-row.empty .records-number { color: #2c3066; }
+.records-row.empty .records-rank { color: #3a3f78; }
 .records-row.new .records-number { animation: records-new 0.5s steps(2, jump-none) infinite; }
+.records-row.new .records-rank { color: #05051a; background: #3ae8ff; border-color: #3ae8ff; text-shadow: none; }
 @keyframes records-new { 50% { color: #ffffff; } }
 
 /* --- Puntos flotantes --- */
-.score { position: absolute; transform: translateX(-50%); text-align: center; }
-.score-label { font-size: 11px; color: var(--blue); letter-spacing: 3px; margin-bottom: 14px; text-shadow: var(--shadow); }
+.score { position: absolute; transform: translateX(-50%); text-align: center; min-width: min(200px, var(--col-right, 200px)); }
 .score-number {
   color: var(--white);
   --edge: #0b0b3a;
@@ -102,7 +140,6 @@ html, body {
 .score-flash .juicy-char { color: #3ae8ff; }
 .juicy-spark.score-spark:nth-child(n) { background: #3ae8ff; box-shadow: 0 0 0 2px #0b0b3a; }
 .juicy-spark.score-spark:nth-child(2n) { background: #ffffff; }
-.score-record { font-size: 9px; color: #9aa3ff; margin-top: 14px; text-shadow: var(--shadow); }
 
 /* --- Ayudas de control con icono de tecla pixelado --- */
 .hud-keys {
@@ -118,6 +155,10 @@ html, body {
   column-gap: 18px;
   row-gap: 22px;
 }
+.hud-keys-head { grid-column: 1 / -1; margin-bottom: 0; }
+/* Columna estrecha: sin líneas en las cabeceras, para no ensancharla. */
+.hud-keys.stacked .hud-head::before, .hud-keys.stacked .hud-head::after { display: none; }
+.hud-keys.stacked .hud-head { margin-bottom: 8px; }
 .key-hint { display: contents; white-space: nowrap; }
 .hud-keys.stacked { grid-template-columns: auto; justify-items: center; text-align: center; row-gap: 6px; }
 .hud-keys.stacked .key-label { margin-bottom: 14px; }
@@ -176,82 +217,185 @@ html, body {
   box-shadow: 0 0 0 3px #000;
   animation: blink 1s steps(2, jump-none) infinite;
 }
-.hud-message {
+/* Aviso de inicio: las cuatro flechas dibujadas como teclas y "PARA EMPEZAR". */
+.hud-start {
   position: absolute;
-  left: 50%;
-  top: 62%;
+  left: var(--maze-x, 50%);
+  top: 76%;
   transform: translateX(-50%);
-  font-size: 14px;
-  color: var(--yellow);
-  text-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 16px 6px 12px;
+  background: rgba(5, 5, 26, 0.9);
+  border: 3px solid var(--yellow);
+  box-shadow: 0 0 0 3px #000, 6px 7px 0 3px rgba(0, 0, 0, 0.55);
   white-space: nowrap;
+  animation: hud-start 1s steps(2, jump-none) infinite;
 }
+@keyframes hud-start { 50% { border-color: var(--white); } }
+.hud-start .key { min-width: 0; width: 30px; height: 28px; margin: 3px 4px 12px; padding: 0; display: grid; place-items: center; }
+/* Flechas hechas con píxeles (la fuente no las trae). */
+.key.arrow::before { content: ''; width: 0; height: 0; border: 6px solid transparent; }
+.key.arrow.up::before { border-bottom-color: #12123a; border-top-width: 0; }
+.key.arrow.down::before { border-top-color: #12123a; border-bottom-width: 0; }
+.key.arrow.left::before { border-right-color: #12123a; border-left-width: 0; }
+.key.arrow.right::before { border-left-color: #12123a; border-right-width: 0; }
+.hud-start-text { margin: 0 0 6px 10px; font-size: 12px; color: var(--yellow); text-shadow: var(--shadow); animation: hud-start-text 1s steps(2, jump-none) infinite; }
+@keyframes hud-start-text { 50% { color: var(--white); } }
 
 @keyframes bump { 50% { transform: scale(1.12); color: var(--white); } }
 .blink { animation: blink 1s steps(2, jump-none) infinite; }
 @keyframes blink { 50% { opacity: 0; } }
 
-/* --- Popups --- */
+/* --- Mensajes flotantes sobre el laberinto --- */
 .popups { position: absolute; inset: 0; }
-/* Puntos de fantasmas y energizadores: entran de golpe con rebote, parpadean entre colores neón con un
-   halo y suben flotando antes de desvanecerse (D-039). */
-.popup {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  font-size: 20px;
-  color: #3ae8ff;
-  text-shadow: var(--shadow), 0 0 10px currentColor, 0 0 22px currentColor;
-  animation: popup 1.2s steps(24) forwards;
-  pointer-events: none;
+.popup { position: absolute; transform: translate(-50%, -50%); white-space: nowrap; pointer-events: none; }
+/* Puntos: cifra de neón con contorno oscuro y halo de su color. Un fantasma o un energizador: neón celeste que
+   destella en blanco al aparecer. Fantasmas seguidos (400 o más): arcoíris y cada vez más grande. Entra con
+   rebote y sube desvaneciéndose. */
+.popup-score {
+  --c: #3ae8ff;
+  --edge: #05051a;
+  font-size: 16px;
+  color: var(--c);
+  text-shadow:
+    -2px 0 var(--edge), 2px 0 var(--edge), 0 -2px var(--edge), 0 2px var(--edge),
+    4px 5px 0 rgba(0, 0, 0, 0.6), 0 0 10px currentColor, 0 0 22px currentColor;
+  animation: popup-score 1.1s steps(22) forwards, popup-flash 0.3s steps(3) backwards;
 }
-@keyframes popup {
-  0%   { opacity: 1; margin-top: 0;     transform: translate(-50%, -50%) scale(0.2);                  color: var(--white); }
-  10%  {             margin-top: -6px;  transform: translate(-50%, -50%) scale(1.75) rotate(-8deg);   color: var(--white); }
-  20%  {             margin-top: -10px; transform: translate(-50%, -50%) scale(0.95) rotate(5deg);    color: var(--yellow); }
-  30%  {             margin-top: -14px; transform: translate(-50%, -50%) scale(1.2) rotate(-3deg);    color: #ff3ad8; }
-  40%  {             margin-top: -18px; transform: translate(-50%, -50%) scale(1.05) rotate(1deg);    color: #3ae8ff; }
-  55%  {             margin-top: -26px; transform: translate(-50%, -50%) scale(1.1);                  color: var(--yellow); }
-  70%  { opacity: 1; margin-top: -36px; transform: translate(-50%, -50%) scale(1.05);                 color: var(--white); }
-  100% { opacity: 0; margin-top: -64px; transform: translate(-50%, -50%) scale(0.8);                  color: #3ae8ff; }
+.popup-score.tier-1 { font-size: 20px; }
+.popup-score.tier-2 { font-size: 22px; }
+.popup-score.tier-3 { font-size: 25px; }
+.popup-score.tier-4 { font-size: 29px; }
+.popup-score.tier-2, .popup-score.tier-3, .popup-score.tier-4 { animation: popup-score 1.2s steps(24) forwards, popup-rainbow 0.36s steps(1) infinite; }
+@keyframes popup-score {
+  0%   { opacity: 1; margin-top: 0;     transform: translate(-50%, -50%) scale(0.2); }
+  12%  {             margin-top: -6px;  transform: translate(-50%, -50%) scale(1.6) rotate(-6deg); }
+  24%  {             margin-top: -10px; transform: translate(-50%, -50%) scale(0.95) rotate(3deg); }
+  36%  {             margin-top: -14px; transform: translate(-50%, -50%) scale(1.08); }
+  70%  { opacity: 1; margin-top: -34px; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; margin-top: -58px; transform: translate(-50%, -50%) scale(0.9); }
 }
-.popup.fail {
-  font-size: 14px;
+@keyframes popup-flash { from { color: var(--white); } }
+@keyframes popup-rainbow {
+  0% { color: #ff3a4a; }
+  17% { color: #ff9a1a; }
+  33% { color: var(--yellow); }
+  50% { color: #5aff8a; }
+  67% { color: #3ae8ff; }
+  83% { color: #ff5ad8; }
+}
+/* Etiqueta: lo que acaba de pasar (objeto cogido, uso ganado…), con el color de su origen. */
+.popup-tag {
+  --c: var(--yellow);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px 6px 8px;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--white);
+  background: #07061c;
+  border: 3px solid var(--c);
+  box-shadow: 0 0 0 3px #000, 5px 6px 0 3px rgba(0, 0, 0, 0.55);
+  text-shadow: 2px 2px 0 #000;
+  animation: popup-tag 1.5s steps(30) forwards;
+}
+.popup-tag::before { content: ''; width: 8px; height: 8px; margin-top: -1px; background: var(--c); box-shadow: 0 0 0 2px #000; }
+@keyframes popup-tag {
+  0%   { opacity: 1; margin-top: 10px;  transform: translate(-50%, -50%) scale(0.2); }
+  8%   {             margin-top: 0;     transform: translate(-50%, -50%) scale(1.25) rotate(-3deg); }
+  16%  {             margin-top: 0;     transform: translate(-50%, -50%) scale(0.96) rotate(2deg); }
+  24%  {             margin-top: 0;     transform: translate(-50%, -50%) scale(1); }
+  75%  { opacity: 1; margin-top: -10px; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; margin-top: -36px; transform: translate(-50%, -50%) scale(0.95); }
+}
+/* No se ha podido: etiqueta roja que tiembla, o una X sobre el sitio. */
+.popup-tag.popup-denied { --c: #ff3a4a; color: #ffb0b6; animation: popup-denied 1s steps(20) forwards; }
+.popup-fail {
+  --edge: #2a0006;
+  font-size: 18px;
   color: #ff3a4a;
-  text-shadow: var(--shadow);
-  animation: popup-fail 0.9s steps(9) forwards;
+  text-shadow: -3px 0 var(--edge), 3px 0 var(--edge), 0 -3px var(--edge), 0 3px var(--edge), 4px 5px 0 rgba(0, 0, 0, 0.6);
+  animation: popup-denied 0.7s steps(14) forwards;
 }
-@keyframes popup-fail {
-  from { opacity: 1; margin-top: 0; }
-  to { opacity: 0; margin-top: -40px; }
+@keyframes popup-denied {
+  0%   { opacity: 1; transform: translate(-50%, -50%) scale(0.4); }
+  10%  { transform: translate(calc(-50% - 5px), -50%) scale(1.15); }
+  20%  { transform: translate(calc(-50% + 5px), -50%) scale(1); }
+  30%  { transform: translate(calc(-50% - 3px), -50%); }
+  40%  { transform: translate(calc(-50% + 3px), -50%); }
+  50%  { transform: translate(-50%, -50%); }
+  75%  { opacity: 1; transform: translate(-50%, -50%); }
+  100% { opacity: 0; transform: translate(-50%, -50%); }
 }
 
-/* --- Game over --- */
-.game-over {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  background: rgba(0, 0, 0, 0.55);
-  animation: fade-in 0.3s steps(3);
-}
+/* --- Game over: ventana que entra con rebote (PopWindow), cifras que cuentan y distintivo de récord --- */
+.game-over { position: absolute; inset: 0; display: grid; place-items: center; }
+.game-over::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(16, 0, 6, 0.6), rgba(0, 0, 0, 0.86)); opacity: var(--mg-dim, 0); }
 @keyframes fade-in { from { opacity: 0; } }
 .go-box {
-  min-width: min(560px, 92vw);
-  padding: 32px 36px;
-  border: 4px solid var(--blue);
-  background: #05051a;
-  box-shadow: 0 0 0 4px #000, 10px 10px 0 4px rgba(0, 0, 0, 0.7);
+  position: relative;
+  min-width: min(600px, 92vw);
+  padding: 30px 38px 26px;
+  border: 4px solid #ff2e3a;
+  background: #07061c;
+  box-shadow: 0 0 0 4px #000, 0 0 0 8px #3a0a14, 12px 14px 0 8px rgba(0, 0, 0, 0.6);
   text-align: center;
   text-shadow: var(--shadow);
+  will-change: transform;
 }
-.go-title { font-size: 34px; color: #ff2e3a; margin-bottom: 14px; }
-.go-cause { font-size: 10px; color: var(--orange); margin-bottom: 28px; }
-.go-row { display: flex; justify-content: space-between; font-size: 16px; margin: 14px 0 6px; }
-.go-row span { color: var(--blue); }
-.go-row b { color: var(--yellow); font-weight: normal; }
-.new-record { display: block; text-align: right; font-size: 9px; color: #3ae8ff; animation: blink 0.6s steps(2, jump-none) infinite; }
-.go-records { font-size: 8px; color: #9aa3ff; margin-top: 26px; line-height: 1.8; }
-.go-restart { font-size: 11px; color: var(--white); margin-top: 26px; }
+.go-title {
+  font-size: 38px;
+  color: #ff2e3a;
+  white-space: pre;
+  --edge: #2a0006;
+  text-shadow:
+    -4px 0 var(--edge), 4px 0 var(--edge), 0 -4px var(--edge), 0 4px var(--edge),
+    -4px -4px var(--edge), 4px -4px var(--edge), -4px 4px var(--edge), 4px 4px var(--edge),
+    6px 8px 0 rgba(0, 0, 0, 0.65);
+}
+.go-char { display: inline-block; animation: go-char 0.5s cubic-bezier(0.2, 1.7, 0.4, 1) backwards; animation-delay: calc(var(--i) * 0.05s + 0.25s); }
+@keyframes go-char { from { transform: translateY(-44px) scale(0) rotate(-40deg); } }
+.go-cause {
+  display: inline-block;
+  margin: 18px 0 22px;
+  padding: 7px 10px 6px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: #05051a;
+  background: var(--orange);
+  box-shadow: 0 0 0 3px #000;
+  text-shadow: none;
+}
+.go-stats { padding: 4px 0 2px; border-top: 2px solid #23265a; border-bottom: 2px solid #23265a; }
+.go-row { display: flex; align-items: center; gap: 14px; margin: 20px 0; }
+.go-label { font-size: 13px; letter-spacing: 3px; color: #8f98ff; }
+.go-dots { flex: 1; height: 3px; background: repeating-linear-gradient(to right, #3a3f78 0 3px, transparent 3px 9px); }
+.go-value { font-weight: normal; font-size: 22px; color: var(--white); }
+.go-value.done { color: var(--yellow); animation: bump 0.2s steps(2); }
+.go-new {
+  padding: 5px 7px 4px;
+  font-style: normal;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: #05051a;
+  background: #3ae8ff;
+  box-shadow: 0 0 0 2px #000;
+  text-shadow: none;
+  transform: scale(0);
+}
+.go-new.show { transform: rotate(-3deg); animation: go-new 0.4s cubic-bezier(0.2, 1.8, 0.4, 1), go-new-blink 0.6s steps(2, jump-none) 0.4s infinite; }
+@keyframes go-new { from { transform: scale(0) rotate(12deg); } }
+@keyframes go-new-blink { 50% { background: var(--white); } }
+.go-best { margin-top: 18px; font-size: 8px; letter-spacing: 1px; color: #6f78c8; }
+.go-best b { font-weight: normal; color: #c4c8f4; margin-left: 4px; }
+.go-best i { display: inline-block; width: 4px; height: 4px; margin: 0 12px 1px; background: #3a3f78; }
+.go-restart { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 20px; }
+.go-restart .key { min-width: 0; margin: 3px 3px 10px; padding: 8px 9px 6px; font-size: 10px; text-shadow: none; }
+.go-restart-text { margin-bottom: 6px; font-size: 11px; color: var(--white); animation: hud-start-text-dim 1s steps(2, jump-none) infinite; }
+@keyframes hud-start-text-dim { 50% { color: #8f98ff; } }
 
 /* --- Aviso de pantalla no compatible (móvil o ventana demasiado pequeña) --- */
 .unsupported {
@@ -291,48 +435,92 @@ html, body {
   66% { color: #ffd51a; }
 }
 
-/* --- Poder especial activo: nombre y barra de tiempo --- */
+/* --- Poder especial activo: placa con el nombre, barra de tiempo por segmentos y segundos --- */
 .hud-special {
+  --c: var(--yellow);
   position: absolute;
   top: 46px;
-  left: 50%;
+  left: var(--maze-x, 50%);
   transform: translateX(-50%);
+  padding: 9px 12px 10px;
+  background: rgba(5, 5, 26, 0.9);
+  border: 3px solid var(--c);
+  box-shadow: 0 0 0 3px #000, 5px 6px 0 3px rgba(0, 0, 0, 0.5);
   text-align: center;
   text-shadow: var(--shadow);
 }
-.hud-special-name { font-size: 14px; color: var(--yellow); margin-bottom: 8px; letter-spacing: 2px; }
-.hud-special-bar { width: 160px; height: 10px; background: #12123a; box-shadow: 0 0 0 3px #000; }
-.hud-special-fill { height: 100%; background: var(--yellow); box-shadow: inset 0 -3px 0 #e89a00; }
-.hud-special.warning { animation: blink 0.25s steps(2, jump-none) infinite; }
+.hud-special-name { font-size: 12px; color: var(--c); margin-bottom: 9px; letter-spacing: 3px; padding-left: 3px; }
+.hud-special-row { display: flex; align-items: center; gap: 10px; }
+.hud-special-bar { width: 180px; height: 12px; background: #15163c; box-shadow: 0 0 0 2px #000; }
+.hud-special-fill { height: 100%; background: repeating-linear-gradient(to right, var(--c) 0 7px, transparent 7px 9px); }
+.hud-special-time { min-width: 2ch; font-weight: normal; font-size: 14px; color: var(--white); text-align: right; }
+.hud-special.warning { animation: hud-special-warn 0.25s steps(2, jump-none) infinite; }
+@keyframes hud-special-warn { 50% { border-color: var(--white); } }
+.hud-special.warning .hud-special-fill { animation: blink 0.25s steps(2, jump-none) infinite; }
 
-/* --- Anuncio grande en el centro (p. ej. poder conseguido) --- */
+/* --- Anuncio grande (p. ej. poder conseguido): banda que cruza el laberinto, letras que caen y etiqueta --- */
 .hud-announce {
+  --c: var(--yellow);
   position: absolute;
-  left: 50%;
+  left: var(--maze-x, 50%);
   top: 38%;
   transform: translate(-50%, -50%);
+  padding: 22px 0 20px;
   text-align: center;
   opacity: 0;
   white-space: nowrap;
 }
-.hud-announce.show { animation: announce 1.6s steps(16) forwards; }
+.hud-announce.show { animation: announce 2s linear forwards; }
+@keyframes announce {
+  0%, 84% { opacity: 1; transform: translate(-50%, -50%); }
+  100% { opacity: 0; transform: translate(-50%, -62%); }
+}
+.hud-announce-band {
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: var(--maze-w, 60vw);
+  transform: translateX(-50%);
+  background: linear-gradient(to right, rgba(3, 3, 14, 0), rgba(3, 3, 14, 0.88) 14%, rgba(3, 3, 14, 0.88) 86%, rgba(3, 3, 14, 0));
+  animation: announce-band 0.2s steps(4) backwards;
+}
+.hud-announce-band::before, .hud-announce-band::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(to right, transparent, var(--c) 18%, var(--c) 82%, transparent);
+}
+.hud-announce-band::before { top: 0; }
+.hud-announce-band::after { bottom: 0; }
+@keyframes announce-band { from { transform: translateX(-50%) scaleY(0); } }
 .hud-announce-main {
   font-size: 44px;
-  color: var(--yellow);
-  --edge: #2a1400;
+  color: var(--c);
+  white-space: pre;
+  --edge: color-mix(in srgb, var(--c) 20%, #000);
   text-shadow:
     -4px 0 var(--edge), 4px 0 var(--edge), 0 -4px var(--edge), 0 4px var(--edge),
     -4px -4px var(--edge), 4px -4px var(--edge), -4px 4px var(--edge), 4px 4px var(--edge),
     7px 9px 0 rgba(0, 0, 0, 0.65);
 }
-.hud-announce-sub { font-size: 11px; color: #3ae8ff; margin-top: 16px; text-shadow: var(--shadow); letter-spacing: 3px; }
-@keyframes announce {
-  0% { opacity: 1; transform: translate(-50%, -50%) scale(0.3) rotate(-8deg); }
-  12% { opacity: 1; transform: translate(-50%, -50%) scale(1.25) rotate(4deg); }
-  22% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
-  75% { opacity: 1; transform: translate(-50%, -60%) scale(1); }
-  100% { opacity: 0; transform: translate(-50%, -80%) scale(1); }
+.hud-announce-char { display: inline-block; animation: announce-char 0.42s cubic-bezier(0.2, 1.7, 0.4, 1) backwards; animation-delay: calc(var(--i) * 0.035s + 0.08s); }
+@keyframes announce-char { from { transform: translateY(-36px) scale(0) rotate(-30deg); } }
+.hud-announce-sub {
+  display: inline-block;
+  margin-top: 16px;
+  padding: 6px 9px 5px 12px;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: #05051a;
+  background: var(--c);
+  box-shadow: 0 0 0 3px #000;
+  animation: announce-sub 0.35s cubic-bezier(0.2, 1.7, 0.4, 1) 0.4s backwards;
 }
+@keyframes announce-sub { from { transform: scale(0) rotate(-6deg); } }
 
 /* --- Minijuego: ventana sobre el laberinto pausado (animada por PopWindow) --- */
 .mg-overlay { position: absolute; inset: 0; display: grid; place-items: center; }
@@ -537,20 +725,23 @@ html, body {
 }
 .gate-labels .portal-label-hint { font-size: 9px; letter-spacing: 3px; color: var(--white); padding: 5px 8px; background: #000; box-shadow: 0 0 0 3px #ff5ad8; }
 
-/* --- Habilidades compradas (encima de las ayudas de teclas) --- */
-.hud-abilities { grid-column: 1 / -1; justify-self: center; display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 10px; }
-.hud-abilities-title { font-size: 9px; color: var(--blue); letter-spacing: 3px; text-shadow: var(--shadow); }
+/* --- Habilidades compradas (encima de los controles) --- */
+.hud-abilities { grid-column: 1 / -1; justify-self: stretch; margin-bottom: 14px; }
+.hud-abilities-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 8px; max-width: min(220px, var(--col-right, 220px)); margin: 0 auto; }
 .ability-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   font-size: 9px;
-  padding: 6px 8px 5px;
+  padding: 6px 8px 5px 7px;
   color: var(--white);
-  background: #05051a;
+  background: #07061c;
   border: 3px solid var(--tier);
-  box-shadow: 0 0 0 2px #000, 0 0 10px var(--tier);
-  text-shadow: var(--shadow);
+  box-shadow: 0 0 0 2px #000, 4px 5px 0 2px rgba(0, 0, 0, 0.5);
+  text-shadow: 2px 2px 0 #000;
   white-space: nowrap;
 }
-.ability-chip b { color: var(--tier); font-weight: normal; margin-left: 6px; }
+.ability-chip::before { content: ''; width: 6px; height: 6px; margin-top: -1px; background: var(--tier); box-shadow: 0 0 0 2px #000; }
 .ability-chip.new { animation: bump 0.25s steps(2) 3; }
 
 /* --- Tienda de habilidades: tres cartas flotantes que ocupan la pantalla --- */

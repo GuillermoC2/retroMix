@@ -57,6 +57,14 @@ Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[?]` propuesta sin
 - [x] Crece menos y se centra sobre el panel de puntos — D-025
 - [ ] Más efectos para la cifra de altura (a petición del usuario, en el futuro)
 
+## Fase 1.7 — Interfaz y mensajes con un sistema común (2026-11-15)
+
+- [x] Cabecera común de sección, mejor marca bajo cada cifra, fondo suave tras las columnas, insignias de puesto y fichas de habilidad — D-059
+- [x] Mensajes flotantes de tres tipos: puntos (color y tamaño según el valor), etiquetas de lo ocurrido y fallos — D-059
+- [x] Anuncio grande en banda con letras que caen; placa del poder activo con barra por segmentos y segundos — D-059
+- [x] Aviso de inicio con las flechas dibujadas; Game Over con ventana animada, cifras que cuentan y distintivo de récord — D-059
+- [ ] El usuario prueba y ajusta la nueva interfaz
+
 ## Fase 1.6 — Interfaz sin cajas, en columna a la derecha del laberinto
 
 - [x] Solo escritorio: en pantallas de móvil (o ventanas pequeñas o verticales) se muestra un aviso y el juego se detiene — D-026

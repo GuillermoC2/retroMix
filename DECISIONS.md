@@ -443,6 +443,22 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 - **Sorteo:** portales y muros portal eligen al azar entre PONG y BLOQUES (`MINIGAMES`).
 - **Verificación:** en el navegador, las dos variantes completas: cuenta, juego con teclas (mover, repetir, girar, soltar), una línea cuádruple forzada (parpadeo, estallido, caída, aviso, 4/5), ganar al llegar a las líneas, perder con el pozo lleno, cierre y resultado devuelto; capturas a 1024×768, 1280×720 y 1920×1080, sin errores. El Pong, otra vez completo tras el cambio. `npm run build` correcto.
 
+## D-059 · Interfaz y mensajes con un sistema común
+- **Fecha:** 2026-11-15 · **Estado:** Vigente (sujeta a ajustes si no convence al usuario)
+- **Contexto:** petición del usuario: mejorar la interfaz y el HUD para que se vean más profesionales, también los mensajes que aparecen al hacer acciones.
+- **Criterio:** se mantiene lo decidido antes (marcadores sin cajas y cifras flotantes vivas, D-022 y D-027). Lo que cambia es el orden: una misma cabecera para todas las secciones, una escala de tamaños, colores con significado y mensajes con forma propia según lo que cuentan.
+- **Columnas:** cada sección lleva la misma cabecera, un rótulo entre dos líneas de píxeles (`sectionHead`): ALTURA, PUNTOS, HABILIDADES, CONTROLES y RECORDS. Bajo cada cifra, la mejor marca en pequeño con el valor resaltado. Detrás de cada columna hay un fondo oscuro suave que la separa del escenario sin encajonarla. En la lista de récords, cada puesto es una insignia cuadrada (oro, plata, bronce; el recién conseguido, en celeste). Las habilidades van en fila, como fichas con el color de su nivel. Cabeceras y listas se adaptan al ancho de la columna (`--col-left`, `--col-right`); en columnas estrechas las cabeceras pierden las líneas.
+- **Mensajes flotantes** (`ui/Popups.ts`), tres tipos en lugar de un texto suelto:
+  - **Puntos:** cifra limpia con contorno oscuro, sin resplandor borroso; color y tamaño según el valor (200 celeste, 400 verde, 800 amarillo, 1600 rosa; menos de 200, blanco y pequeño).
+  - **Etiqueta:** lo que acaba de pasar (HIELO, LASER, DASH, IMAN, +1 ROMPEMUROS), en una ficha oscura con el borde y un cuadrado del color de su origen; sale un poco por encima del protagonista para no taparlo.
+  - **Fallo:** al romper muros sin usos, etiqueta roja "SIN ROMPEMUROS" que tiembla; si no hay muro que romper, una X.
+- **Cambio (mismo día, feedback del usuario):** a los puntos les faltaba el color llamativo de antes. Vuelven el neón y el halo de su color: un fantasma (200) o un energizador (50) salen en celeste neón con un destello blanco al aparecer, y desde el segundo fantasma seguido (400, 800, 1600) van en arcoíris a saltos (rojo, naranja, amarillo, verde, celeste y rosa, un color cada 60 ms) y cada vez más grandes (22, 25 y 29 px).
+- **Anuncio grande** (poder conseguido, muro superado): una banda oscura cruza el laberinto de lado a lado con dos líneas del color del anuncio, el texto cae letra a letra y el subtítulo sale en una etiqueta. Cada poder tiene su color (GIGANTE amarillo, GHOUL rojo, FUEGO HIELO naranja).
+- **Poder activo:** placa con el nombre, barra de tiempo de 20 segmentos y los segundos que quedan, todo con el color del poder; al acabarse parpadea el borde.
+- **Inicio:** en lugar del texto "PULSA UNA DIRECCION PARA EMPEZAR", las cuatro flechas dibujadas como teclas y "PARA EMPEZAR", debajo del protagonista.
+- **Game Over:** la ventana entra con rebote (la misma `PopWindow` de los minijuegos, ahora en `src/ui`), el título cae letra a letra, la causa va en una etiqueta, las cifras cuentan hacia arriba una tras otra con línea de puntos y, si hay récord, su distintivo salta junto a la cifra al acabar la cuenta. Abajo, las mejores marcas y la tecla ENTER dibujada.
+- **Verificación:** capturas antes y después a 1024×768, 1280×720 y 1920×1080 de inicio, juego con todos los mensajes, anuncio con poder activo y Game Over; los minijuegos siguen funcionando; `npm run build` correcto.
+
 ## D-015 · Pruebas fuera del repositorio (provisional)
 - **Fecha:** 2026-11-13 · **Estado:** En revisión
 - **Decisión actual:** el test de conectividad del generador, el fuzzing de movimiento y las capturas con Edge headless + `puppeteer-core` se ejecutaron desde un directorio temporal, sin añadir dependencias al proyecto.

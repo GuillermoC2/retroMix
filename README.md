@@ -51,6 +51,8 @@ src/
     Rng.ts                  aleatorio con semilla
   ui/                       ← componentes de interfaz reutilizables
     JuicyText.ts            texto flotante con reacciones (pop, giro, temblor, destello, chispas)
+    PopWindow.ts            ventana animada estilo Balatro (minijuegos y Game Over)
+    PixelFire.ts            fuego pixel art que arde desde un texto
   render/                   ← utilidades gráficas reutilizables
     PixelRenderer.ts        render a baja resolución
     neon.ts                 color neón único que cambia con el tiempo
@@ -158,7 +160,6 @@ Ganar activa un poder especial aleatorio; perder acaba la partida.
 src/minigames/
   types.ts        contrato: MinigameDef, MinigameStakes (kind) y MinigameResult
   registry.ts     minijuegos disponibles en los portales
-  PopWindow.ts    ventana de minijuego animada (estilo Balatro)
   MinigameFrame.ts  ventana común: marco, título, avisos (con fuego) y cierre
   scene3d.ts      piezas 3D comunes: muelles, cifras de vóxeles, partículas, encuadre
   blocks/         BlocksGame (lógica), BlocksScene (pozo 2.5D), themes y BlocksMode (teclado, avisos)

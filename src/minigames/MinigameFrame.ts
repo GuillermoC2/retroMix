@@ -1,7 +1,7 @@
 import type { GameContext } from '../core/Game';
 import { JuicyText } from '../ui/JuicyText';
 import { PixelFire } from '../ui/PixelFire';
-import { PopWindow } from './PopWindow';
+import { PopWindow } from '../ui/PopWindow';
 
 export interface FrameOptions {
   title: string;

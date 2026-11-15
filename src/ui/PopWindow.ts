@@ -25,13 +25,13 @@ const LEAVE_TIME = 0.62;
 const ANTICIPATION = 0.24;
 
 /**
- * Ventana de minijuego "viva", al estilo Balatro: entra cayendo desde arriba
+ * Ventana "viva", al estilo Balatro (minijuegos, fin de partida): entra cayendo desde arriba
  * girada y diminuta y se asienta con rebotes de muelle; mientras está abierta
  * flota y se inclina en 3D con suavidad; reacciona a golpes (giro, escala y
  * temblor) y al cerrarse coge impulso y sale disparada girando: hacia arriba
  * si se ha ganado, cayendo si se ha perdido. También funde el fondo oscuro.
  *
- * Se actualiza por fotograma con `update(dt)`; reutilizable por cualquier minijuego.
+ * Se actualiza por fotograma con `update(dt)`; reutilizable por cualquier ventana.
  */
 export class PopWindow {
   private time = 0;

@@ -1,5 +1,6 @@
 import { CONFIG } from '../../config';
 import { JuicyText } from '../../ui/JuicyText';
+import { sectionHead } from './Hud';
 
 /**
  * Puntuación flotante (sin caja). La cifra cuenta hacia arriba hasta el valor
@@ -22,10 +23,7 @@ export class ScoreDisplay {
     this.root.className = 'score';
     parent.appendChild(this.root);
 
-    const label = document.createElement('div');
-    label.className = 'score-label';
-    label.textContent = 'PUNTOS';
-    this.root.appendChild(label);
+    this.root.appendChild(sectionHead('PUNTOS'));
 
     this.number = new JuicyText(this.root, {
       className: 'score-number',
@@ -38,8 +36,8 @@ export class ScoreDisplay {
     this.number.body.style.fontSize = `${cfg.fontSize}px`;
     this.number.setText('0');
 
-    this.record.className = 'score-record';
-    this.record.textContent = `RECORD ${bestScore}`;
+    this.record.className = 'hud-best';
+    this.record.innerHTML = `RECORD <b>${bestScore}</b>`;
     this.root.appendChild(this.record);
   }
 

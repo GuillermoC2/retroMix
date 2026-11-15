@@ -68,6 +68,11 @@ const alertColors = (a: { dim: number; bright: number; period: number; duty: num
 const DIRECTION_ACTIONS: readonly Action[] = ['up', 'right', 'down', 'left'];
 const ACTION_DIR: Record<string, Dir> = { up: Dir.Up, right: Dir.Right, down: Dir.Down, left: Dir.Left };
 
+/** Color de las etiquetas flotantes y de los anuncios según su origen. */
+const TAG_COLORS = { ice: '#7fd8ff', laser: '#ff8a1a', dash: '#6ab8ff', magnet: '#ff4a5a', wallBreak: '#ffd51a' };
+const POWER_COLORS: Record<SpecialPowerId, string> = { giant: '#ffd51a', ghoul: '#ff2e3a', fireIce: '#ff8a1a' };
+const ANNOUNCE = { good: '#3ae8ff', bad: '#ff2e3a' };
+
 /** Lo que se juega en cada tipo de entrada a un minijuego. */
 const PORTAL_STAKES: MinigameStakes = { kind: 'portal', wonText: 'TE LLEVAS UN PODER ESPECIAL' };
 const GATE_STAKES: MinigameStakes = { kind: 'gate', wonText: '¡A LA TIENDA DE HABILIDADES!' };
@@ -183,14 +188,14 @@ export class MazeRunMode implements GameMode {
     this.cameraRig.snap(this.scroll.y);
 
     this.hud = new Hud(this.ctx.ui, this.ctx.records.get(GAME_ID));
-    this.hud.setMessage('PULSA UNA DIRECCION PARA EMPEZAR', true);
+    this.hud.setStartHint(true);
     this.popups = new Popups(this.ctx.ui);
     this.portalLabels = new PortalLabels(this.ctx.ui);
     this.gateLabels = new PortalLabels(this.ctx.ui, 'MURO PORTAL · TOCALO PARA ENTRAR', 'gate-labels');
     this.stopResize = this.ctx.renderer.onResize((aspect) => this.cameraRig.setAspect(aspect));
 
     this.state.events.on('score', (e) => {
-      if (e.showPopup) this.popupAt(String(e.amount), e.x, e.y);
+      if (e.showPopup) this.scorePopup(e.amount, e.x, e.y);
     });
   }
 
@@ -258,7 +263,7 @@ export class MazeRunMode implements GameMode {
         const action = DIRECTION_ACTIONS.find((a) => input.pressed(a));
         if (action) {
           this.player.wantDir = ACTION_DIR[action];
-          this.hud.setMessage('');
+          this.hud.setStartHint(false);
           state.setPhase('playing');
         }
         break;
@@ -273,6 +278,8 @@ export class MazeRunMode implements GameMode {
         if (state.phaseTime >= CONFIG.player.deathDuration) this.finish();
         break;
       case 'over':
+        // El mundo queda congelado; solo se anima la ventana de fin de partida.
+        this.gameOver?.update(dt);
         if (input.pressed('confirm')) this.ctx.modes.replace(new MazeRunMode(this.ctx));
         return;
     }
@@ -394,21 +401,21 @@ export class MazeRunMode implements GameMode {
     if (p.kind === 'ice') {
       const { freezeTime } = CONFIG.abilities.ice;
       this.ghosts.freeze(freezeTime);
-      this.popupAt('HIELO', p.x, p.y);
+      this.tagPopup('HIELO', p.x, p.y, TAG_COLORS.ice);
       this.cameraRig.shake(0.15);
       this.state.events.emit('ghostsFrozen', { duration: freezeTime });
     } else if (p.kind === 'laser') {
       const duration = this.abilities.laserDuration || CONFIG.abilities.laser.duration;
       this.laser.fire(duration);
-      this.popupAt('LASER', p.x, p.y);
+      this.tagPopup('LASER', p.x, p.y, TAG_COLORS.laser);
       this.cameraRig.shake(0.2);
       this.state.events.emit('laserFired', { duration });
     } else if (p.kind === 'dash') {
       this.dash.grant(CONFIG.abilities.dash.duration);
-      this.popupAt('DASH', p.x, p.y);
+      this.tagPopup('DASH', p.x, p.y, TAG_COLORS.dash);
     } else {
       this.magnet.grant(this.abilities.magnetDuration || CONFIG.abilities.magnet.duration);
-      this.popupAt('IMAN', p.x, p.y);
+      this.tagPopup('IMAN', p.x, p.y, TAG_COLORS.magnet);
     }
   }
 
@@ -763,7 +770,7 @@ export class MazeRunMode implements GameMode {
     this.gatesView.absorbing = null;
     if (godSettings.invincible) {
       state.setPhase('playing');
-      this.hud.announce('PERDISTE', 'INVENCIBLE: SIGUES VIVO');
+      this.hud.announce('PERDISTE', 'INVENCIBLE: SIGUES VIVO', ANNOUNCE.bad);
     } else {
       this.lostMinigame = gate.game.name;
       this.die('minigame');
@@ -803,14 +810,14 @@ export class MazeRunMode implements GameMode {
     const name = bought ? abilityName(bought, this.abilities.level(bought)) : '';
     this.refreshAbilities(name);
     // Comprar no muestra anuncio (es de los poderes especiales): salta su etiqueta en el HUD.
-    if (!bought) this.hud.announce('¡ADELANTE!', 'MURO SUPERADO');
+    if (!bought) this.hud.announce('¡ADELANTE!', 'MURO SUPERADO', ANNOUNCE.good);
   }
 
   /** Superar un portal o un muro portal da un ROMPEMUROS más. */
   private grantWallBreak(): void {
     const n = CONFIG.powers.wallBreak.perPortal;
     this.wallBreaker.grant(n);
-    this.popupAt(`+${n} ROMPEMUROS`, this.player.x, this.player.y + 1);
+    this.tagPopup(`+${n} ROMPEMUROS`, this.player.x, this.player.y, TAG_COLORS.wallBreak);
     this.hud.pulsePower();
   }
 
@@ -864,7 +871,7 @@ export class MazeRunMode implements GameMode {
         state.setPhase(this.phaseAfterCinematic);
         this.powers.activate(id);
         this.ghosts.resetCombo();
-        this.hud.announce(`¡${this.powers.name(id)}!`, id === 'fireIce' ? CONFIG.specialPowers.fireIce.announceSub : 'PODER ESPECIAL');
+        this.hud.announce(`¡${this.powers.name(id)}!`, id === 'fireIce' ? CONFIG.specialPowers.fireIce.announceSub : 'PODER ESPECIAL', POWER_COLORS[id]);
         state.events.emit('specialPower', { id, active: true });
       },
     });
@@ -1058,7 +1065,7 @@ export class MazeRunMode implements GameMode {
       this.activatePower(this.powers.pick(this.rng));
     } else if (godSettings.invincible) {
       state.setPhase('playing');
-      this.hud.announce('PERDISTE', 'INVENCIBLE: SIGUES VIVO');
+      this.hud.announce('PERDISTE', 'INVENCIBLE: SIGUES VIVO', ANNOUNCE.bad);
     } else {
       this.lostMinigame = portal.game.name;
       this.die('minigame');
@@ -1083,7 +1090,8 @@ export class MazeRunMode implements GameMode {
       this.hud.pulsePower();
       this.state.events.emit('wallBroken', { tiles: result.tiles });
     } else if (result.reason !== 'cooldown') {
-      this.popupAt('X', result.x, result.y, 'fail');
+      const p = this.toScreen(worldX(result.x), result.y, ACTOR_Z);
+      this.popups.fail(p.x, p.y, result.reason === 'no-charges' ? 'SIN ROMPEMUROS' : '');
     }
   }
 
@@ -1102,7 +1110,7 @@ export class MazeRunMode implements GameMode {
       : this.ctx.records.submit(GAME_ID, state.meters, state.score);
     if ('distanceRank' in newRecord) this.hud.setRecords(this.ctx.records.get(GAME_ID).topDistances, newRecord.distanceRank);
     this.state.setPhase('over');
-    this.hud.setMessage('');
+    this.hud.setStartHint(false);
     this.gameOver = new GameOverScreen(this.ctx.ui, {
       meters: state.meters,
       score: state.score,
@@ -1166,7 +1174,7 @@ export class MazeRunMode implements GameMode {
     const cheats = [godSettings.invincible && 'INVENCIBLE', godSettings.infiniteWallBreak && 'MURO INF', skip].filter(Boolean);
     this.hud.setGodMode(cheats.length ? `DIOS: ${cheats.join(' · ')} [K]` : '');
     const power = this.powers.active;
-    this.hud.setSpecial(power ? this.powers.name(power.id) : null, this.powers.remaining, this.powers.warning);
+    this.hud.setSpecial(power ? this.powers.name(power.id) : null, this.powers.remaining, this.powers.warning, this.powers.secondsLeft, power ? POWER_COLORS[power.id] : '');
   }
 
   render(): void {
@@ -1235,8 +1243,14 @@ export class MazeRunMode implements GameMode {
     this.hud.anchor(right, left);
   }
 
-  private popupAt(text: string, tileX: number, tileY: number, className = ''): void {
+  private scorePopup(amount: number, tileX: number, tileY: number): void {
     const p = this.toScreen(worldX(tileX), tileY, ACTOR_Z);
-    this.popups.show(text, p.x, p.y, className);
+    this.popups.score(amount, p.x, p.y);
+  }
+
+  /** Etiqueta de lo que acaba de pasar, un poco por encima de la casilla para no tapar al protagonista. */
+  private tagPopup(text: string, tileX: number, tileY: number, color: string): void {
+    const p = this.toScreen(worldX(tileX), tileY + 1.4, ACTOR_Z);
+    this.popups.tag(text, p.x, p.y, color);
   }
 }
