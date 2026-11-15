@@ -29,8 +29,11 @@ export const HERO_DIAMETER = HERO_VOXEL * HERO_SIZE;
 /** Mitad del grosor en vóxeles: 1 → 3 vóxeles de grosor. El ojo sobresale uno más por cada cara. */
 const HERO_HALF_DEPTH = 1;
 
-/** Aspecto del protagonista: normal o gris oscuro con el ojo rojo (poder GHOUL). */
-export type HeroLook = 'normal' | 'ghoul';
+/** Aspecto del protagonista: normal, gris oscuro con el ojo rojo (poder GHOUL) o azulado (habilidad DASH). */
+export type HeroLook = 'normal' | 'ghoul' | 'dash';
+
+/** Colores del protagonista con DASH (azulado). */
+const DASH_LOOK = { body: 0x6fc8ff, rim: 0x2a7fd8 };
 
 /** Aspecto del poder GHOUL: cuerpo gris oscuro, ojo de esclerótica negra e iris rojo y venas rojas alrededor. */
 const GHOUL = {
@@ -76,6 +79,7 @@ export function heroGeometry(mouth: number, look: HeroLook = 'normal'): THREE.Bu
         const dist = Math.hypot(x - c, y - c);
         const edge = rim && dist > r - 1.5;
         if (ghoul) return edge ? GHOUL.rim : GHOUL.body;
+        if (look === 'dash') return edge ? DASH_LOOK.rim : DASH_LOOK.body;
         return edge ? HERO_RIM : HERO_YELLOW;
       },
       halfDepth: (x, y) => HERO_HALF_DEPTH + (isEye(x, y) || ghoulEye(x, y) ? 1 : 0),
@@ -270,6 +274,51 @@ export function laserOrbGeometry(): THREE.BufferGeometry {
       },
       halfDepth: (x, y) => Math.round(Math.sqrt(Math.max(0, r2 - (x - c) ** 2 - (y - c) ** 2)) * 0.8),
     };
+    return buildVoxelGeometry(sprite, 0.07);
+  });
+}
+
+// -----------------------------------------------------------------------------
+// Pluma (habilidad DASH) e imán (habilidad IMAN)
+// -----------------------------------------------------------------------------
+
+const FEATHER = [
+  '.........',
+  '.......ls',
+  '.....lwsd',
+  '....lwsd.',
+  '..lwwsd..',
+  '..lwsd...',
+  '.lwsd....',
+  '.ls......',
+  '.s.......',
+];
+export const FEATHER_COLOR = 0x7fc0ff;
+
+export function featherGeometry(): THREE.BufferGeometry {
+  return cached('feather', () => {
+    const palette = { s: 0xf0f8ff, w: 0xb4e0ff, l: 0x5aa8ff, d: 0x2a6fd0 };
+    const sprite = spriteFromRows(FEATHER, palette, () => 0);
+    return buildVoxelGeometry(sprite, 0.075);
+  });
+}
+
+const MAGNET = [
+  'SS.....SS',
+  'GG.....GG',
+  'hR.....hR',
+  'hR.....hR',
+  'hR.....hD',
+  'hRR...RRD',
+  '.hRRRRRD.',
+  '..DRRRD..',
+];
+export const MAGNET_COLOR = 0xff3a3a;
+
+export function magnetGeometry(): THREE.BufferGeometry {
+  return cached('magnet', () => {
+    const palette = { S: 0xe8ecf8, G: 0x9aa0b4, R: MAGNET_COLOR, h: 0xff8a8a, D: 0xb01a2a };
+    const sprite = spriteFromRows(MAGNET, palette, () => 1);
     return buildVoxelGeometry(sprite, 0.07);
   });
 }

@@ -41,10 +41,18 @@ export class Hud {
   private keys = el('div', 'hud-keys');
   /** Habilidades compradas, encima de las ayudas de teclas. */
   private abilities = el('div', 'hud-abilities');
-  private power = keyHint('ESPACIO', 'ROMPEMUROS');
+  private power = keyHint('Z', 'ROMPEMUROS');
   /** Usos de ROMPEMUROS, en grande a la derecha del nombre. */
   private charges = el('b', 'key-count');
   private chargesShown = '';
+  /**
+   * Tecla de acción general (X): "ACCION" en gris si no hay nada que hacer; si hay
+   * una acción disponible (p. ej. DASH), su nombre y los segundos que le quedan en grande.
+   */
+  private action = keyHint('X', 'ACCION');
+  private actionName = el('span', '', 'ACCION');
+  private actionTime = el('b', 'key-count');
+  private actionShown = 'init';
   private view = keyHint('C', 'CAMBIAR VISTA');
   /** Anchura de las ayudas en dos columnas (tecla | texto), medida mientras se muestran así. */
   private keysWideWidth = 0;
@@ -60,7 +68,10 @@ export class Hud {
   constructor(parent: HTMLElement, records: RecordEntry) {
     this.power.label.classList.add('with-count');
     this.power.label.appendChild(this.charges);
-    this.keys.append(this.abilities, this.power.root, this.view.root);
+    this.action.label.classList.add('with-count');
+    this.action.label.replaceChildren(this.actionName, this.actionTime);
+    this.keys.append(this.abilities, this.power.root, this.action.root, this.view.root);
+    this.setAction(null);
     this.setAbilities([]);
     this.specialBar.appendChild(this.specialFill);
     this.special.append(this.specialName, this.specialBar);
@@ -129,6 +140,24 @@ export class Hud {
       void this.charges.offsetWidth;
       this.charges.classList.add('gained');
     }
+  }
+
+  /**
+   * Acción disponible en la tecla X: nombre, segundos que le quedan y si se puede
+   * usar ya (si no, en gris, p. ej. mientras recarga). null = ninguna ("ACCION" en gris).
+   */
+  setAction(action: { name: string; seconds: number; ready: boolean } | null): void {
+    const text = action ? `${action.name}|${Math.ceil(action.seconds)}|${action.ready}` : '';
+    if (text === this.actionShown) return;
+    this.actionShown = text;
+    this.actionName.textContent = action?.name ?? 'ACCION';
+    this.actionTime.textContent = action ? String(Math.ceil(action.seconds)) : '';
+    this.action.root.classList.toggle('empty', !action?.ready);
+  }
+
+  /** Se ha pulsado la tecla de acción. */
+  pressActionKey(): void {
+    press(this.action.key);
   }
 
   /** Se ha pulsado el poder (funcione o no). */

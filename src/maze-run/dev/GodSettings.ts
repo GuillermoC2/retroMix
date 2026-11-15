@@ -6,7 +6,7 @@
 export interface GodSettings {
   /** Ni los fantasmas, ni la lava, ni perder un minijuego matan. */
   invincible: boolean;
-  /** Romper muro (Espacio) sin gastar cargas. */
+  /** ROMPEMUROS (Z) sin gastar usos. */
   infiniteWallBreak: boolean;
   /** Saltar los minijuegos de portales y muros dándolos por ganados o perdidos. */
   skipMinigames: SkipMinigames;

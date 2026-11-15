@@ -58,9 +58,20 @@ export class Abilities {
 
   /** Segundos que dura el láser al comer una bola (0 sin la habilidad; LASER + suma `plusBonus`). */
   get laserDuration(): number {
-    const level = this.levelOf('laser');
     const { duration, plusBonus } = CONFIG.abilities.laser;
-    return level ? duration + plusBonus * (level - 1) : 0;
+    return this.leveled('laser', duration, plusBonus);
+  }
+
+  /** Segundos que dura el imán al coger uno (IMAN + suma `plusBonus`). */
+  get magnetDuration(): number {
+    const { duration, plusBonus } = CONFIG.abilities.magnet;
+    return this.leveled('magnet', duration, plusBonus);
+  }
+
+  /** `base` con el nivel 1 y `perLevel` más por cada mejora; 0 sin la habilidad. */
+  private leveled(id: string, base: number, perLevel: number): number {
+    const level = this.levelOf(id);
+    return level ? base + perLevel * (level - 1) : 0;
   }
 
   private levelOf(id: string): number {

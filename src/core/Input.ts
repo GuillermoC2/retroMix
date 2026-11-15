@@ -1,6 +1,6 @@
 /** `opt1`…`opt9`: teclas numéricas (opciones de menús, p. ej. el de modo dios). */
 export type Action =
-  | 'up' | 'down' | 'left' | 'right' | 'camera' | 'confirm' | 'power' | 'god' | 'back'
+  | 'up' | 'down' | 'left' | 'right' | 'camera' | 'confirm' | 'power' | 'action' | 'god' | 'back'
   | `opt${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9}`;
 
 /** Una tecla puede disparar varias acciones; cada modo decide cuáles le importan según su estado. */
@@ -15,8 +15,12 @@ const KEY_MAP: Record<string, readonly Action[]> = {
   KeyD: ['right'],
   KeyC: ['camera'],
   KeyK: ['god'],
+  // X: tecla de acción general (hace la acción disponible en cada momento, p. ej. el dash).
+  KeyX: ['action'],
+  // Z: ROMPEMUROS.
+  KeyZ: ['power'],
   Enter: ['confirm'],
-  Space: ['confirm', 'power'],
+  Space: ['confirm'],
   Escape: ['back'],
 };
 for (let n = 1; n <= 9; n++) {

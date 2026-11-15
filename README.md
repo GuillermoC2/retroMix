@@ -21,7 +21,8 @@ npm run build      # comprobación de tipos + build de producción en dist/
 | Tecla | Acción |
 | --- | --- |
 | WASD / flechas | Mover (la dirección queda en búfer hasta que se pueda girar) |
-| Espacio | Romper el muro de delante (o el de la dirección pulsada si está bloqueada) |
+| Z | ROMPEMUROS: romper el muro de delante (o el de la dirección pulsada si está bloqueada) |
+| X | Acción: hace la acción disponible en cada momento (hoy, el dash de DASH tras coger una pluma) |
 | W/S o ↑/↓ | Mover la pala en el Pong |
 | C | Cambiar perspectiva: derecha → frontal → izquierda → lateral |
 | Enter / Espacio | Reiniciar tras el Game Over |
@@ -129,9 +130,13 @@ Ganar activa un poder especial aleatorio; perder acaba la partida.
   - HIELO (épica): cubitos de hielo cada 70 m; al coger uno, los fantasmas se congelan 5 s (no matan, se pueden comer).
   - LASER (legendaria, hasta 2 niveles): bolas naranjas cada 80 m; al comer una, láser por la boca 5 s (+3 s con LASER +)
     que se come a los fantasmas (`systems/Laser.ts`, `LaserView.ts`).
+  - DASH (épica): plumas cada 90 m; al coger una, 10 s azulado en los que X hace un dash (≈ 6 casillas, recarga 1 s)
+    que mata a los fantasmas que toca (`systems/Dash.ts`, `effects/DashTrail.ts`).
+  - IMAN (básica, hasta 2 niveles): imanes cada 75 m; al coger uno, durante 5 s (+5 s con IMAN +) los puntos pequeños a
+    menos de 3,5 casillas vuelan hacia el protagonista (`systems/Magnet.ts`, `effects/MagnetEffect.ts`).
   - Los objetos que siembran las habilidades (`effects.pickup`) los gestiona `systems/Pickups.ts`.
 - **Otros enganches:** `RunState.events` (`meters`, `score`, `energizer`, `died`, `portalEntered`, `minigameResult`,
-  `specialPower`, `gateEntered`, `abilityBought`, `ghostsFrozen`, `laserFired`…), `RunState.modifiers` (multiplicadores de velocidad), `Maze.setTiles()` y récords por juego (`Records.get(id)`).
+  `specialPower`, `gateEntered`, `abilityBought`, `ghostsFrozen`, `laserFired`, `dash`…), `RunState.modifiers` (multiplicadores de velocidad), `Maze.setTiles()` y récords por juego (`Records.get(id)`).
 
 ```
 src/minigames/

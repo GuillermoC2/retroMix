@@ -358,6 +358,32 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 - **Decisión:** `powers.wallBreak.startCharges` = 2 y `perPortal` = 1. El uso se concede al **superar** el portal: al ganar su minijuego (o con "saltar minijuegos: ganar"). En un muro, al volver de la tienda, cuando se abre. Perder acaba la partida, así que no da nada. Al ganarlo: "+1 ROMPEMUROS" flotante y el número salta.
 - **HUD:** "ESPACIO · ROMPEMUROS" y, a la derecha, los usos en grande (amarillo, con contorno). En gris si no quedan; "INF" con el truco del modo dios. Desaparece el texto pequeño "CARGAS N".
 
+## D-051 · Habilidad épica DASH
+- **Fecha:** 2026-11-15 · **Estado:** Vigente (sujeta a cambios)
+- **Contexto:** petición del usuario: aparecen plumas en el laberinto; al tocar una, el protagonista se vuelve azulado y con la X puede hacer un dash que mata a los fantasmas que toca. Dura 10 s y el dash tiene 2 s de recarga tras usarse. Épica.
+- **Plumas:** objetos de habilidad como los demás (`systems/Pickups.ts`): una cada 90 m. Pluma voxel azul que se mece como si cayera.
+- **Estado azulado** (`systems/Dash.ts`): 10 s con el protagonista azul claro (aspecto `dash` de `heroGeometry`); en los 2 últimos parpadea. Coger otra pluma vuelve a llenar los 10 s, sin sumar. Si hay un poder especial activo, se ve el aspecto del poder.
+- **Dash (X):** acelerón de 0,16 s a ×5 de velocidad por los pasillos (≈ 6 casillas). Sigue el laberinto como el movimiento normal, girando si hay una dirección pulsada; no atraviesa muros. Todo el recorrido de cada fotograma (segmento con 0,6 casillas de medio grosor) se come a los fantasmas, asustados o no, congelados o no, con la cadena de puntos normal. También se comen los puntos del recorrido, para no saltarse ninguno. Recarga: 2 s desde que empieza. Estela de copias azules brillantes y una pequeña sacudida.
+- **HUD:** mientras dura, aparece "X · DASH" con los segundos que quedan en grande (en gris mientras recarga).
+- **Configuración:** `CONFIG.abilities.dash`. Nueva tecla X y evento `dash`.
+- **Cambio (D-053):** recarga de 1 s (antes 2 s). La X pasa a ser la tecla de acción general y el HUD muestra "X · DASH" en su lugar.
+
+## D-052 · Habilidad básica IMAN (e IMAN +)
+- **Fecha:** 2026-11-15 · **Estado:** Vigente (sujeta a cambios)
+- **Contexto:** petición del usuario: aparecen imanes; al comerlos atraes automáticamente todos los puntos en un radio cercano (no los grandes ni otras habilidades). Básica, 5 s; IMAN + lo sube a 10 s.
+- **Imanes:** uno cada 75 m (`systems/Pickups.ts`); imán de herradura voxel rojo con puntas plateadas que bota y se inclina.
+- **Efecto** (`systems/Magnet.ts`): mientras dura, los puntos pequeños a menos de 3,5 casillas (en línea recta, aunque haya muros en medio) se comen y puntúan al momento. La vista (`effects/MagnetEffect.ts`) los hace volar acelerando hasta el protagonista. Un aro rojo marca el radio, con ondas que se cierran hacia él; en el último segundo parpadea. No atrae energizadores ni objetos de habilidad. Coger otro imán vuelve a llenar el tiempo, sin sumar.
+- **Configuración:** `CONFIG.abilities.magnet` (`duration` 5, `plusBonus` 5, `radius` 3,5, `flyTime`, `every` 75…).
+
+## D-053 · Z para ROMPEMUROS y X como tecla de acción general
+- **Fecha:** 2026-11-15 · **Estado:** Vigente (cambia la tecla de D-016)
+- **Contexto:** petición del usuario: ROMPEMUROS a la Z, y la X como tecla de acción general en el HUD, la que hace las acciones cuando se puede. También baja la recarga del dash a 1 s.
+- **Decisión:**
+  - Teclas (`core/Input.ts`): Z → `power` (ROMPEMUROS), X → `action`. Espacio deja de romper muros y queda solo para confirmar (tienda, Game Over, Pong).
+  - `MazeRunMode.useAction()` hace la acción disponible: hoy solo el dash de DASH. Las acciones futuras se añaden ahí.
+  - HUD: "Z · ROMPEMUROS N", "X · ACCION" (en gris si no hay acción) y "C · CAMBIAR VISTA". Con una acción disponible, la X muestra su nombre y los segundos que le quedan en grande ("X · DASH 10"), en gris mientras recarga. Las etiquetas también salen en gris si no se pueden usar (ROMPEMUROS sin usos).
+  - `CONFIG.abilities.dash.cooldown` = 1.
+
 ## D-015 · Pruebas fuera del repositorio (provisional)
 - **Fecha:** 2026-11-13 · **Estado:** En revisión
 - **Decisión actual:** el test de conectividad del generador, el fuzzing de movimiento y las capturas con Edge headless + `puppeteer-core` se ejecutaron desde un directorio temporal, sin añadir dependencias al proyecto.

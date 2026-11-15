@@ -33,6 +33,10 @@ import { Pickups, type Pickup } from './systems/Pickups';
 import { PickupsView } from './systems/PickupsView';
 import { Laser, type LaserBeam } from './systems/Laser';
 import { LaserView } from './systems/LaserView';
+import { Dash } from './systems/Dash';
+import { Magnet } from './systems/Magnet';
+import { DashTrail } from './effects/DashTrail';
+import { MagnetEffect } from './effects/MagnetEffect';
 import { AbilityShopMode } from './ui/AbilityShopMode';
 import { SpecialPowers } from './systems/SpecialPowers';
 import { RunState, type DeathCause } from './systems/RunState';
@@ -46,7 +50,7 @@ import type { Passable } from './entities/Player';
 import { GodMenuMode, type GodMenuSection, type GodMenuToggle } from './dev/GodMenuMode';
 import { anyCheat, godSettings, saveGodSettings, SKIP_MINIGAMES } from './dev/GodSettings';
 import { ACTOR_Z, worldX } from './world';
-import { HERO_DIAMETER } from './entities/sprites';
+import { HERO_DIAMETER, type HeroLook } from './entities/sprites';
 
 export const GAME_ID = 'maze-run';
 
@@ -102,6 +106,10 @@ export class MazeRunMode implements GameMode {
   private laserView = new LaserView();
   /** Rayo del láser de este fotograma (null si no dispara). */
   private beam: LaserBeam | null = null;
+  private dash = new Dash();
+  private dashTrail = new DashTrail();
+  private magnet = new Magnet();
+  private magnetEffect = new MagnetEffect();
   private powers = new SpecialPowers();
   private tentacles = new TentacleView();
   private cinematic = new PowerCinematic(this.tentacles);
@@ -148,7 +156,7 @@ export class MazeRunMode implements GameMode {
     scene.background = new THREE.Color(0x03030a);
     scene.add(new THREE.AmbientLight(0xffffff, 0.8), new THREE.HemisphereLight(0xffffff, 0x181020, 0.5));
     scene.add(this.cameraRig.light, this.cameraRig.light.target);
-    scene.add(this.mazeView.group, this.pelletsView.group, this.playerView.mesh, this.ghostsView.group, this.lavaView.group, this.shatter.group, this.portalsView.group, this.gatesView.group, this.pickupsView.group, this.laserView.group, this.cinematic.group, this.smoke.group, this.tentacles.group);
+    scene.add(this.mazeView.group, this.pelletsView.group, this.playerView.mesh, this.ghostsView.group, this.lavaView.group, this.shatter.group, this.portalsView.group, this.gatesView.group, this.pickupsView.group, this.laserView.group, this.dashTrail.group, this.magnetEffect.group, this.cinematic.group, this.smoke.group, this.tentacles.group);
 
     this.maze.ensureGenerated(this.player.tileY + CONFIG.maze.generateAhead);
     this.cameraRig.snap(this.scroll.y);
@@ -181,6 +189,8 @@ export class MazeRunMode implements GameMode {
     this.pickups.dispose();
     this.pickupsView.dispose();
     this.laserView.dispose();
+    this.dashTrail.dispose();
+    this.magnetEffect.dispose();
     this.mazeView.dispose();
     this.pelletsView.dispose();
     this.playerView.dispose();
@@ -260,6 +270,8 @@ export class MazeRunMode implements GameMode {
     this.wallBreaker.infinite = godSettings.infiniteWallBreak;
     this.wallBreaker.update(dt);
     if (input.pressed('power')) this.useWallBreak();
+    this.dash.update(dt);
+    if (input.pressed('action')) this.useAction();
 
     const ended = this.powers.update(dt);
     if (ended) state.events.emit('specialPower', { id: ended, active: false });
@@ -269,12 +281,17 @@ export class MazeRunMode implements GameMode {
     this.wasGhoul = ghoul;
 
     const boost = giant ? CONFIG.specialPowers.giant.speed : ghoul ? CONFIG.specialPowers.ghoul.speed : 1;
-    player.speedMultiplier = state.modifiers.playerSpeed * boost;
+    const dashing = this.dash.inDash;
+    player.speedMultiplier = state.modifiers.playerSpeed * boost * (dashing ? CONFIG.abilities.dash.dashSpeed : 1);
+    const fromX = player.x;
+    const fromY = player.y;
     player.update(dt, maze, giant ? this.giantPassable : ghoul ? this.ghoulPassable : undefined);
     state.reachRow(player.tileY);
 
     if (giant) this.giantEat();
+    else if (dashing) this.eatAlong(fromX, fromY, player.x, player.y);
     else this.eatPelletAt(player.tileX, player.tileY);
+    this.magnetPull(dt);
 
     const portal = this.portals.touching(player.x, player.y);
     if (portal) return this.enterPortal(portal);
@@ -283,6 +300,12 @@ export class MazeRunMode implements GameMode {
 
     this.ghosts.update(dt, player, state.meters, this.lava.y, state.modifiers.ghostSpeed);
     this.fireLaser(dt);
+    // DASH: todo el recorrido del acelerón de este fotograma mata a los fantasmas que toca.
+    if (dashing) {
+      for (const { ghost, score } of this.ghosts.zap(fromX, fromY, player.x, player.y, CONFIG.abilities.dash.hitHalfWidth, player)) {
+        state.addScore(score, ghost.x, ghost.y, true);
+      }
+    }
     if (giant) {
       const radius = CONFIG.ghosts.hitRadius + CONFIG.specialPowers.giant.reach - 0.5;
       for (const { ghost, score } of this.ghosts.devour(player, radius)) state.addScore(score, ghost.x, ghost.y, true);
@@ -307,6 +330,20 @@ export class MazeRunMode implements GameMode {
     this.pickups.update(this.lava.y);
   }
 
+  /** Come todo lo que hay en las casillas de un recorrido (un dash avanza más de una casilla por fotograma). */
+  private eatAlong(x0: number, y0: number, x1: number, y1: number): void {
+    const steps = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 0.5));
+    let last = '';
+    for (let i = 0; i <= steps; i++) {
+      const tx = Math.round(x0 + ((x1 - x0) * i) / steps);
+      const ty = Math.round(y0 + ((y1 - y0) * i) / steps);
+      const key = `${tx},${ty}`;
+      if (key === last) continue;
+      last = key;
+      this.eatPelletAt(tx, ty);
+    }
+  }
+
   private eatPelletAt(x: number, y: number): void {
     const { state } = this;
     const pickup = this.pickups.takeAt(x, y);
@@ -327,13 +364,37 @@ export class MazeRunMode implements GameMode {
       this.popupAt('HIELO', p.x, p.y);
       this.cameraRig.shake(0.15);
       this.state.events.emit('ghostsFrozen', { duration: freezeTime });
-    } else {
+    } else if (p.kind === 'laser') {
       const duration = this.abilities.laserDuration || CONFIG.abilities.laser.duration;
       this.laser.fire(duration);
       this.popupAt('LASER', p.x, p.y);
       this.cameraRig.shake(0.2);
       this.state.events.emit('laserFired', { duration });
+    } else if (p.kind === 'dash') {
+      this.dash.grant(CONFIG.abilities.dash.duration);
+      this.popupAt('DASH', p.x, p.y);
+    } else {
+      this.magnet.grant(this.abilities.magnetDuration || CONFIG.abilities.magnet.duration);
+      this.popupAt('IMAN', p.x, p.y);
     }
+  }
+
+  /** Tecla de acción (X): hace la acción disponible ahora mismo (hoy solo el dash de DASH). */
+  private useAction(): void {
+    this.hud.pressActionKey();
+    if (this.dash.tryDash()) {
+      this.cameraRig.shake(0.12);
+      this.state.events.emit('dash', {});
+    }
+  }
+
+  /** IMAN: los puntos pequeños cercanos se comen solos y vuelan hacia el protagonista. */
+  private magnetPull(dt: number): void {
+    this.magnet.update(dt);
+    if (!this.magnet.active) return;
+    const eaten = this.magnet.attract(this.pellets, this.player.x, this.player.y);
+    for (const p of eaten) this.state.addScore(CONFIG.pellets.dotScore, p.x, p.y);
+    this.magnetEffect.pull(eaten);
   }
 
   /** Láser: el rayo sale por la boca hacia donde mira el protagonista y se come a los fantasmas que toca. */
@@ -632,6 +693,13 @@ export class MazeRunMode implements GameMode {
     this.hud.pulsePower();
   }
 
+  /** Aspecto del protagonista: el del poder especial si hay uno; si no, azulado con DASH (parpadea al acabarse). */
+  private heroLook(): HeroLook {
+    if (this.powers.look !== 'normal') return this.powers.look;
+    if (!this.dash.active) return 'normal';
+    return this.dash.warning && Math.floor(this.state.phaseTime * 8) % 2 === 0 ? 'normal' : 'dash';
+  }
+
   /** Lista de habilidades compradas en el HUD. */
   private refreshAbilities(highlight = ''): void {
     const items = [...this.abilities.owned].map(([a, level]) => ({ name: abilityName(a, level), color: CONFIG.abilities.tiers[a.tier].color }));
@@ -827,6 +895,8 @@ export class MazeRunMode implements GameMode {
     this.state.reachRow(player.tileY);
     this.ghosts.clear();
     this.laser.clear();
+    this.dash.clear();
+    this.magnet.clear();
     this.lava.y = player.y + CONFIG.lava.startOffset;
     this.scroll.y = player.y + CONFIG.camera.lookAhead;
     this.cameraRig.snap(this.scroll.y);
@@ -909,7 +979,9 @@ export class MazeRunMode implements GameMode {
     this.mazeView.update(dt, this.cameraRig.focus.y);
     this.pelletsView.update(dt);
     this.pickupsView.update(dt);
-    this.laserView.update(dt, this.state.phase === 'playing' ? this.beam : null, this.laser.warning);
+    const playing = this.state.phase === 'playing';
+    this.laserView.update(dt, playing ? this.beam : null, this.laser.warning);
+    this.magnetEffect.update(dt, this.player, playing && this.magnet.active, this.magnet.warning);
     this.portalsView.update(dt, this.cameraRig.focus.y);
     this.gatesView.update(dt, this.cameraRig.focus.y);
 
@@ -922,7 +994,8 @@ export class MazeRunMode implements GameMode {
     }
     const pose = state.phase === 'cinematic' ? this.cinematic.update(dt, this.cameraRig.camera, this.player) : null;
     if (pose) this.playerView.applyPose(pose);
-    else this.playerView.update(dt, this.player, scale, spin, this.powers.ghoulLift, this.powers.look);
+    else this.playerView.update(dt, this.player, scale, spin, this.powers.ghoulLift, this.heroLook());
+    this.dashTrail.update(dt, this.playerView.mesh, state.phase === 'playing' && this.dash.inDash);
     this.ghostsView.update(dt, this.ghosts);
     // Como en el clásico, los fantasmas desaparecen durante la animación de muerte.
     this.ghostsView.group.visible = !(dying && (state.phase === 'over' || state.phaseTime > 0.4));
@@ -937,6 +1010,7 @@ export class MazeRunMode implements GameMode {
     this.hud.setValues(state.meters, state.score);
     this.hud.update(dt);
     this.hud.setPower(this.wallBreaker.charges, godSettings.infiniteWallBreak);
+    this.hud.setAction(this.dash.active ? { name: 'DASH', seconds: this.dash.remaining, ready: this.dash.ready } : null);
     const skip = { off: '', win: 'MG GANADOS', lose: 'MG PERDIDOS' }[godSettings.skipMinigames];
     const cheats = [godSettings.invincible && 'INVENCIBLE', godSettings.infiniteWallBreak && 'MURO INF', skip].filter(Boolean);
     this.hud.setGodMode(cheats.length ? `DIOS: ${cheats.join(' · ')} [K]` : '');

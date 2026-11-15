@@ -31,6 +31,8 @@ export type RunEvents = {
   ghostsFrozen: { duration: number };
   /** Se ha comido una bola del láser: dispara durante `duration` segundos. */
   laserFired: { duration: number };
+  /** El protagonista ha hecho un dash (habilidad DASH). */
+  dash: Record<string, never>;
 };
 
 /**

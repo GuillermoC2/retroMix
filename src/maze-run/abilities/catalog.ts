@@ -107,7 +107,51 @@ const HERO_LASER: PixelIcon = {
   palette: { y: '#ffd51a', k: '#2a1a00', o: '#ff6a1a', c: '#ffb04a', W: '#fff4d0' },
 };
 
-const { longFright, ice, laser } = CONFIG.abilities;
+/** Pluma azul con la estela de un dash. */
+const DASH_FEATHER: PixelIcon = {
+  rows: [
+    '................',
+    '..............ls',
+    '............lwsd',
+    '..........lwwsd.',
+    '.........lwwsbd.',
+    '.......lwwwsbd..',
+    '......lwwwsbbd..',
+    '.....lwwwsbd....',
+    '.....lwwsbd.....',
+    '...lwwwsbd......',
+    '...lwwsbd.......',
+    '...lwsd.........',
+    '...ls...........',
+    '...s............',
+    '..s.............',
+  ],
+  palette: { s: '#f0f8ff', w: '#b4e0ff', l: '#5aa8ff', b: '#7fc0ff', d: '#2a6fd0' },
+};
+
+/** Imán de herradura. */
+const MAGNET_ICON: PixelIcon = {
+  rows: [
+    'SSSSS......SSSSS',
+    'SSSSS......SSSSS',
+    'GGGGG......GGGGG',
+    'hRRRR......hRRRR',
+    'hRRRR......hRRRR',
+    'hRRRR......hRRRR',
+    'hRRRR......hRRRD',
+    'hRRRR......hRRRD',
+    'hRRRRR....RRRRRD',
+    '.hRRRRR..RRRRRD.',
+    '.hRRRRRRRRRRRRD.',
+    '..hRRRRRRRRRRD..',
+    '..DRRRRRRRRRRD..',
+    '....DDRRRRDD....',
+    '.....DDDDDD.....',
+  ],
+  palette: { S: '#e8ecf8', G: '#9aa0b4', R: '#ff3a3a', h: '#ff8a8a', D: '#b01a2a' },
+};
+
+const { longFright, ice, laser, dash, magnet } = CONFIG.abilities;
 
 /** Todas las habilidades que pueden salir en la tienda. Añadir una es añadir una entrada aquí. */
 export const ABILITIES: readonly AbilityDef[] = [
@@ -138,5 +182,23 @@ export const ABILITIES: readonly AbilityDef[] = [
     upgradeDescription: `EL LASER DURA ${laser.plusBonus} S MAS: ${laser.duration + laser.plusBonus} S EN TOTAL`,
     icon: HERO_LASER,
     effects: { pickup: 'laser' },
+  },
+  {
+    id: 'dash',
+    tier: 'epic',
+    name: 'DASH',
+    description: `APARECEN PLUMAS. AL COGER UNA TE VUELVES AZUL ${dash.duration} S Y CON X HACES UN DASH QUE MATA A LOS FANTASMAS QUE TOCAS (RECARGA ${dash.cooldown} S)`,
+    icon: DASH_FEATHER,
+    effects: { pickup: 'dash' },
+  },
+  {
+    id: 'magnet',
+    tier: 'basic',
+    name: 'IMAN',
+    description: `APARECEN IMANES. AL COGER UNO ATRAES LOS PUNTOS CERCANOS DURANTE ${magnet.duration} S (NO LOS GRANDES)`,
+    maxLevel: 2,
+    upgradeDescription: `EL IMAN DURA ${magnet.plusBonus} S MAS: ${magnet.duration + magnet.plusBonus} S EN TOTAL`,
+    icon: MAGNET_ICON,
+    effects: { pickup: 'magnet' },
   },
 ];

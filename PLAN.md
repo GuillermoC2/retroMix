@@ -32,7 +32,7 @@ Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[?]` propuesta sin
 
 ## Fase 1.2 — Poder: romper muros
 
-- [x] Romper muro con **Espacio**: túnel recto a través de todo el grosor del muro hasta el pasillo del otro lado — D-016, D-017
+- [x] Romper muro con **Espacio** (hoy **Z**, D-053): túnel recto a través de todo el grosor del muro hasta el pasillo del otro lado — D-016, D-017
 - [x] Animación: el bloque estalla en pedazos voxel del color neón del muro, con destello, sacudida de cámara y rediseño de contornos
 - [x] Cargas infinitas mientras `CONFIG.dev.infinitePowers = true`; indicador de cargas en el HUD — D-018
 - [x] Verificación: 4.500 intentos aleatorios sin romper el borde ni dejar zonas inaccesibles; animación comprobada en el juego
@@ -147,6 +147,9 @@ partida. Todo sujeto a cambios hasta que guste al usuario.
 - [x] Sin anuncio grande al obtener una habilidad (es de los poderes especiales) — D-045
 - [x] Muros portal cada 100–150 m, +20 m por cada muro cruzado — D-048
 - [x] Precios de las habilidades a la mitad: 2.500 / 5.000 / 10.000 — D-049
+- [x] Habilidad épica DASH: plumas; al coger una, 10 s azulado con dash en X (recarga 1 s) que mata fantasmas — D-051
+- [x] Teclas: ROMPEMUROS pasa a la Z; X es la tecla de acción general (en el HUD, "X ACCION" o la acción disponible) — D-053
+- [x] Habilidad básica IMAN (e IMAN +): imanes; al coger uno, 5 s (10 s) atrayendo los puntos pequeños cercanos — D-052
 - [x] ROMPEMUROS: 2 usos al empezar y +1 por cada portal o muro portal superado; en el HUD, "ROMPEMUROS" con los usos en grande — D-050
 - [x] Verificación: generador (300 semillas, 1.200 muros: posición, forma, sin salas cerca y cada tramo entre muros conectado), flujo completo en el navegador (saltar al muro, entrar, ganar, comprar, abrir y seguir; perder → Game Over; tienda sin puntos), muro irrompible e impasable con los poderes, capturas a 1024×768, 1280×720 y 1920×1080
 - [ ] El usuario prueba y ajusta: distancia entre muros, aspecto del muro, tienda, precios

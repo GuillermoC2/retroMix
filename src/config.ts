@@ -236,7 +236,7 @@ export const CONFIG = {
   },
 
   powers: {
-    /** Romper muro (Espacio): atraviesa en línea recta el muro que hay delante del jugador. */
+    /** ROMPEMUROS (Z): atraviesa en línea recta el muro que hay delante del jugador. */
     wallBreak: {
       /** Cargas (ROMPEMUROS) al empezar la partida. */
       startCharges: 2,
@@ -339,6 +339,45 @@ export const CONFIG = {
       every: 80,
       band: 10,
       firstAhead: 14,
+    },
+    /**
+     * DASH (épica): aparecen plumas; al coger una, el protagonista se vuelve azulado
+     * un rato y con X hace un dash (acelerón por el pasillo) que mata a los
+     * fantasmas que toca.
+     */
+    dash: {
+      /** Segundos que dura el estado azulado (con dash disponible). */
+      duration: 10,
+      /** Recarga (s) tras cada dash. */
+      cooldown: 1,
+      /** Duración (s) y multiplicador de velocidad de cada dash (≈ 5,8 casillas). */
+      dashTime: 0.16,
+      dashSpeed: 5,
+      /** Medio grosor (casillas) de la estela que mata fantasmas. */
+      hitHalfWidth: 0.6,
+      /** Últimos segundos en los que el protagonista parpadea (aviso). */
+      warning: 2,
+      every: 90,
+      band: 10,
+      firstAhead: 11,
+    },
+    /**
+     * IMAN (básica, mejora IMAN +): aparecen imanes; al coger uno, los puntos
+     * pequeños cercanos vuelan hacia el protagonista (no los energizadores ni los
+     * objetos de habilidad).
+     */
+    magnet: {
+      /** Segundos que dura (IMAN + suma `plusBonus`). */
+      duration: 5,
+      plusBonus: 5,
+      /** Radio (casillas) de atracción. */
+      radius: 3.5,
+      /** Segundos que tarda un punto en llegar volando. */
+      flyTime: 0.22,
+      warning: 1,
+      every: 75,
+      band: 10,
+      firstAhead: 9,
     },
     shop: {
       /** Tiempo (s) antes de aceptar teclas (evita compras sin querer al salir del minijuego). */

@@ -5,8 +5,8 @@ import type { Maze } from '../maze/Maze';
 import { PelletType, type Pellets } from './Pellets';
 import type { Portals } from './Portals';
 
-/** Objetos que siembran algunas habilidades: cubito de hielo (HIELO) y bola de energía (LASER). */
-export type PickupKind = 'ice' | 'laser';
+/** Objetos que siembran algunas habilidades: cubito de hielo (HIELO), bola de energía (LASER), pluma (DASH) e imán (IMAN). */
+export type PickupKind = 'ice' | 'laser' | 'dash' | 'magnet';
 
 export interface Pickup {
   id: number;
@@ -19,6 +19,8 @@ export interface Pickup {
 const SPAWN: Record<PickupKind, { every: number; band: number; firstAhead: number }> = {
   ice: CONFIG.abilities.ice,
   laser: CONFIG.abilities.laser,
+  dash: CONFIG.abilities.dash,
+  magnet: CONFIG.abilities.magnet,
 };
 
 type PickupEvents = {
