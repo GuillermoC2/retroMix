@@ -23,7 +23,7 @@ export class WallBreaker {
     this.cooldown = Math.max(0, this.cooldown - dt);
   }
 
-  /** Concede cargas (para futuras recompensas, p. ej. de un minijuego). */
+  /** Concede cargas (p. ej. al superar un portal o un muro portal). */
   grant(amount: number): void {
     this.charges += amount;
   }

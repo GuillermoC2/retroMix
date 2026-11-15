@@ -90,8 +90,10 @@ Todas las curvas siguen `start + (max − start) · (1 − e^(−metros / rampDi
 ## Poder: romper muro
 
 `systems/WallBreaker.ts` abre un túnel recto a través de todo el grosor del muro (máx. `powers.wallBreak.maxDepth`).
-El borde exterior es irrompible. La animación de pedazos está en `effects/ShatterEffect.ts`. Funciona por cargas, y
-Por defecto se empieza con 0 cargas; el menú de modo dios (K) permite romper sin gastar cargas.
+El borde exterior es irrompible. La animación de pedazos está en `effects/ShatterEffect.ts`. Funciona por usos.
+En el HUD se llama **ROMPEMUROS**, con los usos que quedan en grande a la derecha. Se empieza con 2 y cada portal o
+muro portal superado da uno más (`powers.wallBreak.startCharges` y `perPortal`); el menú de modo dios (K) permite romper
+sin gastar usos.
 
 ## Estética neón
 

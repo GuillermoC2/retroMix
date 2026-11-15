@@ -124,9 +124,13 @@ html, body {
 .hud-keys.stacked .key-label:last-child { margin-bottom: 0; }
 .key-hint .key { justify-self: center; }
 .key-label { font-size: 10px; line-height: 1.9; color: #c4c8f4; text-shadow: var(--shadow); white-space: nowrap; }
-.key-sub { font-size: 8px; color: #3ae8ff; }
-.key-hint.empty .key-sub { color: #555a80; }
 .key-label.bump { animation: bump 0.18s steps(2); }
+/* ROMPEMUROS: nombre y, a la derecha, los usos en grande. */
+.key-label.with-count { display: flex; align-items: center; gap: 12px; }
+.key-count { font-weight: normal; font-size: 26px; line-height: 1; color: var(--yellow); text-shadow: -3px 0 #2a1400, 3px 0 #2a1400, 0 -3px #2a1400, 0 3px #2a1400, 4px 5px 0 rgba(0, 0, 0, 0.6); }
+.key-hint.empty .key-count { color: #555a80; text-shadow: -3px 0 #000, 3px 0 #000, 0 -3px #000, 0 3px #000; }
+.key-count.gained { animation: key-count-gained 0.6s steps(6); }
+@keyframes key-count-gained { 0% { transform: scale(1.9); color: #fff; } 50% { transform: scale(1.3); } }
 /* Tecla: contorno negro con esquinas recortadas (pixel art), bisel y canto inferior. */
 .key {
   display: inline-block;

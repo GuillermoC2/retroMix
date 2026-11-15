@@ -86,7 +86,6 @@ Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[?]` propuesta sin
 
 No se harán sin el visto bueno del usuario (se evita añadir funcionalidades no pedidas).
 
-- [?] **Cómo se ganan cargas de romper muro** en el juego normal (p. ej. objeto en el laberinto, cada N metros, recompensa de minijuego en la Fase 2). Al decidirlo: ajustar `powers.wallBreak.startCharges` (hoy 0; sin cargas solo se rompe con el truco del modo dios, D-032)
 - [?] Incorporar las pruebas al repo como `npm test`: conectividad del generador y fuzzing de movimiento (D-015)
 - [?] Sonido y efectos (comer, energizador, muerte, música)
 - [?] Tecla de pausa
@@ -148,11 +147,13 @@ partida. Todo sujeto a cambios hasta que guste al usuario.
 - [x] Sin anuncio grande al obtener una habilidad (es de los poderes especiales) — D-045
 - [x] Muros portal cada 100–150 m, +20 m por cada muro cruzado — D-048
 - [x] Precios de las habilidades a la mitad: 2.500 / 5.000 / 10.000 — D-049
+- [x] ROMPEMUROS: 2 usos al empezar y +1 por cada portal o muro portal superado; en el HUD, "ROMPEMUROS" con los usos en grande — D-050
 - [x] Verificación: generador (300 semillas, 1.200 muros: posición, forma, sin salas cerca y cada tramo entre muros conectado), flujo completo en el navegador (saltar al muro, entrar, ganar, comprar, abrir y seguir; perder → Game Over; tienda sin puntos), muro irrompible e impasable con los poderes, capturas a 1024×768, 1280×720 y 1920×1080
 - [ ] El usuario prueba y ajusta: distancia entre muros, aspecto del muro, tienda, precios
 - [ ] Más habilidades (básicas, épicas y legendarias)
 - [ ] Más minijuegos para los muros (y los portales)
 - [?] Mostrar en el HUD el tiempo que queda de congelación (HIELO) y de láser
+- [?] Si el mapa se queda corto de objetos de habilidad: acortar su intervalo con cada muro superado (p. ej. 100 m, −8 % por muro, mínimo 35–40 m). Por ahora el usuario prefiere el intervalo fijo: el mapa se llenará al añadir habilidades
 - [?] LASER es legendaria por elección propia (el usuario no indicó el nivel, D-047)
 
 ## Deuda técnica y problemas conocidos

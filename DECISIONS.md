@@ -352,6 +352,12 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 - **Contexto:** con los muros portal cada 100–150 m (D-048), al llegar a un muro casi nunca se tienen puntos suficientes. El usuario pide bajar a la mitad el precio de todas las habilidades.
 - **Decisión:** básica 2.500, épica 5.000 y legendaria 10.000 puntos (`CONFIG.abilities.tiers`). La tienda y las cartas leen el precio de ahí, así que no cambia nada más.
 
+## D-050 · ROMPEMUROS: 2 al empezar y +1 por portal
+- **Fecha:** 2026-11-15 · **Estado:** Vigente (resuelve cómo se ganan cargas de romper muro, pendiente desde D-032)
+- **Contexto:** petición del usuario: 2 rompemuros al empezar cada partida y uno más por cada portal, sea muro o normal. En la interfaz, "ROMPEMUROS" en lugar de "ROMPER MURO", con el número de usos en grande a la derecha del nombre.
+- **Decisión:** `powers.wallBreak.startCharges` = 2 y `perPortal` = 1. El uso se concede al **superar** el portal: al ganar su minijuego (o con "saltar minijuegos: ganar"). En un muro, al volver de la tienda, cuando se abre. Perder acaba la partida, así que no da nada. Al ganarlo: "+1 ROMPEMUROS" flotante y el número salta.
+- **HUD:** "ESPACIO · ROMPEMUROS" y, a la derecha, los usos en grande (amarillo, con contorno). En gris si no quedan; "INF" con el truco del modo dios. Desaparece el texto pequeño "CARGAS N".
+
 ## D-015 · Pruebas fuera del repositorio (provisional)
 - **Fecha:** 2026-11-13 · **Estado:** En revisión
 - **Decisión actual:** el test de conectividad del generador, el fuzzing de movimiento y las capturas con Edge headless + `puppeteer-core` se ejecutaron desde un directorio temporal, sin añadir dependencias al proyecto.

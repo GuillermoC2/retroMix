@@ -41,8 +41,9 @@ export class Hud {
   private keys = el('div', 'hud-keys');
   /** Habilidades compradas, encima de las ayudas de teclas. */
   private abilities = el('div', 'hud-abilities');
-  private power = keyHint('ESPACIO', 'ROMPER MURO');
-  private charges = el('div', 'key-sub');
+  private power = keyHint('ESPACIO', 'ROMPEMUROS');
+  /** Usos de ROMPEMUROS, en grande a la derecha del nombre. */
+  private charges = el('b', 'key-count');
   private chargesShown = '';
   private view = keyHint('C', 'CAMBIAR VISTA');
   /** Anchura de las ayudas en dos columnas (tecla | texto), medida mientras se muestran así. */
@@ -57,6 +58,7 @@ export class Hud {
   private announcer = el('div', 'hud-announce');
 
   constructor(parent: HTMLElement, records: RecordEntry) {
+    this.power.label.classList.add('with-count');
     this.power.label.appendChild(this.charges);
     this.keys.append(this.abilities, this.power.root, this.view.root);
     this.setAbilities([]);
@@ -114,13 +116,19 @@ export class Hud {
     this.records.update(dt);
   }
 
-  /** Cargas del poder romper muro. */
+  /** Usos que quedan de ROMPEMUROS (INF con el truco del modo dios). Al ganar uno, el número salta. */
   setPower(charges: number, devInfinite: boolean): void {
-    const text = devInfinite ? 'CARGAS INF (DIOS)' : `CARGAS ${charges}`;
+    const text = devInfinite ? 'INF' : String(charges);
     if (text === this.chargesShown) return;
+    const gained = !devInfinite && this.chargesShown !== '' && charges > Number(this.chargesShown);
     this.chargesShown = text;
     this.charges.textContent = text;
     this.power.root.classList.toggle('empty', !devInfinite && charges <= 0);
+    if (gained) {
+      this.charges.classList.remove('gained');
+      void this.charges.offsetWidth;
+      this.charges.classList.add('gained');
+    }
   }
 
   /** Se ha pulsado el poder (funcione o no). */

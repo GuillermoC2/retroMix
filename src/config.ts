@@ -238,8 +238,10 @@ export const CONFIG = {
   powers: {
     /** Romper muro (Espacio): atraviesa en línea recta el muro que hay delante del jugador. */
     wallBreak: {
-      /** Cargas al empezar la partida. Cómo se ganan más está por definir (ver PLAN.md). */
-      startCharges: 0,
+      /** Cargas (ROMPEMUROS) al empezar la partida. */
+      startCharges: 2,
+      /** Cargas que se ganan al superar el minijuego de un portal o de un muro portal. */
+      perPortal: 1,
       /** Grosor máximo (casillas) que se puede atravesar de una vez. */
       maxDepth: 4,
       /** Tiempo mínimo entre usos (s). */

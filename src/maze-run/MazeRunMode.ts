@@ -617,10 +617,19 @@ export class MazeRunMode implements GameMode {
     this.shatter.burst(this.gates.tiles(gate).filter((t) => t.x % 2 === 1), Dir.Up, color, true);
     this.cameraRig.shake(0.4);
     this.state.setPhase('playing');
+    this.grantWallBreak();
     const name = bought ? abilityName(bought, this.abilities.level(bought)) : '';
     this.refreshAbilities(name);
     // Comprar no muestra anuncio (es de los poderes especiales): salta su etiqueta en el HUD.
     if (!bought) this.hud.announce('¡ADELANTE!', 'MURO SUPERADO');
+  }
+
+  /** Superar un portal o un muro portal da un ROMPEMUROS más. */
+  private grantWallBreak(): void {
+    const n = CONFIG.powers.wallBreak.perPortal;
+    this.wallBreaker.grant(n);
+    this.popupAt(`+${n} ROMPEMUROS`, this.player.x, this.player.y + 1);
+    this.hud.pulsePower();
   }
 
   /** Lista de habilidades compradas en el HUD. */
@@ -831,6 +840,7 @@ export class MazeRunMode implements GameMode {
     state.events.emit('minigameResult', { game: portal.game.id, won: result.won });
     if (result.won) {
       state.setPhase('playing');
+      this.grantWallBreak();
       this.activatePower(this.powers.pick(this.rng));
     } else if (godSettings.invincible) {
       state.setPhase('playing');
