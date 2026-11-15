@@ -10,6 +10,12 @@ export interface GodMenuToggle {
   toggle: () => void;
 }
 
+/** Grupo de acciones con su título en el menú. */
+export interface GodMenuSection {
+  title: string;
+  actions: GodMenuAction[];
+}
+
 /** Acción que cierra el menú y se ejecuta en la partida (p. ej. lanzar un poder especial). Solo con clic. */
 export interface GodMenuAction {
   label: string;
@@ -24,7 +30,8 @@ const OPTION_ACTIONS: readonly Action[] = ['opt1', 'opt2', 'opt3', 'opt4', 'opt5
  * Menú de modo dios (solo desarrollo). Se apila sobre la partida, que queda en
  * pausa; K o Esc lo cierran.
  *  - TRUCOS: se cambian con las teclas 1–9 o con clic.
- *  - PODERES ESPECIALES: con clic; cierran el menú y lanzan el poder.
+ *  - Secciones de acciones (poderes especiales, saltos…): con clic; cierran el
+ *    menú y se ejecutan.
  * Aspecto deliberadamente mínimo.
  */
 export class GodMenuMode implements GameMode {
@@ -35,7 +42,7 @@ export class GodMenuMode implements GameMode {
   constructor(
     private ctx: GameContext,
     private toggles: GodMenuToggle[],
-    private actions: GodMenuAction[],
+    private sections: GodMenuSection[],
   ) {}
 
   enter(): void {
@@ -94,12 +101,14 @@ export class GodMenuMode implements GameMode {
         this.draw();
       }),
     );
-    line('god-section', 'PODERES ESPECIALES (CLIC)');
-    for (const a of this.actions) {
-      button(a.label, a.button(), () => {
-        this.close();
-        a.run();
-      });
+    for (const section of this.sections) {
+      line('god-section', `${section.title} (CLIC)`);
+      for (const a of section.actions) {
+        button(a.label, a.button(), () => {
+          this.close();
+          a.run();
+        });
+      }
     }
     line('god-foot', 'K / ESC: CERRAR');
   }

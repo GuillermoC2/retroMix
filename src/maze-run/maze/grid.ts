@@ -1,6 +1,7 @@
 /** Tipos básicos de la rejilla del laberinto: casillas y direcciones. */
 
-export const Tile = { Open: 0, Wall: 1 } as const;
+/** `Gate`: muro portal (bloquea a todos y es irrompible hasta superar su minijuego). */
+export const Tile = { Open: 0, Wall: 1, Gate: 2 } as const;
 export type Tile = (typeof Tile)[keyof typeof Tile];
 
 /** 0 = arriba, 1 = derecha, 2 = abajo, 3 = izquierda (Y crece hacia arriba). */

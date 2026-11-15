@@ -266,6 +266,46 @@ export const CONFIG = {
   },
 
   /**
+   * Muros portal: cada cierta distancia una barrera de lado a lado corta el
+   * laberinto. No se puede romper ni rodear: al tocarla se entra en su minijuego
+   * (anunciado sobre el muro). Ganar abre la tienda de habilidades y el muro;
+   * perder acaba la partida.
+   */
+  gates: {
+    /** Metros del primer muro y separación entre muros. */
+    firstAt: 500,
+    every: 500,
+    /** Grosor del muro (casillas). */
+    rows: 3,
+    /** Las salas con portal se apartan al menos estas filas de un muro. */
+    plazaClearance: 24,
+    /** Duración (s) de la absorción al tocar el muro y de su apertura. */
+    absorbTime: 0.6,
+    openTime: 0.7,
+  },
+
+  /**
+   * Habilidades permanentes que se compran en la tienda tras superar un muro
+   * portal. Cada casilla de la tienda es de un nivel, con su precio (puntos) y su
+   * color de marco. Las habilidades se definen en `maze-run/abilities/catalog.ts`.
+   */
+  abilities: {
+    tiers: {
+      basic: { name: 'BASICA', price: 5000, color: '#3a8bff' },
+      epic: { name: 'EPICA', price: 10000, color: '#b04bff' },
+      legendary: { name: 'LEGENDARIA', price: 20000, color: '#ffc21a' },
+    },
+    /** SUSTO LARGO (básica): segundos extra del susto de los energizadores, por cada copia. */
+    longFright: { frightBonus: 2 },
+    shop: {
+      /** Tiempo (s) antes de aceptar teclas (evita compras sin querer al salir del minijuego). */
+      inputDelay: 0.6,
+      /** Tiempo (s) que se celebra la compra antes de volver al laberinto. */
+      closeDelay: 1.1,
+    },
+  },
+
+  /**
    * Poderes especiales que se ganan al vencer un minijuego. Se elige uno al azar
    * de `pool` y se activa automáticamente.
    */
@@ -409,3 +449,4 @@ export const CONFIG = {
 
 export type MazeStyle = (typeof CONFIG.maze.styles)[number];
 export type SpecialPowerId = (typeof CONFIG.specialPowers.pool)[number];
+export type AbilityTier = keyof typeof CONFIG.abilities.tiers;

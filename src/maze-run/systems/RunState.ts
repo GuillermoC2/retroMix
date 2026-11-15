@@ -23,6 +23,10 @@ export type RunEvents = {
   minigameResult: { game: string; won: boolean };
   /** Empieza o termina un poder especial. */
   specialPower: { id: string; active: boolean };
+  /** Se ha tocado un muro portal (entra en su minijuego). */
+  gateEntered: { game: string };
+  /** Se ha comprado una habilidad en la tienda (los puntos ya se han descontado). */
+  abilityBought: { id: string; tier: string; price: number };
 };
 
 /**
@@ -60,6 +64,13 @@ export class RunState {
   addScore(amount: number, x: number, y: number, showPopup = false): void {
     this.score += amount;
     this.events.emit('score', { amount, x, y, showPopup });
+  }
+
+  /** Gasta puntos (tienda de habilidades). @returns false si no hay suficientes. */
+  spend(amount: number): boolean {
+    if (this.score < amount) return false;
+    this.score -= amount;
+    return true;
   }
 
   reachRow(row: number): void {

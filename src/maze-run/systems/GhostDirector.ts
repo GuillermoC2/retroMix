@@ -91,9 +91,12 @@ export class GhostDirector {
     }
   }
 
-  /** Asusta a todos los fantasmas activos. */
-  frighten(meters: number): number {
-    const duration = frightDuration(meters);
+  /**
+   * Asusta a todos los fantasmas activos.
+   * @param bonus segundos extra (habilidades compradas, p. ej. SUSTO LARGO).
+   */
+  frighten(meters: number, bonus = 0): number {
+    const duration = frightDuration(meters) + bonus;
     this.frightTimer = duration;
     this.eatCombo = 0;
     for (const g of this.ghosts) if (g.state === 'normal' || g.state === 'frightened') g.setState('frightened');
@@ -232,6 +235,12 @@ export class GhostDirector {
     ghost.dir = 2;
     this.ghosts.push(ghost);
     return true;
+  }
+
+  /** Quita todos los fantasmas (p. ej. al saltar a otra zona con el modo dios). */
+  clear(): void {
+    [...this.ghosts].forEach((g) => this.remove(g));
+    this.frightTimer = 0;
   }
 
   private remove(g: Ghost): void {

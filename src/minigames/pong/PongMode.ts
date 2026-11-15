@@ -1,6 +1,6 @@
 import type { GameContext } from '../../core/Game';
 import type { GameMode } from '../../core/ModeStack';
-import type { MinigameResult } from '../types';
+import type { MinigameResult, MinigameStakes } from '../types';
 import { BALL_HALF, COURT_LINE, PADDLE_INSET, PADDLE_WIDTH, PongGame } from './PongGame';
 
 const COLORS = {
@@ -46,6 +46,7 @@ export class PongMode implements GameMode {
   constructor(
     private ctx: GameContext,
     private done: (result: MinigameResult) => void,
+    private stakes: MinigameStakes,
   ) {}
 
   enter(): void {
@@ -63,7 +64,7 @@ export class PongMode implements GameMode {
         </div>
         <div class="mg-footer">
           <div><span class="key">W</span><span class="key">S</span> O FLECHAS: MOVER</div>
-          <div class="mg-stakes">PRIMERO A ${pointsToWin} · GANA: PODER ESPECIAL · PIERDE: FIN DE LA PARTIDA</div>
+          <div class="mg-stakes">PRIMERO A ${pointsToWin} · GANA: ${this.stakes.reward} · PIERDE: FIN DE LA PARTIDA</div>
         </div>
       </div>`;
     this.screen.className = 'mg-screen';
@@ -137,7 +138,7 @@ export class PongMode implements GameMode {
       case 'over': {
         const won = game.winner === 'player';
         big = won ? '¡HAS GANADO!' : 'HAS PERDIDO';
-        small = won ? 'TE LLEVAS UN PODER ESPECIAL' : 'FIN DE LA PARTIDA';
+        small = won ? this.stakes.wonText : 'FIN DE LA PARTIDA';
         tone = won ? 'good' : 'bad';
         break;
       }

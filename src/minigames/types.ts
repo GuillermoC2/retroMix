@@ -6,8 +6,16 @@ export interface MinigameResult {
   won: boolean;
 }
 
+/** Qué se juega el jugador: textos que el minijuego muestra (la recompensa depende de quién lo lanza). */
+export interface MinigameStakes {
+  /** Recompensa al ganar, para el pie de la ventana (p. ej. "PODER ESPECIAL"). */
+  reward: string;
+  /** Texto bajo "¡HAS GANADO!" (p. ej. "TE LLEVAS UN PODER ESPECIAL"). */
+  wonText: string;
+}
+
 /**
- * Un minijuego que se puede lanzar desde un portal. `create` devuelve un modo
+ * Un minijuego que se puede lanzar desde un portal o un muro portal. `create` devuelve un modo
  * superpuesto (`overlay`) que se apila sobre el laberinto pausado; al acabar,
  * llama a `done` una sola vez y se retira él mismo con `ctx.modes.pop()`.
  */
@@ -15,5 +23,5 @@ export interface MinigameDef {
   id: string;
   /** Nombre que se muestra sobre el portal y en la ventana. */
   name: string;
-  create(ctx: GameContext, done: (result: MinigameResult) => void): GameMode;
+  create(ctx: GameContext, done: (result: MinigameResult) => void, stakes: MinigameStakes): GameMode;
 }

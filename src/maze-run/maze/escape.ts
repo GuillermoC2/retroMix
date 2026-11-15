@@ -8,11 +8,14 @@ const NETWORK_MIN = 40;
  * Casillas de muro que hay que abrir para que (x, y) quede conectada a la red de
  * pasillos: el camino que atraviesa menos muros hasta una zona abierta grande.
  * Sirve cuando un poder deja al jugador encima de un muro o en un agujero aislado.
- * El borde exterior y las filas no generadas no se atraviesan.
+ * El borde exterior, los muros portal y las filas no generadas no se atraviesan.
  */
 export function escapeTiles(maze: Maze, x: number, y: number): Array<{ x: number; y: number }> {
   const key = (tx: number, ty: number) => ty * 64 + tx;
-  const crossable = (tx: number, ty: number) => tx > 0 && tx < maze.width - 1 && maze.tile(tx, ty) !== undefined;
+  const crossable = (tx: number, ty: number) => {
+    const tile = maze.tile(tx, ty);
+    return tx > 0 && tx < maze.width - 1 && tile !== undefined && tile !== Tile.Gate;
+  };
   if (!crossable(x, y)) return [];
 
   const cost = new Map<number, number>([[key(x, y), maze.isOpen(x, y) ? 0 : 1]]);

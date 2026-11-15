@@ -5,7 +5,7 @@ Documento vivo. Se actualiza al empezar y al terminar cada tarea. Las decisiones
 
 Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[?]` propuesta sin aprobar (requiere visto bueno del usuario)
 
-**Estado actual:** Fase 2 (primera integración) completada: portales cada 150 m, Pong, poder GIGANTE (8 s) con su cinemática y menú de modo dios. Siguiente paso: nuevos poderes especiales. Pendiente para más adelante: mejorar la interfaz y el funcionamiento del Pong.
+**Estado actual:** Fase 3 (muros portal y tienda de habilidades) hecha, a la espera de que el usuario la pruebe; todo sujeto a cambios hasta que le guste. Con esto queda la base del juego: lo siguiente es ir añadiendo habilidades, minijuegos y alguna mecánica nueva. Pendiente para más adelante: mejorar la interfaz y el funcionamiento del Pong.
 
 ---
 
@@ -72,6 +72,7 @@ Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[?]` propuesta sin
 - [x] Modo dios con la tecla K (no se puede morir), solo para desarrollo — D-023
 - [x] Cargas infinitas de romper muro (`dev.infinitePowers`) — D-018
 - [x] Menú de modo dios con K: activar/desactivar invencibilidad, romper muro infinito y cada poder especial; el romper muro infinito deja de estar activo por defecto — D-032
+- [x] Menú K, sección PRUEBAS: saltar justo debajo del siguiente muro portal y sumar 10.000 puntos (para probar la tienda) — D-041
 - [ ] Antes de publicar: poner a `false` todo lo de `CONFIG.dev`
 
 ## Siguiente — Ajuste por juego real
@@ -91,7 +92,11 @@ No se harán sin el visto bueno del usuario (se evita añadir funcionalidades no
 - ~~Controles táctiles o móvil~~ — descartado: el juego es solo para escritorio (D-026)
 - [?] GIGANTE inmune a la lava (ahora la lava sí le mata, D-031)
 - [?] Puntos por cada muro comido por el GIGANTE
-- [?] Atajo de desarrollo para saltar al siguiente portal
+- [?] Atajo de desarrollo para saltar al siguiente portal de sala (el de los muros portal ya existe, D-041)
+- [?] Gastar puntos en la tienda baja también la puntuación final y su récord (D-042). Alternativa: llevar aparte los puntos gastables y los totales
+- [?] Limitar cuántas veces se puede comprar la misma habilidad (hoy se acumulan sin límite, D-043)
+- [?] Que perder el minijuego de un muro portal no acabe la partida (p. ej. reintentar pagando puntos o perder una habilidad)
+- [?] Mostrar en la tienda las habilidades que ya se tienen y sus efectos sumados
 - [?] Lista de récords que reacciona en directo: al superar una distancia de la lista durante la partida, esa fila salta y se marca como superada
 - [?] Retocar el sprite del protagonista mirando hacia arriba (parado, se lee algo como un corazón)
 
@@ -121,6 +126,27 @@ activa solo; si se pierde, se acaba la partida.
 - [ ] Más poderes especiales
 - [ ] Más minijuegos (Tetris, Space Invaders…)
 - [ ] Animaciones de entrada y salida del portal más elaboradas (a petición del usuario, más adelante)
+
+## Fase 3 — Muros portal y tienda de habilidades (2026-11-15)
+
+Cada ~500 m un muro portal corta el laberinto de lado a lado. No se puede romper ni rodear: al tocarlo se entra en un
+minijuego al azar (su nombre ya aparece sobre el muro). Si se gana, se abre una tienda con 3 habilidades permanentes
+(básica azul 5.000, épica morada 10.000, legendaria dorada 20.000 puntos) y luego el muro se abre; si se pierde, fin de la
+partida. Todo sujeto a cambios hasta que guste al usuario.
+
+- [x] Muro portal en el generador: fila de bloques convertida en barrera (`Tile.Gate`) con las líneas de debajo y de encima abiertas de lado a lado; las salas con portal se apartan — D-041
+- [x] Nadie lo atraviesa: jugador, fantasmas, romper muro, GIGANTE, GHOUL y el camino de escape del GHOUL lo respetan — D-041
+- [x] Aspecto: campo de energía pixelado con flechas que suben, barandillas, pilares y dos emblemas de portal; recorre el arcoíris; se disuelve y se hunde al abrirse — D-041
+- [x] Cartel con el nombre del minijuego en el centro del muro ("PONG · MURO PORTAL · TOCALO PARA ENTRAR") — D-041
+- [x] Tocarlo (empujar hacia arriba desde la línea de debajo): el jugador se mete en el muro y empieza el minijuego (por ahora siempre Pong) — D-041
+- [x] Ganar → tienda de habilidades con 3 cartas flotantes a pantalla completa; perder → Game Over — D-042
+- [x] Tienda: teclado (flechas, Enter, 1–3, Esc) y ratón; cartas bloqueadas si faltan puntos; casillas vacías; se compra una como mucho — D-042
+- [x] Habilidades: catálogo por niveles (básica, épica, legendaria) y lista de compradas en el HUD — D-042
+- [x] Primera habilidad básica: SUSTO LARGO (+2 s al susto de los energizadores, acumulable) — D-043
+- [x] Verificación: generador (300 semillas, 1.200 muros: posición, forma, sin salas cerca y cada tramo entre muros conectado), flujo completo en el navegador (saltar al muro, entrar, ganar, comprar, abrir y seguir; perder → Game Over; tienda sin puntos), muro irrompible e impasable con los poderes, capturas a 1024×768, 1280×720 y 1920×1080
+- [ ] El usuario prueba y ajusta: distancia entre muros, aspecto del muro, tienda, precios
+- [ ] Más habilidades (básicas, épicas y legendarias)
+- [ ] Más minijuegos para los muros (y los portales)
 
 ## Deuda técnica y problemas conocidos
 

@@ -39,6 +39,8 @@ export class Hud {
   private score: ScoreDisplay;
   private records: RecordsList;
   private keys = el('div', 'hud-keys');
+  /** Habilidades compradas, encima de las ayudas de teclas. */
+  private abilities = el('div', 'hud-abilities');
   private power = keyHint('ESPACIO', 'ROMPER MURO');
   private charges = el('div', 'key-sub');
   private chargesShown = '';
@@ -56,7 +58,8 @@ export class Hud {
 
   constructor(parent: HTMLElement, records: RecordEntry) {
     this.power.label.appendChild(this.charges);
-    this.keys.append(this.power.root, this.view.root);
+    this.keys.append(this.abilities, this.power.root, this.view.root);
+    this.setAbilities([]);
     this.specialBar.appendChild(this.specialFill);
     this.special.append(this.specialName, this.specialBar);
     this.root.append(this.keys, this.message, this.god, this.special, this.announcer);
@@ -130,6 +133,23 @@ export class Hud {
     this.power.label.classList.remove('bump');
     void this.power.label.offsetWidth;
     this.power.label.classList.add('bump');
+  }
+
+  /**
+   * Habilidades compradas: nombre, copias y color de su nivel.
+   * @param highlight nombre de la recién comprada (salta un momento).
+   */
+  setAbilities(items: ReadonlyArray<{ name: string; count: number; color: string }>, highlight = ''): void {
+    this.abilities.innerHTML = '';
+    this.abilities.style.display = items.length ? '' : 'none';
+    if (!items.length) return;
+    this.abilities.append(el('div', 'hud-abilities-title', 'HABILIDADES'));
+    for (const item of items) {
+      const chip = el('div', `ability-chip${item.name === highlight ? ' new' : ''}`, item.name);
+      chip.style.setProperty('--tier', item.color);
+      if (item.count > 1) chip.append(el('b', '', `X${item.count}`));
+      this.abilities.append(chip);
+    }
   }
 
   /** Se ha cambiado de vista. */

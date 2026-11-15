@@ -422,3 +422,169 @@ html, body {
 }
 .god-row:hover { background: #2a2a4a; }
 .god-row b { font-weight: normal; color: var(--yellow); }
+
+/* --- Muro portal: cartel con el nombre del minijuego (más grande que el de los portales) --- */
+.gate-labels .portal-label { transform: translate(-50%, -50%); gap: 8px; animation-duration: 0.9s; }
+.gate-labels .portal-label-game {
+  font-size: 30px;
+  letter-spacing: 6px;
+  --edge: #12002a;
+  text-shadow:
+    -3px 0 var(--edge), 3px 0 var(--edge), 0 -3px var(--edge), 0 3px var(--edge),
+    -3px -3px var(--edge), 3px -3px var(--edge), -3px 3px var(--edge), 3px 3px var(--edge),
+    6px 7px 0 rgba(0, 0, 0, 0.6), 0 0 18px currentColor;
+}
+.gate-labels .portal-label-hint { font-size: 9px; letter-spacing: 3px; color: var(--white); padding: 5px 8px; background: #000; box-shadow: 0 0 0 3px #ff5ad8; }
+
+/* --- Habilidades compradas (encima de las ayudas de teclas) --- */
+.hud-abilities { grid-column: 1 / -1; justify-self: center; display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 10px; }
+.hud-abilities-title { font-size: 9px; color: var(--blue); letter-spacing: 3px; text-shadow: var(--shadow); }
+.ability-chip {
+  font-size: 9px;
+  padding: 6px 8px 5px;
+  color: var(--white);
+  background: #05051a;
+  border: 3px solid var(--tier);
+  box-shadow: 0 0 0 2px #000, 0 0 10px var(--tier);
+  text-shadow: var(--shadow);
+  white-space: nowrap;
+}
+.ability-chip b { color: var(--tier); font-weight: normal; margin-left: 6px; }
+.ability-chip.new { animation: bump 0.25s steps(2) 3; }
+
+/* --- Tienda de habilidades: tres cartas flotantes que ocupan la pantalla --- */
+.shop {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3vh 3vw 3.5vh;
+  background:
+    repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0) 0 2px, rgba(0, 0, 0, 0.25) 2px 4px),
+    radial-gradient(ellipse at center, rgba(40, 10, 80, 0.82), rgba(0, 0, 8, 0.94));
+  pointer-events: auto;
+  text-shadow: var(--shadow);
+  animation: fade-in 0.25s ease-out;
+}
+.shop-head { text-align: center; }
+.shop-title {
+  font-size: clamp(22px, 4.2vh, 40px);
+  color: var(--yellow);
+  --edge: #2a1400;
+  text-shadow:
+    -4px 0 var(--edge), 4px 0 var(--edge), 0 -4px var(--edge), 0 4px var(--edge),
+    -4px -4px var(--edge), 4px -4px var(--edge), -4px 4px var(--edge), 4px 4px var(--edge),
+    7px 9px 0 rgba(0, 0, 0, 0.65);
+  animation: shop-title 0.55s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+@keyframes shop-title { from { transform: scale(0.3) rotate(-6deg); } 60% { transform: scale(1.15) rotate(2deg); } }
+.shop-sub { font-size: clamp(10px, 1.6vh, 14px); color: #3ae8ff; letter-spacing: 4px; margin-top: 1.6vh; }
+.shop-points { font-size: clamp(10px, 1.6vh, 14px); color: #c4c8f4; margin-top: 1.6vh; letter-spacing: 2px; }
+.shop-points b { font-weight: normal; color: var(--white); font-size: 1.6em; margin-left: 8px; }
+
+.shop-cards { flex: 1; display: flex; justify-content: center; align-items: center; gap: 3vw; width: 100%; min-height: 0; padding: 2vh 0; }
+.shop-slot { height: 100%; max-height: 64vh; width: min(27vw, 46vh); animation: shop-float 2.8s ease-in-out infinite alternate; animation-delay: calc(var(--d) * -0.95s); will-change: transform; }
+@keyframes shop-float {
+  from { transform: translateY(-1.4vh) rotate(-1.2deg); }
+  to { transform: translateY(1.4vh) rotate(1.2deg); }
+}
+.shop-enter { height: 100%; animation: shop-in 0.6s cubic-bezier(0.2, 0.8, 0.3, 1) both; animation-delay: calc(var(--d) * 0.14s + 0.1s); will-change: transform; }
+@keyframes shop-in {
+  from { transform: translateY(70vh) scale(0.5) rotate(10deg); }
+  70% { transform: translateY(-3vh) scale(1.05) rotate(-2deg); }
+}
+
+.shop-card {
+  --tier: #3a8bff;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.6vh;
+  padding: 3vh 1.4vw 2.4vh;
+  font: inherit;
+  color: var(--white);
+  text-shadow: var(--shadow);
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--tier) 22%, #05051a), #05051a 55%);
+  border: 8px solid var(--tier);
+  box-shadow:
+    0 0 0 4px #000,
+    inset 0 0 0 4px rgba(0, 0, 0, 0.55),
+    0 0 26px color-mix(in srgb, var(--tier) 60%, transparent),
+    12px 14px 0 4px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.15s ease-out, filter 0.15s ease-out;
+}
+.shop-card.selected {
+  transform: scale(1.06);
+  filter: brightness(1.18);
+  box-shadow:
+    0 0 0 4px #000,
+    0 0 0 9px var(--white),
+    inset 0 0 0 4px rgba(0, 0, 0, 0.55),
+    0 0 44px var(--tier),
+    12px 14px 0 4px rgba(0, 0, 0, 0.6);
+}
+.shop-tier { font-size: clamp(11px, 1.9vh, 18px); letter-spacing: 4px; color: var(--tier); padding: 6px 10px; background: #000; box-shadow: 0 0 0 3px var(--tier); }
+.shop-key { position: absolute; top: 1.2vh; left: 0.8vw; font-size: 10px; color: #000; background: var(--tier); padding: 4px 6px 3px; text-shadow: none; }
+.shop-icon { width: min(13vh, 8vw); image-rendering: pixelated; image-rendering: crisp-edges; margin-top: 1vh; filter: drop-shadow(5px 6px 0 rgba(0, 0, 0, 0.6)); }
+.shop-icon-empty { height: min(13vh, 8vw); display: grid; place-items: center; font-size: min(10vh, 6vw); color: color-mix(in srgb, var(--tier) 45%, #222); }
+.shop-name { font-size: clamp(12px, 2.2vh, 20px); color: var(--white); text-align: center; line-height: 1.4; }
+.shop-badge { font-size: clamp(20px, 4.4vh, 40px); color: var(--tier); text-shadow: -3px 0 #000, 3px 0 #000, 0 -3px #000, 0 3px #000, 5px 6px 0 rgba(0, 0, 0, 0.6); }
+.shop-desc { font-size: clamp(8px, 1.25vh, 11px); line-height: 1.9; color: #c4c8f4; text-align: center; }
+.shop-owned { font-size: 9px; color: #3ae8ff; min-height: 9px; }
+.shop-price { margin-top: auto; font-size: clamp(14px, 2.6vh, 24px); color: var(--yellow); padding: 1vh 1vw; background: #000; box-shadow: 0 0 0 3px var(--tier); }
+.shop-need { font-size: 9px; color: #ff2e6d; min-height: 9px; }
+
+/* Legendaria: destello dorado que cruza la carta. */
+.shop-card.tier-legendary::after {
+  content: '';
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  width: 22%;
+  left: -40%;
+  background: rgba(255, 240, 170, 0.22);
+  transform: skewX(-18deg);
+  animation: shop-shine 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes shop-shine { 0% { transform: skewX(-18deg) translateX(0); } 55%, 100% { transform: skewX(-18deg) translateX(780%); } }
+
+.shop-card.empty { cursor: default; background: #05051a; border-style: dashed; filter: saturate(0.5) brightness(0.75); }
+.shop-card.empty .shop-name { color: #6a6e9a; }
+.shop-card.empty .shop-price { color: #555a80; }
+.shop-card.empty::after { display: none; }
+.shop-card.locked .shop-price { color: #ff2e6d; }
+.shop-card.locked { filter: brightness(0.7); }
+.shop-card.locked.selected { filter: brightness(0.85); }
+.shop-card.denied { animation: mg-shake 0.3s linear; }
+.shop-card.bought { animation: shop-bought 0.6s ease-out; transform: scale(1.1); filter: brightness(1.35); }
+.shop-card.bought .shop-price { color: var(--white); background: var(--tier); text-shadow: var(--shadow); }
+@keyframes shop-bought {
+  0% { transform: scale(1.06); filter: brightness(3); }
+  30% { transform: scale(1.22) rotate(-3deg); }
+  60% { transform: scale(1.06) rotate(2deg); filter: brightness(1.6); }
+}
+.shop-card.faded, .shop-exit.faded { opacity: 0.25; transform: scale(0.94); transition: opacity 0.3s ease-out, transform 0.3s ease-out; }
+
+.shop-foot { display: flex; flex-direction: column; align-items: center; gap: 1.6vh; }
+.shop-exit {
+  font: inherit;
+  font-size: 11px;
+  padding: 10px 16px 8px;
+  color: #c4c8f4;
+  background: #05051a;
+  border: 3px solid #555a80;
+  box-shadow: 0 0 0 3px #000;
+  cursor: pointer;
+  text-shadow: var(--shadow);
+}
+.shop-exit.selected { color: #05051a; background: var(--white); border-color: var(--white); text-shadow: none; box-shadow: 0 0 0 3px #000, 0 0 18px rgba(255, 255, 255, 0.6); }
+.shop-keys { font-size: 9px; color: #9aa3ff; }
+.shop-keys .key { min-width: 0; margin: 0 4px 8px; padding: 6px 7px 4px; font-size: 9px; text-shadow: none; }

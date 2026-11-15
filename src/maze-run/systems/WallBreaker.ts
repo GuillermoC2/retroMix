@@ -42,8 +42,8 @@ export class WallBreaker {
       const ty = y + DY[dir] * k;
       const tile = maze.tile(tx, ty);
       if (tile === Tile.Open) break; // llegamos al pasillo del otro lado
-      // Borde exterior o fuera del laberinto generado: irrompible.
-      if (tile === undefined || tx <= 0 || tx >= maze.width - 1) return { ok: false, reason: 'border', x: fx, y: fy };
+      // Borde exterior, muro portal o fuera del laberinto generado: irrompible.
+      if (tile === undefined || tile === Tile.Gate || tx <= 0 || tx >= maze.width - 1) return { ok: false, reason: 'border', x: fx, y: fy };
       if (k > maxDepth) return { ok: false, reason: 'too-thick', x: fx, y: fy };
       tiles.push({ x: tx, y: ty });
     }

@@ -18,6 +18,10 @@ import { Tile } from './grid';
  *  - Cada `portals.every` metros se abre una sala amplia con un portal en el
  *    centro: dos filas de bloques (y sus tres líneas) se vacían entre dos columnas
  *    de pasillo. Vaciar solo abre casillas, así que la conectividad se mantiene.
+ *  - Cada `gates.every` metros, un muro portal: una fila de bloques entera pasa a
+ *    ser `Tile.Gate` (barrera de lado a lado) y las líneas de debajo y de encima
+ *    se abren de lado a lado. Así, todo lo de debajo sigue conectado entre sí por
+ *    la línea inferior y todo lo de encima por la superior.
  */
 
 const LEFT = -1;
@@ -119,6 +123,8 @@ export interface GeneratedChunk {
   energizers: Array<{ x: number; y: number }>;
   /** Portales (centro de una sala) que caen en esta sección. */
   portals: Array<{ x: number; y: number }>;
+  /** Muros portal (primera y última fila de la barrera) que caen en esta sección. */
+  gates: Array<{ y0: number; y1: number }>;
   style: string;
 }
 
@@ -133,6 +139,11 @@ interface Plaza {
   x1: number;
 }
 const PLAZA_ROWS = 9;
+
+/** Muro portal: la fila de bloques r se convierte en barrera; las líneas r y r+1 se abren de lado a lado. */
+interface GateRow {
+  r: number;
+}
 
 export class MazeGenerator {
   readonly width = CONFIG.maze.width;
@@ -154,7 +165,10 @@ export class MazeGenerator {
   private style!: MazeStyle;
   /** Sala del portal más reciente (la que se está vaciando) y fila a partir de la cual toca la siguiente. */
   private plaza: Plaza | null = null;
-  private nextPlazaY = CONFIG.player.startRow + CONFIG.portals.firstAt / CONFIG.scoring.metersPerRow;
+  private nextPlazaY = this.awayFromGates(CONFIG.player.startRow + CONFIG.portals.firstAt / CONFIG.scoring.metersPerRow);
+  /** Muro portal más reciente y fila a partir de la cual toca el siguiente. */
+  private gate: GateRow | null = null;
+  private nextGateY = CONFIG.player.startRow + CONFIG.gates.firstAt / CONFIG.scoring.metersPerRow;
 
   constructor(private rng: Rng = new Rng()) {
     this.lineY[0] = 1;
@@ -174,17 +188,23 @@ export class MazeGenerator {
     }
 
     const portals: Array<{ x: number; y: number }> = [];
+    const gates: Array<{ y0: number; y1: number }> = [];
     for (let n = 0; n < CONFIG.maze.blockRowsPerChunk; n++) {
       const r = this.nextBlockRow++;
-      // Sala del portal: sus dos filas de bloques caen en la misma sección (el portal también).
-      if (index > 0 && this.lineY[r] >= this.nextPlazaY && n <= CONFIG.maze.blockRowsPerChunk - 2) {
+      const isGate = index > 0 && this.lineY[r] >= this.nextGateY;
+      if (isGate) {
+        this.gate = { r };
+        gates.push({ y0: this.lineY[r] + 1, y1: this.lineY[r] + CONFIG.gates.rows });
+        this.nextGateY += CONFIG.gates.every / CONFIG.scoring.metersPerRow;
+      } else if (index > 0 && this.lineY[r] >= this.nextPlazaY && n <= CONFIG.maze.blockRowsPerChunk - 2) {
+        // Sala del portal: sus dos filas de bloques caen en la misma sección (el portal también).
         const [c0, c1] = CONFIG.portals.plazaColumns;
         this.plaza = { r0: r, y0: this.lineY[r], x0: this.cols[c0], x1: this.cols[c1] };
         portals.push({ x: (this.width - 1) / 2, y: this.lineY[r] + (PLAZA_ROWS - 1) / 2 });
-        this.nextPlazaY += CONFIG.portals.every / CONFIG.scoring.metersPerRow;
+        this.nextPlazaY = this.awayFromGates(this.nextPlazaY + CONFIG.portals.every / CONFIG.scoring.metersPerRow);
       }
       const inPlaza = this.plaza !== null && r - this.plaza.r0 <= 1;
-      const height = inPlaza || this.rng.chance(this.style.tallRowChance) ? 3 : 2;
+      const height = isGate ? CONFIG.gates.rows : inPlaza || this.rng.chance(this.style.tallRowChance) ? 3 : 2;
       this.lineY[r + 1] = this.lineY[r] + height + 1;
       for (let c = 0; c < this.nb; c++) this.pieces.add(this.blockId(r, c));
       this.vClosed[r] = new Array(this.nc).fill(false);
@@ -205,9 +225,19 @@ export class MazeGenerator {
       }
     }
 
-    const chunk: GeneratedChunk = { index, yStart, rows, energizers: [], portals, style: this.style.name };
+    const chunk: GeneratedChunk = { index, yStart, rows, energizers: [], portals, gates, style: this.style.name };
     chunk.energizers = this.placeEnergizers(chunk);
     return chunk;
+  }
+
+  /** Si la fila `y` queda demasiado cerca de un muro portal, la lleva justo después de él (para salas con portal). */
+  private awayFromGates(y: number): number {
+    const { firstAt, every, plazaClearance } = CONFIG.gates;
+    const first = CONFIG.player.startRow + firstAt / CONFIG.scoring.metersPerRow;
+    const step = every / CONFIG.scoring.metersPerRow;
+    const k = Math.max(0, Math.round((y - first) / step));
+    const gateY = first + k * step;
+    return Math.abs(y - gateY) < plazaClearance ? gateY + plazaClearance : y;
   }
 
   private blockId(r: number, c: number): number {
@@ -321,6 +351,8 @@ export class MazeGenerator {
     }
     // Las tres líneas de la sala (abajo, centro y arriba) quedan abiertas de lado a lado.
     if (this.plaza && r >= this.plaza.r0 && r - this.plaza.r0 <= 2) this.carve(row, this.plaza);
+    // Líneas a ambos lados del muro portal: abiertas de lado a lado.
+    if (this.gate && (r === this.gate.r || r === this.gate.r + 1)) row.fill(Tile.Open, 1, this.width - 1);
     return row;
   }
 
@@ -330,6 +362,7 @@ export class MazeGenerator {
       if (!this.vClosed[r][i]) row[this.cols[i]] = Tile.Open;
     }
     if (this.plaza && r >= this.plaza.r0 && r - this.plaza.r0 <= 1) this.carve(row, this.plaza);
+    if (this.gate?.r === r) row.fill(Tile.Gate, 1, this.width - 1);
     return row;
   }
 

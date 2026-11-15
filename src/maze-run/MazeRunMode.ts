@@ -25,6 +25,11 @@ import { PelletType, Pellets } from './systems/Pellets';
 import { PelletsView } from './systems/PelletsView';
 import { Portals, type Portal } from './systems/Portals';
 import { PortalsView } from './systems/PortalsView';
+import { Gates, gateCenterY, type Gate } from './systems/Gates';
+import { GatesView } from './systems/GatesView';
+import { Abilities, type ShopSlot } from './systems/Abilities';
+import type { AbilityDef } from './abilities/catalog';
+import { AbilityShopMode } from './ui/AbilityShopMode';
 import { SpecialPowers } from './systems/SpecialPowers';
 import { RunState, type DeathCause } from './systems/RunState';
 import { WallBreaker } from './systems/WallBreaker';
@@ -32,9 +37,9 @@ import { GameOverScreen } from './ui/GameOverScreen';
 import { Hud } from './ui/Hud';
 import { Popups } from './ui/Popups';
 import { PortalLabels } from './ui/PortalLabels';
-import type { MinigameResult } from '../minigames/types';
+import type { MinigameResult, MinigameStakes } from '../minigames/types';
 import type { Passable } from './entities/Player';
-import { GodMenuMode, type GodMenuAction, type GodMenuToggle } from './dev/GodMenuMode';
+import { GodMenuMode, type GodMenuSection, type GodMenuToggle } from './dev/GodMenuMode';
 import { anyCheat, godSettings, saveGodSettings } from './dev/GodSettings';
 import { ACTOR_Z, worldX } from './world';
 import { HERO_DIAMETER } from './entities/sprites';
@@ -43,6 +48,21 @@ export const GAME_ID = 'maze-run';
 
 const DIRECTION_ACTIONS: readonly Action[] = ['up', 'right', 'down', 'left'];
 const ACTION_DIR: Record<string, Dir> = { up: Dir.Up, right: Dir.Right, down: Dir.Down, left: Dir.Left };
+
+/** Lo que se juega en cada tipo de entrada a un minijuego. */
+const PORTAL_STAKES: MinigameStakes = { reward: 'PODER ESPECIAL', wonText: 'TE LLEVAS UN PODER ESPECIAL' };
+const GATE_STAKES: MinigameStakes = { reward: 'HABILIDAD', wonText: '¡A LA TIENDA DE HABILIDADES!' };
+
+/** Entrada a un minijuego en curso: por un portal de sala o por un muro portal. */
+interface Entering {
+  target: { kind: 'portal'; portal: Portal } | { kind: 'gate'; gate: Gate };
+  fromX: number;
+  fromY: number;
+  toX: number;
+  toY: number;
+  absorbTime: number;
+  launched: boolean;
+}
 
 /**
  * La carrera por el laberinto infinito. Crea y conecta los sistemas
@@ -53,6 +73,10 @@ const ACTION_DIR: Record<string, Dir> = { up: Dir.Up, right: Dir.Right, down: Di
  * Portales: al pisar uno, el jugador es absorbido (fase `portal`) y se apila el
  * minijuego encima (este modo queda en pausa). Al volver se aplica el resultado:
  * ganar activa un poder especial aleatorio; perder acaba la partida.
+ *
+ * Muros portal: barreras de lado a lado que hay que superar. Al tocarlas se
+ * entra igual en su minijuego; ganar abre la tienda de habilidades y luego el
+ * muro; perder acaba la partida.
  */
 export class MazeRunMode implements GameMode {
   private scene = new THREE.Scene();
@@ -64,6 +88,9 @@ export class MazeRunMode implements GameMode {
   private pelletsView = new PelletsView(this.pellets);
   private portals = new Portals(this.maze, this.rng);
   private portalsView = new PortalsView(this.portals);
+  private gates = new Gates(this.maze, this.rng);
+  private gatesView = new GatesView(this.gates);
+  private abilities = new Abilities();
   private powers = new SpecialPowers();
   private tentacles = new TentacleView();
   private cinematic = new PowerCinematic(this.tentacles);
@@ -92,8 +119,9 @@ export class MazeRunMode implements GameMode {
   private hud!: Hud;
   private popups!: Popups;
   private portalLabels!: PortalLabels;
-  /** Portal por el que se está entrando (animación de absorción y minijuego en curso). */
-  private entering: { portal: Portal; fromX: number; fromY: number; launched: boolean } | null = null;
+  private gateLabels!: PortalLabels;
+  /** Portal o muro por el que se está entrando (absorción, minijuego y, tras un muro, la tienda). */
+  private entering: Entering | null = null;
   /** Nombre del minijuego perdido, para el Game Over. */
   private lostMinigame: string | null = null;
   private gameOver: GameOverScreen | null = null;
@@ -109,7 +137,7 @@ export class MazeRunMode implements GameMode {
     scene.background = new THREE.Color(0x03030a);
     scene.add(new THREE.AmbientLight(0xffffff, 0.8), new THREE.HemisphereLight(0xffffff, 0x181020, 0.5));
     scene.add(this.cameraRig.light, this.cameraRig.light.target);
-    scene.add(this.mazeView.group, this.pelletsView.group, this.playerView.mesh, this.ghostsView.group, this.lavaView.group, this.shatter.group, this.portalsView.group, this.cinematic.group, this.smoke.group, this.tentacles.group);
+    scene.add(this.mazeView.group, this.pelletsView.group, this.playerView.mesh, this.ghostsView.group, this.lavaView.group, this.shatter.group, this.portalsView.group, this.gatesView.group, this.cinematic.group, this.smoke.group, this.tentacles.group);
 
     this.maze.ensureGenerated(this.player.tileY + CONFIG.maze.generateAhead);
     this.cameraRig.snap(this.scroll.y);
@@ -118,6 +146,7 @@ export class MazeRunMode implements GameMode {
     this.hud.setMessage('PULSA UNA DIRECCION PARA EMPEZAR', true);
     this.popups = new Popups(this.ctx.ui);
     this.portalLabels = new PortalLabels(this.ctx.ui);
+    this.gateLabels = new PortalLabels(this.ctx.ui, 'MURO PORTAL · TOCALO PARA ENTRAR', 'gate-labels');
     this.stopResize = this.ctx.renderer.onResize((aspect) => this.cameraRig.setAspect(aspect));
 
     this.state.events.on('score', (e) => {
@@ -130,11 +159,14 @@ export class MazeRunMode implements GameMode {
     this.hud.dispose();
     this.popups.dispose();
     this.portalLabels.dispose();
+    this.gateLabels.dispose();
     this.gameOver?.dispose();
     this.state.events.clear();
     this.pellets.dispose();
     this.portals.dispose();
     this.portalsView.dispose();
+    this.gates.dispose();
+    this.gatesView.dispose();
     this.mazeView.dispose();
     this.pelletsView.dispose();
     this.playerView.dispose();
@@ -151,11 +183,13 @@ export class MazeRunMode implements GameMode {
   pause(): void {
     this.hud.setVisible(false);
     this.portalLabels.setVisible(false);
+    this.gateLabels.setVisible(false);
   }
 
   resume(): void {
     this.hud.setVisible(true);
     this.portalLabels.setVisible(true);
+    this.gateLabels.setVisible(true);
   }
 
   update(dt: number): void {
@@ -168,7 +202,7 @@ export class MazeRunMode implements GameMode {
       this.hud.pressViewKey();
     }
     if (CONFIG.dev.godMenuKey && input.pressed('god') && (state.phase === 'ready' || state.phase === 'playing')) {
-      this.ctx.modes.push(new GodMenuMode(this.ctx, this.godToggles(), this.godPowerActions()));
+      this.ctx.modes.push(new GodMenuMode(this.ctx, this.godToggles(), this.godSections()));
       return;
     }
 
@@ -230,6 +264,8 @@ export class MazeRunMode implements GameMode {
 
     const portal = this.portals.touching(player.x, player.y);
     if (portal) return this.enterPortal(portal);
+    const gate = this.gates.touching(player);
+    if (gate) return this.enterGate(gate);
 
     this.ghosts.update(dt, player, state.meters, this.lava.y, state.modifiers.ghostSpeed);
     if (giant) {
@@ -259,7 +295,7 @@ export class MazeRunMode implements GameMode {
     if (pellet?.type === PelletType.Dot) state.addScore(CONFIG.pellets.dotScore, pellet.x, pellet.y);
     if (pellet?.type === PelletType.Energizer) {
       state.addScore(CONFIG.pellets.energizerScore, pellet.x, pellet.y, true);
-      state.events.emit('energizer', { duration: this.ghosts.frighten(state.meters) });
+      state.events.emit('energizer', { duration: this.ghosts.frighten(state.meters, this.abilities.frightBonus) });
     }
   }
 
@@ -271,7 +307,7 @@ export class MazeRunMode implements GameMode {
   private readonly giantPassable: Passable = (x, y) => {
     // Su centro no entra en muros tan cerca del borde que el cuerpo lo atravesaría.
     const margin = 1 + Math.floor(CONFIG.specialPowers.giant.reach);
-    return this.maze.isOpen(x, y) || (this.maze.tile(x, y) !== undefined && x >= margin && x <= this.maze.width - 1 - margin);
+    return this.maze.isOpen(x, y) || (this.maze.tile(x, y) === Tile.Wall && x >= margin && x <= this.maze.width - 1 - margin);
   };
 
   /** Come muros y puntos alrededor de su centro (≈ 6×6 casillas). El borde exterior no se come. */
@@ -298,14 +334,19 @@ export class MazeRunMode implements GameMode {
   // Poder GHOUL
   // ---------------------------------------------------------------------------
 
-  /** El GHOUL camina por encima de cualquier casilla salvo el borde exterior. */
-  private readonly ghoulPassable: Passable = (x, y) => this.maze.tile(x, y) !== undefined && x >= 1 && x <= this.maze.width - 2;
+  /** El GHOUL camina por encima de cualquier casilla salvo el borde exterior y los muros portal. */
+  private readonly ghoulPassable: Passable = (x, y) => {
+    const tile = this.maze.tile(x, y);
+    return tile !== undefined && tile !== Tile.Gate && x >= 1 && x <= this.maze.width - 2;
+  };
 
   /** Altura del suelo bajo un pie: 0 si se clava (pasillo o bloque que se rompe); la tapa si es irrompible. */
   private readonly groundZ: GroundZ = (x, y) => {
     const tx = Math.round(x);
     const tile = this.maze.tile(tx, Math.round(y));
     const breakable = tx >= 1 && tx <= this.maze.width - 2;
+    // Sobre un muro portal el pie se apoya encima del campo de energía.
+    if (tile === Tile.Gate) return CONFIG.maze.wallDepth + 0.06;
     return tile === undefined || (tile === Tile.Wall && !breakable) ? CONFIG.maze.wallDepth : 0;
   };
 
@@ -417,25 +458,118 @@ export class MazeRunMode implements GameMode {
   // ---------------------------------------------------------------------------
 
   private enterPortal(portal: Portal): void {
-    this.entering = { portal, fromX: this.player.x, fromY: this.player.y, launched: false };
+    const { player } = this;
+    this.entering = {
+      target: { kind: 'portal', portal },
+      fromX: player.x,
+      fromY: player.y,
+      toX: portal.x,
+      toY: portal.y,
+      absorbTime: CONFIG.portals.absorbTime,
+      launched: false,
+    };
     this.portalsView.absorbing = portal;
     this.state.setPhase('portal');
     this.state.events.emit('portalEntered', { game: portal.game.id });
   }
 
-  /** Absorción: el jugador va al centro del portal girando y encogiendo; luego se abre el minijuego. */
+  /** Tocar un muro portal: el jugador se mete en el muro (en su columna) y se abre su minijuego. */
+  private enterGate(gate: Gate): void {
+    const { player } = this;
+    this.entering = {
+      target: { kind: 'gate', gate },
+      fromX: player.x,
+      fromY: player.y,
+      toX: player.tileX,
+      toY: Math.round(gateCenterY(gate)),
+      absorbTime: CONFIG.gates.absorbTime,
+      launched: false,
+    };
+    this.gatesView.absorbing = gate;
+    this.state.setPhase('portal');
+    this.state.events.emit('gateEntered', { game: gate.game.id });
+  }
+
+  /** Absorción: el jugador va al portal (o dentro del muro) girando y encogiendo; luego se abre el minijuego. */
   private updatePortal(): void {
     const e = this.entering;
     if (!e || e.launched) return;
-    const t = Math.min(1, this.state.phaseTime / CONFIG.portals.absorbTime);
-    this.player.x = e.fromX + (e.portal.x - e.fromX) * t;
-    this.player.y = e.fromY + (e.portal.y - e.fromY) * t;
+    const t = Math.min(1, this.state.phaseTime / e.absorbTime);
+    this.player.x = e.fromX + (e.toX - e.fromX) * t;
+    this.player.y = e.fromY + (e.toY - e.fromY) * t;
     if (t < 1) return;
     e.launched = true;
-    this.portals.close(e.portal);
-    this.portalsView.absorbing = null;
-    const { portal } = e;
-    this.ctx.modes.push(portal.game.create(this.ctx, (result) => this.onMinigameDone(portal, result)));
+    const { target } = e;
+    if (target.kind === 'portal') {
+      const { portal } = target;
+      this.portals.close(portal);
+      this.portalsView.absorbing = null;
+      this.ctx.modes.push(portal.game.create(this.ctx, (result) => this.onMinigameDone(portal, result), PORTAL_STAKES));
+    } else {
+      const { gate } = target;
+      this.ctx.modes.push(gate.game.create(this.ctx, (result) => this.onGateMinigameDone(gate, result), GATE_STAKES));
+    }
+  }
+
+  /** Vuelta del minijuego de un muro: ganar lleva a la tienda; perder acaba la partida. */
+  private onGateMinigameDone(gate: Gate, result: MinigameResult): void {
+    const { state, player } = this;
+    state.events.emit('minigameResult', { game: gate.game.id, won: result.won });
+    if (result.won) return this.openShop(gate);
+    // Sale del muro y vuelve a la línea de debajo (el muro sigue cerrado).
+    const e = this.entering!;
+    player.x = Math.round(e.fromX);
+    player.y = gate.y0 - 1;
+    player.wantDir = null;
+    this.entering = null;
+    this.gatesView.absorbing = null;
+    if (godSettings.invincible) {
+      state.setPhase('playing');
+      this.hud.announce('PERDISTE', 'INVENCIBLE: SIGUES VIVO');
+    } else {
+      this.lostMinigame = gate.game.name;
+      this.die('minigame');
+    }
+  }
+
+  /** Tienda de habilidades: una casilla por nivel; al cerrarla se abre el muro. */
+  private openShop(gate: Gate): void {
+    const { state } = this;
+    this.ctx.modes.push(
+      new AbilityShopMode(this.ctx, {
+        slots: this.abilities.offer(this.rng),
+        points: () => state.score,
+        owned: (a) => this.abilities.count(a),
+        buy: (slot: ShopSlot) => {
+          const price = CONFIG.abilities.tiers[slot.tier].price;
+          if (!slot.ability || !state.spend(price)) return false;
+          this.abilities.add(slot.ability);
+          state.events.emit('abilityBought', { id: slot.ability.id, tier: slot.tier, price });
+          return true;
+        },
+        done: (bought) => this.openGate(gate, bought),
+      }),
+    );
+  }
+
+  /** El muro se abre: se disuelve, estalla en pedazos y el jugador reaparece en él y sigue. */
+  private openGate(gate: Gate, bought: AbilityDef | null): void {
+    this.entering = null;
+    this.gatesView.absorbing = null;
+    this.gates.open(gate);
+    const color = new THREE.Color().setHSL(this.gatesView.currentHue, 1, 0.6);
+    this.shatter.burst(this.gates.tiles(gate).filter((t) => t.x % 2 === 1), Dir.Up, color, true);
+    this.cameraRig.shake(0.4);
+    this.state.setPhase('playing');
+    this.refreshAbilities(bought?.name);
+    if (bought) this.hud.announce(`¡${bought.name}!`, 'HABILIDAD COMPRADA');
+    else this.hud.announce('¡ADELANTE!', 'MURO SUPERADO');
+  }
+
+  /** Lista de habilidades compradas en el HUD. */
+  private refreshAbilities(highlight = ''): void {
+    const items = [...this.abilities.owned].map(([a, count]) => ({ name: a.name, count, color: CONFIG.abilities.tiers[a.tier].color }));
+    this.hud.setAbilities(items, highlight);
   }
 
   /**
@@ -494,10 +628,14 @@ export class MazeRunMode implements GameMode {
     return [setting('INVENCIBLE', 'invincible'), setting('ROMPER MURO INFINITO', 'infiniteWallBreak')];
   }
 
-  /** Poderes especiales del menú: al hacer clic se cierra el menú y se lanza (con su cinemática) o se quita. */
-  private godPowerActions(): GodMenuAction[] {
+  /**
+   * Acciones del menú (con clic se cierra el menú y se ejecutan): lanzar o quitar
+   * poderes especiales (con su cinemática), saltar al siguiente muro portal y
+   * sumar puntos para probar la tienda.
+   */
+  private godSections(): GodMenuSection[] {
     const isActive = (id: SpecialPowerId) => this.powers.active?.id === id && this.powers.remaining > 0;
-    return CONFIG.specialPowers.pool.map((id) => ({
+    const powers = CONFIG.specialPowers.pool.map((id) => ({
       label: this.powers.name(id),
       button: () => (isActive(id) ? 'ACTIVO: QUITAR' : 'ACTIVAR'),
       run: () => {
@@ -506,6 +644,49 @@ export class MazeRunMode implements GameMode {
         else this.activatePower(id);
       },
     }));
+    const tests = [
+      { label: 'SIGUIENTE MURO PORTAL', button: () => 'IR', run: () => this.jumpToGate() },
+      {
+        label: 'SUMAR 10000 PUNTOS',
+        button: () => 'SUMAR',
+        run: () => {
+          this.usedCheats = true;
+          this.state.addScore(10000, this.player.x, this.player.y);
+        },
+      },
+    ];
+    return [
+      { title: 'PODERES ESPECIALES', actions: powers },
+      { title: 'PRUEBAS', actions: tests },
+    ];
+  }
+
+  /** (Desarrollo) Lleva al jugador justo debajo del siguiente muro portal, con la lava detrás. */
+  private jumpToGate(): void {
+    const { player, maze } = this;
+    if (this.state.phase !== 'ready' && this.state.phase !== 'playing') return;
+    let gate = this.gates.nextClosedAbove(player.y);
+    for (let guard = 0; !gate && guard < 400; guard++) {
+      maze.ensureGenerated(maze.topY + 1);
+      gate = this.gates.nextClosedAbove(player.y);
+    }
+    if (!gate) return;
+    this.usedCheats = true;
+    if (this.powers.ghoul) this.endGhoul();
+    this.powers.clear();
+    this.wasGhoul = false;
+    player.x = CONFIG.player.startColumn;
+    player.y = gate.y0 - 1;
+    player.wantDir = null;
+    player.dir = Dir.Left;
+    player.moving = false;
+    this.state.reachRow(player.tileY);
+    this.ghosts.clear();
+    this.lava.y = player.y + CONFIG.lava.startOffset;
+    this.scroll.y = player.y + CONFIG.camera.lookAhead;
+    this.cameraRig.snap(this.scroll.y);
+    maze.ensureGenerated(player.tileY + CONFIG.maze.generateAhead);
+    maze.destroyBelow(Math.floor(this.lava.y) - CONFIG.maze.destroyBelowLava);
   }
 
   /** Vuelta del minijuego (este modo ya se ha reanudado). */
@@ -583,11 +764,12 @@ export class MazeRunMode implements GameMode {
     this.mazeView.update(dt, this.cameraRig.focus.y);
     this.pelletsView.update(dt);
     this.portalsView.update(dt, this.cameraRig.focus.y);
+    this.gatesView.update(dt, this.cameraRig.focus.y);
 
     let scale = this.powers.playerScale;
     let spin = 0;
-    if (state.phase === 'portal') {
-      const t = Math.min(1, state.phaseTime / CONFIG.portals.absorbTime);
+    if (state.phase === 'portal' && this.entering) {
+      const t = Math.min(1, state.phaseTime / this.entering.absorbTime);
       scale *= 1 - t;
       spin = t * t * Math.PI * 4;
     }
@@ -618,6 +800,7 @@ export class MazeRunMode implements GameMode {
     this.ctx.renderer.render(this.scene, this.cameraRig.camera);
     this.anchorHud();
     this.placePortalLabels();
+    this.placeGateLabels();
   }
 
   /**
@@ -638,13 +821,25 @@ export class MazeRunMode implements GameMode {
 
   /** Carteles con el nombre del minijuego sobre los portales abiertos. */
   private placePortalLabels(): void {
+    const entering = this.entering?.target;
     const items = this.portals.list
-      .filter((p) => p.open && this.entering?.portal !== p)
+      .filter((p) => p.open && !(entering?.kind === 'portal' && entering.portal === p))
       .map((p) => {
         const s = this.toScreen(worldX(p.x), p.y + 1.5, ACTOR_Z);
         return { id: p.id, text: p.game.name, x: s.x, y: s.y };
       });
     this.portalLabels.sync(items);
+  }
+
+  /** Cartel del minijuego sobre cada muro portal cerrado (en el centro del muro). */
+  private placeGateLabels(): void {
+    const items = this.gates.list
+      .filter((g) => g.closed)
+      .map((g) => {
+        const s = this.toScreen(0, gateCenterY(g), CONFIG.maze.wallDepth + 0.3);
+        return { id: g.id, text: g.game.name, x: s.x, y: s.y };
+      });
+    this.gateLabels.sync(items);
   }
 
   // ---------------------------------------------------------------------------

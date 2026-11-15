@@ -25,7 +25,8 @@ npm run build      # comprobación de tipos + build de producción en dist/
 | W/S o ↑/↓ | Mover la pala en el Pong |
 | C | Cambiar perspectiva: derecha → frontal → izquierda → lateral |
 | Enter / Espacio | Reiniciar tras el Game Over |
-| K | *(desarrollo)* Menú de modo dios (pausa): trucos (invencible, romper muro infinito) con 1–9 o clic, y poderes especiales con clic (cierra el menú y lanza el poder); K o Esc cierran. Requiere `CONFIG.dev.godMenuKey`; los trucos se recuerdan entre recargas y una partida con trucos no guarda récords |
+| ←/→, Enter, 1–3, Esc | En la tienda de habilidades: elegir, comprar, comprar directamente, salir sin comprar (también con el ratón) |
+| K | *(desarrollo)* Menú de modo dios (pausa): trucos (invencible, romper muro infinito) con 1–9 o clic; con clic, poderes especiales (cierra el menú y lanza el poder), saltar al siguiente muro portal y sumar 10.000 puntos; K o Esc cierran. Requiere `CONFIG.dev.godMenuKey`; los trucos se recuerdan entre recargas y una partida con trucos no guarda récords |
 
 ## Tecnología
 
@@ -114,8 +115,15 @@ Ganar activa un poder especial aleatorio; perder acaba la partida.
 - **Cinemática de poder** (`effects/PowerCinematic.ts`): al recibir un poder, el protagonista vuela hacia la cámara, hace
   el acto del poder (GIGANTE: come una cereza y crece en 3 escalones) y cae de golpe dejando humo. Un poder nuevo
   necesita su acto en `ACTS`. Tiempos en `CONFIG.specialPowers.cinematic` y en el `intro` de cada poder.
+- **Muros portal** (`systems/Gates.ts`, `systems/GatesView.ts`, `CONFIG.gates`): cada 500 m una barrera de lado a lado
+  (`Tile.Gate`) que nada atraviesa. Al empujarla desde la línea de debajo se entra en su minijuego (nombre en un cartel
+  sobre el muro). Ganar abre la tienda y luego el muro; perder acaba la partida.
+- **Habilidades** (`abilities/catalog.ts`, `systems/Abilities.ts`, `ui/AbilityShopMode.ts`, `CONFIG.abilities`): permanentes,
+  de tres niveles (básica 5.000, épica 10.000, legendaria 20.000 puntos). La tienda ofrece una por nivel. **Añadir una
+  habilidad:** una entrada en `ABILITIES` (nivel, textos, icono pixel art y `effects`) y aplicar su efecto donde toque
+  leyendo `Abilities` (p. ej. `frightBonus`, que usa SUSTO LARGO).
 - **Otros enganches:** `RunState.events` (`meters`, `score`, `energizer`, `died`, `portalEntered`, `minigameResult`,
-  `specialPower`…), `RunState.modifiers` (multiplicadores de velocidad), `Maze.setTiles()` y récords por juego (`Records.get(id)`).
+  `specialPower`, `gateEntered`, `abilityBought`…), `RunState.modifiers` (multiplicadores de velocidad), `Maze.setTiles()` y récords por juego (`Records.get(id)`).
 
 ```
 src/minigames/

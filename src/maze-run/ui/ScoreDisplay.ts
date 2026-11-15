@@ -45,7 +45,13 @@ export class ScoreDisplay {
 
   setScore(score: number): void {
     const gain = score - this.target;
-    if (gain <= 0) return;
+    if (gain < 0) {
+      // Puntos gastados (tienda de habilidades): la cifra baja contando y tiembla.
+      this.target = score;
+      this.number.shake(4, 0.3);
+      return;
+    }
+    if (gain === 0) return;
     this.target = score;
     const cfg = CONFIG.ui.score;
     if (gain >= cfg.bigGain) {
@@ -78,9 +84,9 @@ export class ScoreDisplay {
 
   update(dt: number): void {
     // Recuento: se acerca al valor real de forma exponencial, en múltiplos de 10 como los puntos.
-    if (this.shown < this.target) {
+    if (this.shown !== this.target) {
       this.shown += (this.target - this.shown) * (1 - Math.exp(-dt * CONFIG.ui.score.tallyRate));
-      if (this.target - this.shown < 5) this.shown = this.target;
+      if (Math.abs(this.target - this.shown) < 5) this.shown = this.target;
     }
     this.number.setText(String(Math.round(this.shown / 10) * 10));
     this.number.update(dt);

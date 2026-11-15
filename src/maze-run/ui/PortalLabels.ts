@@ -1,10 +1,19 @@
-/** Cartel flotante sobre cada portal abierto con el nombre del minijuego al que lleva. */
+/**
+ * Cartel flotante sobre cada portal abierto (o muro portal cerrado) con el nombre
+ * del minijuego al que lleva.
+ * @param hint texto pequeño bajo el nombre.
+ * @param variant clase extra para dar otro aspecto (p. ej. los muros portal).
+ */
 export class PortalLabels {
   readonly root = document.createElement('div');
   private labels = new Map<number, HTMLDivElement>();
 
-  constructor(parent: HTMLElement) {
-    this.root.className = 'portal-labels';
+  constructor(
+    parent: HTMLElement,
+    private hint = 'PORTAL',
+    variant = '',
+  ) {
+    this.root.className = `portal-labels ${variant}`.trim();
     parent.appendChild(this.root);
   }
 
@@ -17,7 +26,7 @@ export class PortalLabels {
       if (!label) {
         label = document.createElement('div');
         label.className = 'portal-label';
-        label.innerHTML = `<span class="portal-label-game">${item.text}</span><span class="portal-label-hint">PORTAL</span>`;
+        label.innerHTML = `<span class="portal-label-game">${item.text}</span><span class="portal-label-hint">${this.hint}</span>`;
         this.root.appendChild(label);
         this.labels.set(item.id, label);
       }
