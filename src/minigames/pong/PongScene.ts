@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { NeonCycle } from '../../render/neon';
 import { PixelCanvas, hexRGB } from '../../render/pixelTextures';
-import { buildVoxelGeometry, spriteFromRows } from '../../render/voxel';
+import { Spring, VoxelGlyphs, VoxelParticles, createMinigameRenderer, disposeScene, fitDistance, type Particle } from '../scene3d';
 import { BALL_HALF, COURT_LINE, PADDLE_INSET, PADDLE_WIDTH, type PongGame, type PongSide } from './PongGame';
 import type { PongTheme } from './themes';
 
@@ -22,44 +22,7 @@ const FOV = 20;
 const FIT_MARGIN = 0.97;
 const TRAIL = 6;
 const MAX_PARTICLES = 260;
-/** Cifras de 3×5 del marcador (fila 0 arriba). */
-const DIGITS = [
-  '111101101101111', '010110010010111', '111001111100111', '111001111001111', '101101111001001',
-  '111100111001111', '111100111101111', '111001001001001', '111101111101111', '111101111001111',
-];
 const DIGIT_VOXEL = 3;
-
-/** Muelle amortiguado alrededor de 0. */
-class Spring {
-  value = 0;
-  velocity = 0;
-  constructor(
-    private k: number,
-    private c: number,
-  ) {}
-  update(dt: number): void {
-    const steps = Math.ceil(dt / (1 / 120));
-    const h = dt / steps;
-    for (let i = 0; i < steps; i++) {
-      this.velocity += (-this.k * this.value - this.c * this.velocity) * h;
-      this.value += this.velocity * h;
-    }
-  }
-}
-
-interface Particle {
-  x: number;
-  y: number;
-  z: number;
-  vx: number;
-  vy: number;
-  vz: number;
-  life: number;
-  max: number;
-  size: number;
-  gravity: number;
-  color: THREE.Color;
-}
 
 interface Paddle {
   side: PongSide;
@@ -93,11 +56,10 @@ export class PongScene {
   private ballSpin = new THREE.Vector3();
   private trail: THREE.Mesh[] = [];
   private trailPoints: Array<{ x: number; y: number }> = [];
-  private digitGeometries: THREE.BufferGeometry[];
+  private glyphs = new VoxelGlyphs(DIGIT_VOXEL);
   private digits: Record<PongSide, { mesh: THREE.Mesh; shown: number; pop: Spring }>;
   private ambient: THREE.AmbientLight;
-  private particles: Particle[] = [];
-  private particleMesh: THREE.InstancedMesh;
+  private particles = new VoxelParticles(MAX_PARTICLES, 'z', 0);
   private emberTimer = 0;
   private shakeAmount = 0;
   private zoom = new Spring(140, 9);
@@ -106,19 +68,13 @@ export class PongScene {
   private lastPhase = '';
   private lastVy = 0;
   private readonly target = new THREE.Vector3(0, 0, 0);
-  private readonly tmp = new THREE.Object3D();
 
   constructor(
     canvas: HTMLCanvasElement,
     private game: PongGame,
     private theme: PongTheme,
   ) {
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
-    this.renderer.setPixelRatio(1);
-    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.BasicShadowMap;
-    this.renderer.setClearColor(theme.clear);
+    this.renderer = createMinigameRenderer(canvas, theme.clear);
     this.scene.fog = new THREE.Fog(theme.clear, 380, 620);
 
     this.neon = new NeonCycle(theme.neon.colors, theme.neon.secondsPerColor, theme.neon.transition);
@@ -154,18 +110,8 @@ export class PongScene {
       this.scene.add(m);
     }
 
-    this.digitGeometries = DIGITS.map((bits) =>
-      buildVoxelGeometry(
-        spriteFromRows([0, 1, 2, 3, 4].map((r) => bits.slice(r * 3, r * 3 + 3)), { '1': 0xffffff }, () => 0),
-        DIGIT_VOXEL,
-      ),
-    );
     this.digits = { player: this.buildDigit('player'), ai: this.buildDigit('ai') };
-
-    this.particleMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial(), MAX_PARTICLES);
-    this.particleMesh.count = 0;
-    this.particleMesh.frustumCulled = false;
-    this.scene.add(this.particleMesh);
+    this.scene.add(this.particles.mesh);
   }
 
   /** Coordenadas del juego (Y hacia abajo) → mundo (Y hacia arriba, Z hacia la cámara). */
@@ -276,7 +222,7 @@ export class PongScene {
   private buildDigit(side: PongSide): { mesh: THREE.Mesh; shown: number; pop: Spring } {
     const color = side === 'player' ? this.theme.player : this.theme.ai;
     const material = new THREE.MeshLambertMaterial({ vertexColors: true, color, emissive: color, emissiveIntensity: 0.3 });
-    const mesh = new THREE.Mesh(this.digitGeometries[0], material);
+    const mesh = new THREE.Mesh(this.glyphs.get('0'), material);
     mesh.position.set(side === 'player' ? -20 : 20, this.wy(17), DIGIT_VOXEL / 2);
     mesh.receiveShadow = true;
     this.scene.add(mesh);
@@ -302,20 +248,7 @@ export class PongScene {
     const y = H / 2 - COURT_LINE + RAIL_DEPTH;
     const corners: THREE.Vector3[] = [];
     for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const z of [0, POST_HEIGHT]) corners.push(new THREE.Vector3(sx * x, sy * y, z));
-    const p = new THREE.Vector3();
-    let lo = 60;
-    let hi = 1500;
-    for (let i = 0; i < 24; i++) {
-      const d = (lo + hi) / 2;
-      this.placeCamera(d, 0, 0, 0);
-      const fits = corners.every((c) => {
-        p.copy(c).project(this.camera);
-        return Math.abs(p.x) <= FIT_MARGIN && Math.abs(p.y) <= FIT_MARGIN;
-      });
-      if (fits) hi = d;
-      else lo = d;
-    }
-    return hi;
+    return fitDistance(this.camera, corners, (d) => this.placeCamera(d, 0, 0, 0), FIT_MARGIN);
   }
 
   private placeCamera(d: number, yaw: number, shakeX: number, shakeY: number): void {
@@ -370,9 +303,8 @@ export class PongScene {
     }
   }
 
-  private spawn(p: Omit<Particle, 'max'>): void {
-    if (this.particles.length >= MAX_PARTICLES) this.particles.shift();
-    this.particles.push({ ...p, max: p.life });
+  private spawn(p: Particle): void {
+    this.particles.spawn(p);
   }
 
   // ---------------------------------------------------------------------------
@@ -492,7 +424,7 @@ export class PongScene {
       const score = Math.min(9, this.game.score[side]);
       if (score !== d.shown) {
         d.shown = score;
-        d.mesh.geometry = this.digitGeometries[score];
+        d.mesh.geometry = this.glyphs.get(String(score));
         d.pop.velocity += 14;
       }
       d.pop.update(dt);
@@ -534,34 +466,7 @@ export class PongScene {
       }
     }
 
-    let n = 0;
-    this.particles = this.particles.filter((p) => {
-      p.life -= dt;
-      if (p.life <= 0) return false;
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      p.z += p.vz * dt;
-      p.vz -= p.gravity * dt;
-      const half = p.size / 2;
-      if (p.gravity > 0 && p.z < half) {
-        p.z = half;
-        p.vz = Math.abs(p.vz) * 0.4;
-        p.vx *= 0.6;
-        p.vy *= 0.6;
-      }
-      const k = p.life / p.max;
-      this.tmp.position.set(p.x, p.y, p.z);
-      this.tmp.rotation.set(p.life * 7, p.life * 5, 0);
-      this.tmp.scale.setScalar(p.size * Math.min(1, k * 1.6));
-      this.tmp.updateMatrix();
-      this.particleMesh.setMatrixAt(n, this.tmp.matrix);
-      this.particleMesh.setColorAt(n, p.color);
-      n++;
-      return true;
-    });
-    this.particleMesh.count = n;
-    this.particleMesh.instanceMatrix.needsUpdate = true;
-    if (this.particleMesh.instanceColor) this.particleMesh.instanceColor.needsUpdate = true;
+    this.particles.update(dt);
   }
 
   render(): void {
@@ -570,20 +475,7 @@ export class PongScene {
 
   /** Libera la GPU: cada minijuego crea su propio contexto WebGL y hay que devolverlo. */
   dispose(): void {
-    const textures = new Set<THREE.Texture>();
-    this.scene.traverse((o) => {
-      const mesh = o as THREE.Mesh;
-      mesh.geometry?.dispose();
-      const materials = Array.isArray(mesh.material) ? mesh.material : mesh.material ? [mesh.material] : [];
-      for (const m of materials) {
-        const map = (m as THREE.MeshLambertMaterial).map;
-        if (map) textures.add(map);
-        m.dispose();
-      }
-    });
-    this.digitGeometries.forEach((g) => g.dispose());
-    textures.forEach((t) => t.dispose());
-    this.renderer.dispose();
-    this.renderer.forceContextLoss();
+    disposeScene(this.scene, this.renderer);
+    this.glyphs.dispose();
   }
 }

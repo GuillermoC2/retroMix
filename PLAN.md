@@ -137,7 +137,9 @@ activa solo; si se pierde, se acaba la partida.
 - [x] FUEGO HIELO: hielo y fuego cada 0,5 s; la cuña de hielo es una rampa que sube por encima de los muros y deja pasar sobre ellos deslizándose — D-055
 - [x] Poder FUEGO HIELO: Z dispara un rastro de hielo en cuña (estrecho → ancho) que come puntos, mata fantasmas y sobre el que se desliza más rápido; X lanza llamaradas que queman bloques, fantasmas y puntos; algo más grande (×1,35); cinemática: el lado izquierdo se congela y el derecho arde — D-055
 - [ ] Más poderes especiales
-- [ ] Más minijuegos (Tetris, Space Invaders…)
+- [x] Segundo minijuego: BLOQUES (piezas que caen, 2.5D): 5 líneas en muro portal, 10 y más rápido en portal especial — D-058
+- [x] Ventana y piezas 3D comunes para los minijuegos (`MinigameFrame`, `scene3d`) — D-058
+- [ ] Más minijuegos (Space Invaders…)
 - [ ] Animaciones de entrada y salida del portal más elaboradas (a petición del usuario, más adelante)
 
 ## Fase 3 — Muros portal y tienda de habilidades (2026-11-15)

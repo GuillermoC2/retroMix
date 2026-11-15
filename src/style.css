@@ -380,7 +380,7 @@ html, body {
 /* Avisos grandes (JuicyText) y texto pequeño sobre la pista. */
 .juicy.mg-big {
   position: absolute;
-  left: 50%;
+  left: var(--mg-text-x, 50%);
   top: 40%;
   transform: translate(-50%, -50%);
   z-index: 1;
@@ -395,7 +395,7 @@ html, body {
 .mg-big[data-tone='bad'] { color: #ff2e6d; }
 .mg-small {
   position: absolute;
-  left: 50%;
+  left: var(--mg-text-x, 50%);
   top: 66%;
   transform: translateX(-50%);
   z-index: 1;
@@ -407,6 +407,21 @@ html, body {
 }
 .mg-small.mg-small-pop { animation: mg-small-pop 0.45s cubic-bezier(0.2, 1.8, 0.4, 1); }
 @keyframes mg-small-pop { from { transform: translateX(-50%) scale(0.2) rotate(-6deg); opacity: 0; } }
+
+/* Etiquetas sobre la escena 3D (las coloca el minijuego según dónde se ve cada cosa). */
+.mg-label {
+  position: absolute;
+  z-index: 1;
+  transform: translate(-50%, -100%);
+  line-height: 1;
+  white-space: nowrap;
+  font-size: max(9px, calc(var(--mg-scale, 3) * 2.4px));
+  letter-spacing: 2px;
+  color: #9aa3ff;
+  animation: mg-label-in 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) 0.5s backwards;
+}
+@keyframes mg-label-in { from { transform: translate(-50%, -100%) scale(0); } }
+.mg-hard .mg-label { color: #ff5a3a; }
 
 /* Portal de poder especial: más difícil, todo rojizo. */
 .mg-hard::before { background: radial-gradient(ellipse at center, rgba(70, 0, 6, 0.5), rgba(14, 0, 0, 0.86)); }

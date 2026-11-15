@@ -590,6 +590,34 @@ export const CONFIG = {
       /** Tiempo (s) que se muestra el resultado antes de volver al laberinto. */
       resultTime: 2.4,
     },
+    /** BLOQUES: piezas de 4 bloques que caen; se gana al completar las líneas pedidas y se pierde si se llena el pozo. */
+    blocks: {
+      /** Pozo en casillas. */
+      width: 10,
+      height: 16,
+      /** Líneas que hay que completar según la entrada (muro portal / portal de poder especial). */
+      linesToWin: { gate: 5, portal: 10 },
+      /**
+       * Caída (s por fila): al empezar, lo que baja por cada línea hecha y el mínimo.
+       * El portal especial es algo más rápido.
+       */
+      fall: {
+        gate: { start: 0.75, perLine: 0.04, min: 0.2 },
+        portal: { start: 0.55, perLine: 0.03, min: 0.15 },
+      },
+      /** Bajada rápida (↓): factor sobre la caída normal. */
+      softDropFactor: 0.08,
+      /** Al moverse con ← → mantenidas: retardo antes de repetir y ritmo de repetición (s). */
+      repeatDelay: 0.16,
+      repeatRate: 0.05,
+      /** Tiempo (s) apoyada antes de fijarse; se reinicia al moverla o girarla, como mucho `lockResets` veces. */
+      lockDelay: 0.45,
+      lockResets: 12,
+      /** Duración (s) de la animación de líneas completas. */
+      clearTime: 0.38,
+      countdown: 3,
+      resultTime: 2.4,
+    },
   },
 
   /** Ajustes solo para desarrollo/pruebas. Poner a false para el juego normal. */

@@ -24,6 +24,7 @@ npm run build      # comprobación de tipos + build de producción en dist/
 | Z | ROMPEMUROS: romper el muro de delante (o el de la dirección pulsada si está bloqueada). Con un poder especial no rompe muros: hace la acción del poder (FUEGO HIELO: rastro de hielo) o nada |
 | X | Acción: hace la acción disponible en cada momento (el dash de DASH tras coger una pluma; la llamarada de FUEGO HIELO) |
 | W/S o ↑/↓ | Mover la pala en el Pong |
+| ← → · ↑/X · Z · ↓ · Espacio | BLOQUES: mover, girar, girar al revés, bajar rápido, soltar |
 | C | Cambiar perspectiva: derecha → frontal → izquierda → lateral |
 | Enter / Espacio | Reiniciar tras el Game Over |
 | ←/→, Enter, 1–3, Esc | En la tienda de habilidades: elegir, comprar, comprar directamente, salir sin comprar (también con el ratón) |
@@ -114,7 +115,12 @@ Ganar activa un poder especial aleatorio; perder acaba la partida.
   desde dónde se entra (`gate` muro portal, `portal` portal de poder especial, más difícil) y `PopWindow` da la
   ventana animada (entrada, flotación, golpes y salida).
 - **Pong** (`src/minigames/pong/`): lógica en `PongGame`, pista 2.5D en `PongScene` (Three.js, su propio renderer),
-  temas en `themes.ts` y ventana, textos y teclado en `PongMode`. Parámetros en `CONFIG.minigames.pong`.
+  temas en `themes.ts` y teclado y avisos en `PongMode`. Parámetros en `CONFIG.minigames.pong`.
+- **BLOQUES** (`src/minigames/blocks/`): piezas de 4 bloques que caen. Lógica en `BlocksGame`, pozo 2.5D en `BlocksScene`,
+  temas en `themes.ts` y teclado y avisos en `BlocksMode`. Parámetros en `CONFIG.minigames.blocks`.
+  Teclas: ← → mover, ↑ o X girar, Z girar al revés, ↓ bajar rápido, Espacio soltar.
+- **Común:** `MinigameFrame` (ventana animada, título, avisos con fuego, cierre) y `scene3d` (muelles, cifras de vóxeles,
+  partículas, encuadre de cámara, liberar la GPU).
 - **Poderes especiales** (`systems/SpecialPowers.ts`, `CONFIG.specialPowers`): se elige uno de `pool`.
   **GIGANTE**: ×6 de tamaño, más rápido, come muros, fantasmas y puntos durante 8 s.
   **GHOUL**: ×2,6, gris con el ojo rojo, 10 s caminando sobre 4 tentáculos de vóxeles por encima de los muros; rompe los bloques que pisa y pisotea fantasmas
@@ -153,5 +159,8 @@ src/minigames/
   types.ts        contrato: MinigameDef, MinigameStakes (kind) y MinigameResult
   registry.ts     minijuegos disponibles en los portales
   PopWindow.ts    ventana de minijuego animada (estilo Balatro)
+  MinigameFrame.ts  ventana común: marco, título, avisos (con fuego) y cierre
+  scene3d.ts      piezas 3D comunes: muelles, cifras de vóxeles, partículas, encuadre
+  blocks/         BlocksGame (lógica), BlocksScene (pozo 2.5D), themes y BlocksMode (teclado, avisos)
   pong/           PongGame (lógica), PongScene (pista 2.5D), themes (muro / portal) y PongMode (ventana, textos, teclado)
 ```
