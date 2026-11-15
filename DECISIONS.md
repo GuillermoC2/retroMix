@@ -283,7 +283,7 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 - **Al ganar:** tienda (D-042) y, al cerrarla, el muro se abre: sus casillas pasan a pasillo, el campo se disuelve píxel a píxel, el marco se hunde a escalones, estalla en pedazos del color del muro y el jugador reaparece en él y sigue. **Al perder:** vuelve a la línea de debajo y se acaba la partida ("¡HAS PERDIDO AL PONG!"); con invencible, el muro sigue cerrado y puede reintentarlo.
 - **Aspecto** (`systems/GatesView.ts`): campo de energía pixelado (8 px por casilla) con flechas que suben por la tapa y la cara frontal, bordes brillantes y destellos; dos barandillas oscuras con tira luminosa; pilares con remate brillante en las columnas de pasillo; y dos emblemas de portal (anillo octogonal y remolino) a los lados del cartel. Todo recorre el arcoíris, como los portales, para no confundirse con el color único del laberinto. Una luz compartida ilumina el muro más cercano. *(Primera versión con un emblema en el centro: el cartel lo tapaba.)*
 - **Contrato de minijuego:** `create` recibe ahora `stakes` (recompensa y texto al ganar), porque el Pong decía siempre "PODER ESPECIAL". Portal: "PODER ESPECIAL"; muro: "HABILIDAD" y "¡A LA TIENDA DE HABILIDADES!".
-- **Desarrollo:** el menú K tiene una sección PRUEBAS con "SIGUIENTE MURO PORTAL" (genera hasta el muro y lleva al jugador justo debajo, con la lava detrás y sin fantasmas) y "SUMAR 10000 PUNTOS". Cuentan como trucos (sin récords).
+- **Desarrollo:** el menú K tiene (hoy en TELETRANSPORTE, D-044) "SIGUIENTE MURO PORTAL" (genera hasta el muro y lleva al jugador justo debajo, con la lava detrás y sin fantasmas) y "SUMAR 10000 PUNTOS". Cuentan como trucos (sin récords).
 
 ## D-042 · Tienda de habilidades tras superar un muro portal
 - **Fecha:** 2026-11-15 · **Estado:** Vigente (sujeta a cambios)
@@ -300,6 +300,14 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 - **Contexto:** petición del usuario: una habilidad básica que haga durar 2 s más el efecto de los puntos blancos grandes (energizadores) en los fantasmas.
 - **Decisión:** `GhostDirector.frighten(meters, bonus)` suma los segundos de las habilidades a la duración normal del susto (que decrece con la distancia, D-009). El parpadeo de aviso sigue siendo los últimos 2 s. Valor en `CONFIG.abilities.longFright.frightBonus`. Icono propio: fantasma asustado con un reloj.
 - **Acumulable:** cada copia comprada suma otros 2 s. Si no, tras la primera compra la casilla básica quedaría sin nada útil mientras sea la única habilidad básica. Anotado como `[?]` poner un límite.
+
+## D-044 · Menú de modo dios más ancho: teletransporte y saltar minijuegos
+- **Fecha:** 2026-11-15 · **Estado:** Vigente (amplía D-032; sustituye su "aspecto mínimo")
+- **Contexto:** el usuario pide mejorar el panel de desarrollador: teletransporte a distintas partes, saltar minijuegos automáticamente, más ancho y con colores distintos.
+- **Aspecto:** paneles en columnas (rejilla que se adapta al ancho, hasta 1180 px), cada uno con su color: TRUCOS cian, TELETRANSPORTE verde, PODERES ESPECIALES rosa y PRUEBAS amarillo. El valor de cada truco es una etiqueta verde si está activo y gris si no.
+- **SALTAR MINIJUEGOS** (truco 3, se recuerda como los demás): NO → GANAR → PERDER. Con GANAR o PERDER, al entrar en un portal o un muro portal no se abre el minijuego y se aplica directamente ese resultado (poder especial / tienda, o muerte). GANAR cuenta como truco (sin récords); PERDER no, porque no da ventaja. En el HUD: "MG GANADOS" / "MG PERDIDOS".
+- **TELETRANSPORTE** (clic): siguiente portal (unas casillas por debajo, en su sala), siguiente muro portal (justo debajo, como antes estaba en PRUEBAS), y avanzar 100, 500 y 1000 m (salta los muros que haya en medio). Siempre a la casilla abierta más cercana, con la lava detrás, sin fantasmas ni poderes y la cámara colocada. Cuenta como truco.
+- **PRUEBAS** queda con "SUMAR 10000 PUNTOS".
 
 ## D-015 · Pruebas fuera del repositorio (provisional)
 - **Fecha:** 2026-11-13 · **Estado:** En revisión

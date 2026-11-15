@@ -37,10 +37,10 @@ import { GameOverScreen } from './ui/GameOverScreen';
 import { Hud } from './ui/Hud';
 import { Popups } from './ui/Popups';
 import { PortalLabels } from './ui/PortalLabels';
-import type { MinigameResult, MinigameStakes } from '../minigames/types';
+import type { MinigameDef, MinigameResult, MinigameStakes } from '../minigames/types';
 import type { Passable } from './entities/Player';
 import { GodMenuMode, type GodMenuSection, type GodMenuToggle } from './dev/GodMenuMode';
-import { anyCheat, godSettings, saveGodSettings } from './dev/GodSettings';
+import { anyCheat, godSettings, saveGodSettings, SKIP_MINIGAMES } from './dev/GodSettings';
 import { ACTOR_Z, worldX } from './world';
 import { HERO_DIAMETER } from './entities/sprites';
 
@@ -500,14 +500,21 @@ export class MazeRunMode implements GameMode {
     if (t < 1) return;
     e.launched = true;
     const { target } = e;
+    // (Modo dios) Saltar el minijuego: se da por ganado o perdido sin jugarlo.
+    const skip = godSettings.skipMinigames;
+    if (skip !== 'off') this.usedCheats ||= skip === 'win';
+    const play = (game: MinigameDef, done: (result: MinigameResult) => void, stakes: MinigameStakes) => {
+      if (skip === 'off') this.ctx.modes.push(game.create(this.ctx, done, stakes));
+      else done({ won: skip === 'win' });
+    };
     if (target.kind === 'portal') {
       const { portal } = target;
       this.portals.close(portal);
       this.portalsView.absorbing = null;
-      this.ctx.modes.push(portal.game.create(this.ctx, (result) => this.onMinigameDone(portal, result), PORTAL_STAKES));
+      play(portal.game, (result) => this.onMinigameDone(portal, result), PORTAL_STAKES);
     } else {
       const { gate } = target;
-      this.ctx.modes.push(gate.game.create(this.ctx, (result) => this.onGateMinigameDone(gate, result), GATE_STAKES));
+      play(gate.game, (result) => this.onGateMinigameDone(gate, result), GATE_STAKES);
     }
   }
 
@@ -615,37 +622,58 @@ export class MazeRunMode implements GameMode {
 
   /** Trucos del menú de la tecla K (se recuerdan entre partidas). */
   private godToggles(): GodMenuToggle[] {
-    const yesNo = (on: boolean) => (on ? 'SI' : 'NO');
-    const setting = (label: string, key: keyof typeof godSettings): GodMenuToggle => ({
+    const flag = (label: string, key: 'invincible' | 'infiniteWallBreak'): GodMenuToggle => ({
       label,
-      value: () => yesNo(godSettings[key]),
+      value: () => (godSettings[key] ? 'SI' : 'NO'),
+      on: () => godSettings[key],
       toggle: () => {
         godSettings[key] = !godSettings[key];
         saveGodSettings();
         this.usedCheats ||= godSettings[key];
       },
     });
-    return [setting('INVENCIBLE', 'invincible'), setting('ROMPER MURO INFINITO', 'infiniteWallBreak')];
+    const skipNames = { off: 'NO', win: 'GANAR', lose: 'PERDER' } as const;
+    const skip: GodMenuToggle = {
+      label: 'SALTAR MINIJUEGOS',
+      value: () => skipNames[godSettings.skipMinigames],
+      on: () => godSettings.skipMinigames !== 'off',
+      toggle: () => {
+        const i = SKIP_MINIGAMES.indexOf(godSettings.skipMinigames);
+        godSettings.skipMinigames = SKIP_MINIGAMES[(i + 1) % SKIP_MINIGAMES.length];
+        saveGodSettings();
+      },
+    };
+    return [flag('INVENCIBLE', 'invincible'), flag('ROMPER MURO INFINITO', 'infiniteWallBreak'), skip];
   }
 
   /**
    * Acciones del menú (con clic se cierra el menú y se ejecutan): lanzar o quitar
-   * poderes especiales (con su cinemática), saltar al siguiente muro portal y
-   * sumar puntos para probar la tienda.
+   * poderes especiales (con su cinemática), teletransportes y pruebas.
    */
   private godSections(): GodMenuSection[] {
     const isActive = (id: SpecialPowerId) => this.powers.active?.id === id && this.powers.remaining > 0;
     const powers = CONFIG.specialPowers.pool.map((id) => ({
       label: this.powers.name(id),
-      button: () => (isActive(id) ? 'ACTIVO: QUITAR' : 'ACTIVAR'),
+      button: () => (isActive(id) ? 'QUITAR' : 'ACTIVAR'),
       run: () => {
         this.usedCheats = true;
         if (isActive(id)) this.powers.deactivate();
         else this.activatePower(id);
       },
     }));
+    const forward = (meters: number) => ({
+      label: `AVANZAR ${meters} M`,
+      button: () => 'IR',
+      run: () => this.teleportForward(meters),
+    });
+    const teleports = [
+      { label: 'SIGUIENTE PORTAL', button: () => 'IR', run: () => this.teleportToPortal() },
+      { label: 'SIGUIENTE MURO PORTAL', button: () => 'IR', run: () => this.teleportToGate() },
+      forward(100),
+      forward(500),
+      forward(1000),
+    ];
     const tests = [
-      { label: 'SIGUIENTE MURO PORTAL', button: () => 'IR', run: () => this.jumpToGate() },
       {
         label: 'SUMAR 10000 PUNTOS',
         button: () => 'SUMAR',
@@ -656,27 +684,73 @@ export class MazeRunMode implements GameMode {
       },
     ];
     return [
-      { title: 'PODERES ESPECIALES', actions: powers },
-      { title: 'PRUEBAS', actions: tests },
+      { title: 'TELETRANSPORTE', color: '#5aff8a', actions: teleports },
+      { title: 'PODERES ESPECIALES', color: '#ff5ad8', actions: powers },
+      { title: 'PRUEBAS', color: '#ffc21a', actions: tests },
     ];
   }
 
-  /** (Desarrollo) Lleva al jugador justo debajo del siguiente muro portal, con la lava detrás. */
-  private jumpToGate(): void {
+  /** (Desarrollo) Justo debajo del siguiente muro portal cerrado. */
+  private teleportToGate(): void {
+    const gate = this.generateUntil(() => this.gates.nextClosedAbove(this.player.y));
+    if (gate) this.teleport(CONFIG.player.startColumn, gate.y0 - 1);
+  }
+
+  /** (Desarrollo) En la sala del siguiente portal abierto, un poco por debajo del portal. */
+  private teleportToPortal(): void {
+    const y = this.player.y + 1;
+    const portal = this.generateUntil(() =>
+      this.portals.list.filter((p) => p.open && p.y > y).sort((a, b) => a.y - b.y)[0] ?? null,
+    );
+    if (portal) this.teleport(portal.x, portal.y - 2);
+  }
+
+  /** (Desarrollo) N metros más arriba (salta los muros portal que haya en medio). */
+  private teleportForward(meters: number): void {
+    const y = this.player.tileY + Math.round(meters / CONFIG.scoring.metersPerRow);
+    this.maze.ensureGenerated(y + CONFIG.maze.generateAhead);
+    this.teleport(CONFIG.player.startColumn, y);
+  }
+
+  /** Genera laberinto hacia arriba hasta que `find` encuentre algo (o se rinde). */
+  private generateUntil<T>(find: () => T | null): T | null {
+    let found = find();
+    for (let guard = 0; !found && guard < 400; guard++) {
+      this.maze.ensureGenerated(this.maze.topY + 1);
+      found = find();
+    }
+    return found;
+  }
+
+  /** Casilla abierta más cercana a (x, y): busca en esa fila y, si no hay, en las de debajo. */
+  private nearestOpen(x: number, y: number): { x: number; y: number } | null {
+    const { width } = CONFIG.maze;
+    for (let dy = 0; dy < 12; dy++) {
+      for (let dx = 0; dx < width; dx++) {
+        for (const tx of dx ? [x - dx, x + dx] : [x]) {
+          if (this.maze.isOpen(tx, y - dy)) return { x: tx, y: y - dy };
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * (Desarrollo) Lleva al jugador a la casilla abierta más cercana a (x, y): sin
+   * poderes ni fantasmas, con la lava detrás y la cámara ya colocada.
+   */
+  private teleport(x: number, y: number): void {
     const { player, maze } = this;
     if (this.state.phase !== 'ready' && this.state.phase !== 'playing') return;
-    let gate = this.gates.nextClosedAbove(player.y);
-    for (let guard = 0; !gate && guard < 400; guard++) {
-      maze.ensureGenerated(maze.topY + 1);
-      gate = this.gates.nextClosedAbove(player.y);
-    }
-    if (!gate) return;
+    maze.ensureGenerated(y + CONFIG.maze.generateAhead);
+    const to = this.nearestOpen(x, y);
+    if (!to) return;
     this.usedCheats = true;
     if (this.powers.ghoul) this.endGhoul();
     this.powers.clear();
     this.wasGhoul = false;
-    player.x = CONFIG.player.startColumn;
-    player.y = gate.y0 - 1;
+    player.x = to.x;
+    player.y = to.y;
     player.wantDir = null;
     player.dir = Dir.Left;
     player.moving = false;
@@ -685,7 +759,6 @@ export class MazeRunMode implements GameMode {
     this.lava.y = player.y + CONFIG.lava.startOffset;
     this.scroll.y = player.y + CONFIG.camera.lookAhead;
     this.cameraRig.snap(this.scroll.y);
-    maze.ensureGenerated(player.tileY + CONFIG.maze.generateAhead);
     maze.destroyBelow(Math.floor(this.lava.y) - CONFIG.maze.destroyBelowLava);
   }
 
@@ -790,7 +863,8 @@ export class MazeRunMode implements GameMode {
     this.hud.setValues(state.meters, state.score);
     this.hud.update(dt);
     this.hud.setPower(this.wallBreaker.charges, godSettings.infiniteWallBreak);
-    const cheats = [godSettings.invincible && 'INVENCIBLE', godSettings.infiniteWallBreak && 'MURO INF'].filter(Boolean);
+    const skip = { off: '', win: 'MG GANADOS', lose: 'MG PERDIDOS' }[godSettings.skipMinigames];
+    const cheats = [godSettings.invincible && 'INVENCIBLE', godSettings.infiniteWallBreak && 'MURO INF', skip].filter(Boolean);
     this.hud.setGodMode(cheats.length ? `DIOS: ${cheats.join(' · ')} [K]` : '');
     const power = this.powers.active;
     this.hud.setSpecial(power ? this.powers.name(power.id) : null, this.powers.remaining, this.powers.warning);

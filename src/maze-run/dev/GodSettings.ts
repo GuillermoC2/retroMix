@@ -8,14 +8,21 @@ export interface GodSettings {
   invincible: boolean;
   /** Romper muro (Espacio) sin gastar cargas. */
   infiniteWallBreak: boolean;
+  /** Saltar los minijuegos de portales y muros dándolos por ganados o perdidos. */
+  skipMinigames: SkipMinigames;
 }
 
+export type SkipMinigames = 'off' | 'win' | 'lose';
+export const SKIP_MINIGAMES: readonly SkipMinigames[] = ['off', 'win', 'lose'];
+
 const KEY = 'retromix:god';
-const DEFAULTS: GodSettings = { invincible: false, infiniteWallBreak: false };
+const DEFAULTS: GodSettings = { invincible: false, infiniteWallBreak: false, skipMinigames: 'off' };
 
 function load(): GodSettings {
   try {
-    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') };
+    const s = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') };
+    if (!SKIP_MINIGAMES.includes(s.skipMinigames)) s.skipMinigames = 'off';
+    return s;
   } catch {
     return { ...DEFAULTS };
   }
@@ -31,5 +38,6 @@ export function saveGodSettings(): void {
   }
 }
 
-/** ¿Hay algún truco activo? (una partida con trucos no guarda récords). */
-export const anyCheat = (): boolean => godSettings.invincible || godSettings.infiniteWallBreak;
+/** ¿Hay algún truco activo que dé ventaja? (una partida con trucos no guarda récords). */
+export const anyCheat = (): boolean =>
+  godSettings.invincible || godSettings.infiniteWallBreak || godSettings.skipMinigames === 'win';

@@ -73,6 +73,7 @@ Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[?]` propuesta sin
 - [x] Cargas infinitas de romper muro (`dev.infinitePowers`) — D-018
 - [x] Menú de modo dios con K: activar/desactivar invencibilidad, romper muro infinito y cada poder especial; el romper muro infinito deja de estar activo por defecto — D-032
 - [x] Menú K, sección PRUEBAS: saltar justo debajo del siguiente muro portal y sumar 10.000 puntos (para probar la tienda) — D-041
+- [x] Menú K más ancho, en paneles de colores; TELETRANSPORTE (siguiente portal, siguiente muro, +100/+500/+1000 m) y truco SALTAR MINIJUEGOS (NO / GANAR / PERDER) — D-044
 - [ ] Antes de publicar: poner a `false` todo lo de `CONFIG.dev`
 
 ## Siguiente — Ajuste por juego real
@@ -92,7 +93,6 @@ No se harán sin el visto bueno del usuario (se evita añadir funcionalidades no
 - ~~Controles táctiles o móvil~~ — descartado: el juego es solo para escritorio (D-026)
 - [?] GIGANTE inmune a la lava (ahora la lava sí le mata, D-031)
 - [?] Puntos por cada muro comido por el GIGANTE
-- [?] Atajo de desarrollo para saltar al siguiente portal de sala (el de los muros portal ya existe, D-041)
 - [?] Gastar puntos en la tienda baja también la puntuación final y su récord (D-042). Alternativa: llevar aparte los puntos gastables y los totales
 - [?] Limitar cuántas veces se puede comprar la misma habilidad (hoy se acumulan sin límite, D-043)
 - [?] Que perder el minijuego de un muro portal no acabe la partida (p. ej. reintentar pagando puntos o perder una habilidad)

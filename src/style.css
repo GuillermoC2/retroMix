@@ -390,38 +390,76 @@ html, body {
   80% { transform: translate(2px, 2px); }
 }
 
-/* --- Menú de modo dios (solo desarrollo; aspecto mínimo a propósito) --- */
+/* --- Menú de modo dios (solo desarrollo): paneles de colores en columnas --- */
 .god-menu {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  padding: 16px 20px;
+  width: min(1180px, 94vw);
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 18px 22px 22px;
   font-size: 11px;
-  line-height: 2;
+  line-height: 1.6;
   color: #fff;
-  background: #000;
-  border: 3px solid #ff5ad8;
+  background: rgba(4, 4, 18, 0.94);
+  border: 4px solid #fff;
+  box-shadow: 0 0 0 4px #000, 0 0 0 8px #ff5ad8, 0 0 40px rgba(255, 90, 216, 0.45), 12px 14px 0 8px rgba(0, 0, 0, 0.6);
   pointer-events: auto;
+  text-shadow: 2px 2px 0 #000;
+  animation: fade-in 0.15s ease-out;
 }
-.god-title { margin-bottom: 8px; }
-.god-section { margin-top: 10px; color: #ff5ad8; }
-.god-foot { margin-top: 12px; color: #9aa3ff; }
-.god-row {
+.god-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+.god-title {
+  font-size: 22px;
+  color: var(--yellow);
+  text-shadow: -3px 0 #2a1400, 3px 0 #2a1400, 0 -3px #2a1400, 0 3px #2a1400, 5px 6px 0 rgba(0, 0, 0, 0.6);
+}
+.god-sub { color: #9aa3ff; font-size: 10px; letter-spacing: 1px; }
+.god-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; align-items: start; }
+.god-panel {
+  --c: #3ae8ff;
+  padding: 0 0 8px;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--c) 18%, #05051a), #05051a 70%);
+  border: 3px solid var(--c);
+  box-shadow: 0 0 0 3px #000, 0 0 16px color-mix(in srgb, var(--c) 35%, transparent);
+}
+.god-panel-title {
   display: flex;
   justify-content: space-between;
-  gap: 32px;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 10px 6px;
+  margin-bottom: 6px;
+  color: #000;
+  background: var(--c);
+  text-shadow: none;
+  font-size: 11px;
+}
+.god-panel-hint { font-size: 8px; opacity: 0.7; }
+.god-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   width: 100%;
-  padding: 2px 6px;
+  padding: 6px 10px;
   font: inherit;
   color: inherit;
+  text-shadow: inherit;
   background: none;
   border: 0;
   cursor: pointer;
   text-align: left;
 }
-.god-row:hover { background: #2a2a4a; }
-.god-row b { font-weight: normal; color: var(--yellow); }
+.god-row:hover { background: color-mix(in srgb, var(--c) 22%, transparent); }
+.god-key { min-width: 18px; padding: 3px 4px 1px; text-align: center; color: #000; background: var(--c); text-shadow: none; font-size: 9px; }
+.god-label { flex: 1; }
+.god-value { font-weight: normal; padding: 4px 7px 2px; font-size: 9px; text-shadow: none; white-space: nowrap; }
+.god-value.on { color: #000; background: #5aff8a; }
+.god-value.off { color: #9aa3ff; background: #1a1a38; }
+.god-value.action { color: #000; background: var(--c); }
+.god-row:hover .god-value.action { background: #fff; }
 
 /* --- Muro portal: cartel con el nombre del minijuego (más grande que el de los portales) --- */
 .gate-labels .portal-label { transform: translate(-50%, -50%); gap: 8px; animation-duration: 0.9s; }

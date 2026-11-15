@@ -2,17 +2,21 @@ import type { GameContext } from '../../core/Game';
 import type { Action } from '../../core/Input';
 import type { GameMode } from '../../core/ModeStack';
 
-/** Truco que se activa o desactiva (tecla numérica o clic). */
+/** Truco que se activa, desactiva o cambia de valor (tecla numérica o clic). */
 export interface GodMenuToggle {
   label: string;
   /** Estado que se muestra a la derecha (p. ej. "SI"/"NO"). */
   value: () => string;
+  /** ¿Está activo? (colorea el valor). */
+  on: () => boolean;
   toggle: () => void;
 }
 
-/** Grupo de acciones con su título en el menú. */
+/** Grupo de acciones con su título y color en el menú. */
 export interface GodMenuSection {
   title: string;
+  /** Color del panel (CSS). */
+  color: string;
   actions: GodMenuAction[];
 }
 
@@ -25,14 +29,14 @@ export interface GodMenuAction {
 }
 
 const OPTION_ACTIONS: readonly Action[] = ['opt1', 'opt2', 'opt3', 'opt4', 'opt5', 'opt6', 'opt7', 'opt8', 'opt9'];
+const TOGGLES_COLOR = '#3ae8ff';
 
 /**
  * Menú de modo dios (solo desarrollo). Se apila sobre la partida, que queda en
- * pausa; K o Esc lo cierran.
+ * pausa; K o Esc lo cierran. Paneles de colores en columnas:
  *  - TRUCOS: se cambian con las teclas 1–9 o con clic.
- *  - Secciones de acciones (poderes especiales, saltos…): con clic; cierran el
- *    menú y se ejecutan.
- * Aspecto deliberadamente mínimo.
+ *  - Secciones de acciones (poderes, teletransporte, pruebas…): con clic;
+ *    cierran el menú y se ejecutan.
  */
 export class GodMenuMode implements GameMode {
   readonly overlay = true;
@@ -74,43 +78,54 @@ export class GodMenuMode implements GameMode {
   }
 
   private draw(): void {
-    this.root.innerHTML = '';
-    const line = (className: string, text: string) => {
-      const e = document.createElement('div');
+    const el = (tag: string, className: string, text = '') => {
+      const e = document.createElement(tag);
       e.className = className;
       e.textContent = text;
-      this.root.appendChild(e);
+      return e;
     };
-    const button = (label: string, value: string, onClick: () => void) => {
-      const b = document.createElement('button');
-      b.className = 'god-row';
-      const l = document.createElement('span');
-      l.textContent = label;
-      const v = document.createElement('b');
-      v.textContent = value;
-      b.append(l, v);
+    const panel = (title: string, hint: string, color: string) => {
+      const p = el('section', 'god-panel');
+      p.style.setProperty('--c', color);
+      const head = el('div', 'god-panel-title', title);
+      head.append(el('span', 'god-panel-hint', hint));
+      p.append(head);
+      grid.append(p);
+      return p;
+    };
+    const row = (label: string, value: string, valueClass: string, onClick: () => void, key = '') => {
+      const b = el('button', 'god-row');
+      if (key) b.append(el('span', 'god-key', key));
+      b.append(el('span', 'god-label', label), el('b', `god-value ${valueClass}`, value));
       b.addEventListener('click', onClick);
-      this.root.appendChild(b);
+      return b;
     };
 
-    line('god-title', 'MODO DIOS (PAUSA)');
-    line('god-section', 'TRUCOS (TECLA O CLIC)');
+    const head = el('div', 'god-head');
+    head.append(el('div', 'god-title', 'MODO DIOS'), el('div', 'god-sub', 'PARTIDA EN PAUSA · K / ESC: CERRAR'));
+    const grid = el('div', 'god-grid');
+
+    const toggles = panel('TRUCOS', 'TECLA O CLIC', TOGGLES_COLOR);
     this.toggles.forEach((t, i) =>
-      button(`${i + 1}  ${t.label}`, t.value(), () => {
-        t.toggle();
-        this.draw();
-      }),
+      toggles.append(
+        row(t.label, t.value(), t.on() ? 'on' : 'off', () => {
+          t.toggle();
+          this.draw();
+        }, String(i + 1)),
+      ),
     );
     for (const section of this.sections) {
-      line('god-section', `${section.title} (CLIC)`);
+      const p = panel(section.title, 'CLIC', section.color);
       for (const a of section.actions) {
-        button(a.label, a.button(), () => {
-          this.close();
-          a.run();
-        });
+        p.append(
+          row(a.label, a.button(), 'action', () => {
+            this.close();
+            a.run();
+          }),
+        );
       }
     }
-    line('god-foot', 'K / ESC: CERRAR');
+    this.root.replaceChildren(head, grid);
   }
 
   render(): void {}
