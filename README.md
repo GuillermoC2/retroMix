@@ -109,8 +109,11 @@ portal en el centro. Pisarlo absorbe al jugador y abre un minijuego en una venta
 Ganar activa un poder especial aleatorio; perder acaba la partida.
 
 - **Añadir un minijuego:** crear un `GameMode` con `overlay = true` que al terminar haga `ctx.modes.pop()` y llame
-  a `done({ won })`, y registrarlo en `src/minigames/registry.ts`. El portal elige uno al azar.
-- **Pong** (`src/minigames/pong/`): lógica en `PongGame`, ventana y dibujo en `PongMode`. Parámetros en `CONFIG.minigames.pong`.
+  a `done({ won })`, y registrarlo en `src/minigames/registry.ts`. El portal elige uno al azar. `stakes.kind` dice
+  desde dónde se entra (`gate` muro portal, `portal` portal de poder especial, más difícil) y `PopWindow` da la
+  ventana animada (entrada, flotación, golpes y salida).
+- **Pong** (`src/minigames/pong/`): lógica en `PongGame`, pista 2.5D en `PongScene` (Three.js, su propio renderer),
+  temas en `themes.ts` y ventana, textos y teclado en `PongMode`. Parámetros en `CONFIG.minigames.pong`.
 - **Poderes especiales** (`systems/SpecialPowers.ts`, `CONFIG.specialPowers`): se elige uno de `pool`.
   **GIGANTE**: ×6 de tamaño, más rápido, come muros, fantasmas y puntos durante 8 s.
   **GHOUL**: ×2,6, gris con el ojo rojo, 10 s caminando sobre 4 tentáculos de vóxeles por encima de los muros; rompe los bloques que pisa y pisotea fantasmas
@@ -146,7 +149,8 @@ Ganar activa un poder especial aleatorio; perder acaba la partida.
 
 ```
 src/minigames/
-  types.ts        contrato: MinigameDef y MinigameResult
+  types.ts        contrato: MinigameDef, MinigameStakes (kind) y MinigameResult
   registry.ts     minijuegos disponibles en los portales
-  pong/           PongGame (lógica) y PongMode (ventana, dibujo, teclado)
+  PopWindow.ts    ventana de minijuego animada (estilo Balatro)
+  pong/           PongGame (lógica), PongScene (pista 2.5D), themes (muro / portal) y PongMode (ventana, textos, teclado)
 ```

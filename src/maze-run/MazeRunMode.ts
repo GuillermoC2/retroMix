@@ -69,8 +69,8 @@ const DIRECTION_ACTIONS: readonly Action[] = ['up', 'right', 'down', 'left'];
 const ACTION_DIR: Record<string, Dir> = { up: Dir.Up, right: Dir.Right, down: Dir.Down, left: Dir.Left };
 
 /** Lo que se juega en cada tipo de entrada a un minijuego. */
-const PORTAL_STAKES: MinigameStakes = { reward: 'PODER ESPECIAL', wonText: 'TE LLEVAS UN PODER ESPECIAL' };
-const GATE_STAKES: MinigameStakes = { reward: 'HABILIDAD', wonText: '¡A LA TIENDA DE HABILIDADES!' };
+const PORTAL_STAKES: MinigameStakes = { kind: 'portal', wonText: 'TE LLEVAS UN PODER ESPECIAL' };
+const GATE_STAKES: MinigameStakes = { kind: 'gate', wonText: '¡A LA TIENDA DE HABILIDADES!' };
 
 /** Entrada a un minijuego en curso: por un portal de sala o por un muro portal. */
 interface Entering {

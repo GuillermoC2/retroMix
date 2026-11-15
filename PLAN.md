@@ -5,7 +5,7 @@ Documento vivo. Se actualiza al empezar y al terminar cada tarea. Las decisiones
 
 Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[?]` propuesta sin aprobar (requiere visto bueno del usuario)
 
-**Estado actual:** Fase 3 (muros portal y tienda de habilidades) hecha y tercer poder especial, FUEGO HIELO (D-055), con poderes y habilidades que ya no se mezclan (D-054), a la espera de que el usuario los pruebe; todo sujeto a cambios hasta que le guste. Con esto queda la base del juego: lo siguiente es ir añadiendo habilidades, minijuegos y alguna mecánica nueva. Pendiente para más adelante: mejorar la interfaz y el funcionamiento del Pong.
+**Estado actual:** Fase 3 (muros portal y tienda de habilidades) hecha y tercer poder especial, FUEGO HIELO (D-055), con poderes y habilidades que ya no se mezclan (D-054), a la espera de que el usuario los pruebe; todo sujeto a cambios hasta que le guste. Con esto queda la base del juego: lo siguiente es ir añadiendo habilidades, minijuegos y alguna mecánica nueva. Pong rehecho en 2.5D con variante por tipo de entrada y ventana animada (D-056), a la espera de que el usuario lo pruebe.
 
 ---
 
@@ -118,7 +118,15 @@ activa solo; si se pierde, se acaba la partida.
 - [x] Fantasmas algo más planos — D-034
 - [x] Cinemática al recibir un poder especial: sale volando hacia la cámara, hace la acción del poder (GIGANTE: come una cereza y crece en 3 escalones) y cae de golpe dejando humo; ~3–4 s — D-035
 - [ ] El usuario prueba y ajusta: dificultad del Pong, distancia entre portales, duración/tamaño/velocidad del gigante
-- [ ] Mejorar la interfaz y el funcionamiento del Pong (pedido por el usuario; se hará más adelante)
+- [x] Pong 2.5D con el estilo del laberinto (pista de vóxeles en perspectiva, barandillas de neón, palas y bola con volumen y sombra, marcador de cubos, partículas) — D-056
+- [x] Minijuegos distintos según la entrada: en un muro portal gana el primer punto; en un portal de poder especial, 3 puntos y estética rojiza (letras rojas, brasas, avisos de punto en llamas) — D-056
+- [x] Sin el texto de abajo de la ventana (controles y recompensa) — D-056
+- [x] Ventana de minijuego con animaciones estilo Balatro: entra cayendo y rebota, flota inclinándose, reacciona a golpes y puntos, y sale disparada (arriba al ganar, cayendo al perder) — D-056
+- [x] Menos tambaleo de la ventana y de la cámara — D-056
+- [x] Muro portal: te pueden marcar 2 veces (pierdes al 3.º gol); portal: solo 1 vez (pierdes al 2.º) — D-056
+- [x] Fuego de las letras pixel art (simulación de fuego retro en baja resolución, `ui/PixelFire.ts`) — D-056
+- [ ] El usuario prueba el nuevo Pong y ajusta (encuadre, inclinación, colores, animaciones)
+- [?] Hacer también el rival del portal especial algo mejor (más rápido o con menos error) además de pedir 3 puntos
 - [x] Poder GHOUL: 4 tentáculos rojos con venas, camina por encima de los muros rompiendo los que pisa y pisa a los fantasmas; máscara original y ojo rojo; 10 s, ×1,2 — D-036
 - [x] GHOUL revisado: tentáculos de vóxeles, sin máscara (gris oscuro con ojo rojo), más grande (×2,6), nueva animación; GIGANTE al doble (×6) — D-037
 - [x] Color de las paredes con los poderes: alerta roja con GHOUL, cambio de color más rápido con GIGANTE — D-038

@@ -334,29 +334,29 @@ html, body {
   100% { opacity: 0; transform: translate(-50%, -80%) scale(1); }
 }
 
-/* --- Minijuego: ventana sobre el laberinto pausado --- */
-.mg-overlay {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  background: rgba(0, 0, 8, 0.62);
-  animation: fade-in 0.25s steps(3);
-}
+/* --- Minijuego: ventana sobre el laberinto pausado (animada por PopWindow) --- */
+.mg-overlay { position: absolute; inset: 0; display: grid; place-items: center; }
+/* Fondo oscuro: su opacidad la lleva PopWindow (entra y sale con la ventana). */
+.mg-overlay::before { content: ''; position: absolute; inset: 0; background: rgba(0, 0, 8, 0.62); opacity: var(--mg-dim, 0); }
 .mg-window {
-  padding: 14px 18px 16px;
+  position: relative;
+  padding: 14px 18px 18px;
   border: 4px solid #ff5ad8;
   background: #05051a;
   box-shadow: 0 0 0 4px #000, 10px 10px 0 4px rgba(0, 0, 0, 0.7);
   text-shadow: var(--shadow);
-  animation: mg-open 0.3s steps(4);
+  will-change: transform;
 }
-@keyframes mg-open { from { transform: scale(0.2, 0.05); } 50% { transform: scale(1, 0.05); } }
-.mg-titlebar { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+.mg-titlebar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .mg-title { font-size: 22px; color: var(--white); letter-spacing: 6px; }
-.mg-side { font-size: 10px; width: 70px; }
-.mg-you { color: var(--yellow); }
-.mg-rival { color: #ff2e6d; text-align: right; }
+/* Las letras del título caen una a una girando. */
+.mg-title .juicy-char { animation: mg-letter-in 0.55s cubic-bezier(0.2, 1.7, 0.4, 1) backwards; animation-delay: calc(var(--i, 0) * 0.08s + 0.2s); }
+@keyframes mg-letter-in { from { transform: translateY(-46px) scale(0) rotate(-50deg); } }
+.mg-side { font-size: 10px; width: 70px; animation: mg-side-in 0.55s cubic-bezier(0.2, 1.6, 0.4, 1) 0.42s backwards, mg-side-bob 1.6s ease-in-out 1s infinite alternate; }
+.mg-you { color: var(--yellow); --from: -70px; }
+.mg-rival { color: #ff2e6d; text-align: right; --from: 70px; animation-delay: 0.5s, 1.3s; }
+@keyframes mg-side-in { from { transform: translateX(var(--from)) scale(0.3); opacity: 0; } }
+@keyframes mg-side-bob { to { transform: translateY(-3px); } }
 .mg-screen { position: relative; line-height: 0; box-shadow: 0 0 0 3px #000, 0 0 0 6px #2a2f6a; }
 .mg-canvas { image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
 /* Líneas de barrido tipo monitor CRT. */
@@ -365,27 +365,9 @@ html, body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0) 0 2px, rgba(0, 0, 0, 0.22) 2px 4px);
+  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0) 0 2px, rgba(0, 0, 0, 0.18) 2px 4px);
 }
-.mg-big, .mg-small {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  line-height: 1.4;
-  text-align: center;
-  white-space: nowrap;
-  z-index: 1;
-}
-.mg-big { top: 36%; font-size: calc(var(--mg-scale, 3) * 7px); color: var(--white); }
-.mg-big[data-tone='good'] { color: var(--yellow); }
-.mg-big[data-tone='bad'] { color: #ff2e6d; }
-.mg-big.mg-pop { animation: bump 0.2s steps(2); }
-.mg-small { top: 62%; font-size: 10px; color: #3ae8ff; }
-.mg-footer { margin-top: 14px; font-size: 9px; color: #c4c8f4; line-height: 2; text-align: center; }
-.mg-footer .key { min-width: 0; margin: 0 6px 8px; padding: 6px 7px 4px; font-size: 9px; text-shadow: none; }
-.mg-stakes { color: #9aa3ff; font-size: 8px; }
 .mg-screen.mg-hit { animation: mg-hit 0.12s steps(1); }
-.mg-screen.mg-scored, .mg-screen.mg-conceded { animation: mg-shake 0.3s steps(6); }
 @keyframes mg-hit { 0% { box-shadow: 0 0 0 3px #000, 0 0 0 6px #ffffff; } }
 @keyframes mg-shake {
   0%, 100% { transform: translate(0, 0); }
@@ -394,6 +376,67 @@ html, body {
   60% { transform: translate(-3px, -1px); }
   80% { transform: translate(2px, 2px); }
 }
+
+/* Avisos grandes (JuicyText) y texto pequeño sobre la pista. */
+.juicy.mg-big {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  line-height: 1.4;
+  white-space: nowrap;
+  font-size: calc(var(--mg-scale, 3) * 7px);
+  color: var(--white);
+  pointer-events: none;
+}
+.mg-big .juicy-char { white-space: pre; }
+.mg-big[data-tone='good'] { color: var(--yellow); }
+.mg-big[data-tone='bad'] { color: #ff2e6d; }
+.mg-small {
+  position: absolute;
+  left: 50%;
+  top: 66%;
+  transform: translateX(-50%);
+  z-index: 1;
+  line-height: 1.4;
+  white-space: nowrap;
+  font-size: max(10px, calc(var(--mg-scale, 3) * 2.2px));
+  color: #3ae8ff;
+  letter-spacing: 2px;
+}
+.mg-small.mg-small-pop { animation: mg-small-pop 0.45s cubic-bezier(0.2, 1.8, 0.4, 1); }
+@keyframes mg-small-pop { from { transform: translateX(-50%) scale(0.2) rotate(-6deg); opacity: 0; } }
+
+/* Portal de poder especial: más difícil, todo rojizo. */
+.mg-hard::before { background: radial-gradient(ellipse at center, rgba(70, 0, 6, 0.5), rgba(14, 0, 0, 0.86)); }
+.mg-hard .mg-window { border-color: #ff2a14; background: #140306; animation: mg-hard-glow 0.9s ease-in-out infinite alternate; }
+@keyframes mg-hard-glow {
+  from { box-shadow: 0 0 0 4px #000, 0 0 16px 4px rgba(255, 40, 10, 0.35), 10px 10px 0 4px rgba(0, 0, 0, 0.7); }
+  to { box-shadow: 0 0 0 4px #000, 0 0 36px 12px rgba(255, 60, 10, 0.6), 10px 10px 0 4px rgba(0, 0, 0, 0.7); }
+}
+.mg-hard .mg-title, .mg-hard .mg-big, .mg-hard .mg-big[data-tone] { color: #ff2a14; }
+.mg-hard .mg-you { color: #ff6a4a; }
+.mg-hard .mg-rival { color: #ff1a1a; }
+.mg-hard .mg-small { color: #ff5a3a; }
+.mg-hard .mg-screen { box-shadow: 0 0 0 3px #000, 0 0 0 6px #6a0e0e; }
+@keyframes mg-hit-hard { 0% { box-shadow: 0 0 0 3px #000, 0 0 0 6px #ffb020; } }
+.mg-hard .mg-screen.mg-hit { animation-name: mg-hit-hard; }
+
+/* Avisos en llamas: letras incandescentes con contorno de píxeles y fuego pixel art detrás (PixelFire). */
+.mg-fire .juicy-char {
+  color: #fff3a0;
+  text-shadow: -0.125em 0 #c81800, 0.125em 0 #c81800, 0 -0.125em #c81800, 0 0.125em #c81800, 0.125em 0.25em 0 #3a0000;
+  animation: mg-fire-glow 0.25s steps(1) infinite;
+}
+.mg-fire .juicy-char:nth-child(2n) { animation-delay: -0.12s; }
+@keyframes mg-fire-glow { 50% { color: #ffd84a; } }
+.mg-fire[data-tone='bad'] .juicy-char { color: #ffb020; }
+@keyframes mg-fire-glow-bad { 50% { color: #ff8a10; } }
+.mg-fire[data-tone='bad'] .juicy-char { animation-name: mg-fire-glow-bad; }
+.pixel-fire { position: absolute; z-index: -1; image-rendering: pixelated; image-rendering: crisp-edges; pointer-events: none; }
+.juicy-spark.mg-spark-fire { background: #ff7a10; box-shadow: 0 0 0 2px #7a0000; }
+.juicy-spark.mg-spark-fire:nth-child(3n) { background: #ffd040; }
 
 /* --- Menú de modo dios (solo desarrollo): paneles de colores en columnas --- */
 .god-menu {

@@ -6,10 +6,16 @@ export interface MinigameResult {
   won: boolean;
 }
 
-/** Qué se juega el jugador: textos que el minijuego muestra (la recompensa depende de quién lo lanza). */
+/**
+ * Desde dónde se entra: un muro portal (`gate`, la recompensa es la tienda de
+ * habilidades) o un portal de sala (`portal`, la recompensa es un poder especial).
+ * Los portales son más difíciles porque dan más: cada minijuego decide cómo.
+ */
+export type MinigameKind = 'gate' | 'portal';
+
+/** Qué se juega el jugador: el tipo de entrada y los textos que el minijuego muestra. */
 export interface MinigameStakes {
-  /** Recompensa al ganar, para el pie de la ventana (p. ej. "PODER ESPECIAL"). */
-  reward: string;
+  kind: MinigameKind;
   /** Texto bajo "¡HAS GANADO!" (p. ej. "TE LLEVAS UN PODER ESPECIAL"). */
   wonText: string;
 }

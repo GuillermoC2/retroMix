@@ -33,7 +33,11 @@ export class PongGame {
   hits = 0;
   private aiAim = 0;
 
-  constructor(private random: () => number = Math.random) {}
+  /** @param pointsToWin puntos que necesita cada lado para ganar (según la entrada, ver `CONFIG.minigames.pong.pointsToWin`). */
+  constructor(
+    readonly pointsToWin: Readonly<Record<PongSide, number>>,
+    private random: () => number = Math.random,
+  ) {}
 
   get top(): number {
     return COURT_LINE;
@@ -143,7 +147,7 @@ export class PongGame {
   private point(by: PongSide): void {
     this.score[by]++;
     this.lastPoint = by;
-    if (this.score[by] >= this.cfg.pointsToWin) {
+    if (this.score[by] >= this.pointsToWin[by]) {
       this.winner = by;
       this.setPhase('over');
     } else {

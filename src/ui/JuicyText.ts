@@ -57,6 +57,8 @@ export class JuicyText {
   private shownBaseScale = 1;
   /** Factor externo para que quepa en el espacio disponible. */
   fit = 1;
+  /** Multiplicador de la ondulación de los caracteres (0 = quietos, p. ej. si algo depende de su posición). */
+  wave = 1;
 
   private scaleSpring = new Spring(260, 9);
   private rotSpring = new Spring(200, 8);
@@ -188,7 +190,7 @@ export class JuicyText {
     this.body.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${rot.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
 
     this.chars.forEach((span, i) => {
-      const wy = Math.sin(this.time * 3.2 + i * o.wavePhase) * o.waveAmplitude;
+      const wy = Math.sin(this.time * 3.2 + i * o.wavePhase) * o.waveAmplitude * this.wave;
       span.style.transform = `translateY(${wy.toFixed(1)}px)`;
     });
   }

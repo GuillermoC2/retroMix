@@ -550,8 +550,15 @@ export const CONFIG = {
 
   minigames: {
     pong: {
-      /** Puntos para ganar la partida. */
-      pointsToWin: 3,
+      /**
+       * Puntos que necesita cada lado para ganar, según la entrada. Muro portal (habilidad):
+       * ganas con 1 y el rival necesita 3 (te pueden marcar 2 veces). Portal (poder especial,
+       * más difícil): necesitas 3 y el rival 2 (solo te pueden marcar 1 vez).
+       */
+      pointsToWin: {
+        gate: { player: 1, ai: 3 },
+        portal: { player: 3, ai: 2 },
+      },
       /** Campo en píxeles lógicos (se escala en pantalla sin suavizado). */
       width: 160,
       height: 120,
