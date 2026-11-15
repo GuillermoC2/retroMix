@@ -29,8 +29,22 @@ export const HERO_DIAMETER = HERO_VOXEL * HERO_SIZE;
 /** Mitad del grosor en vóxeles: 1 → 3 vóxeles de grosor. El ojo sobresale uno más por cada cara. */
 const HERO_HALF_DEPTH = 1;
 
-/** Aspecto del protagonista: normal, gris oscuro con el ojo rojo (poder GHOUL) o azulado (habilidad DASH). */
-export type HeroLook = 'normal' | 'ghoul' | 'dash';
+/**
+ * Aspecto del protagonista: normal, gris oscuro con el ojo rojo (poder GHOUL),
+ * azulado (habilidad DASH) o mitad hielo y mitad fuego (poder FUEGO HIELO).
+ */
+export type HeroLook = 'normal' | 'ghoul' | 'dash' | 'fireice';
+
+/** Escalones del avance del hielo y del fuego por el cuerpo (cinemática de FUEGO HIELO). */
+export const FIRE_ICE_STEPS = 6;
+/** Fotogramas del parpadeo de las llamas. */
+export const FIRE_FRAMES = 3;
+
+/** FUEGO HIELO: hielo (lado izquierdo, la espalda) y fuego (lado derecho, el de la boca). */
+const ICE_SIDE = { body: 0xa8e4ff, light: 0xe8fbff, shine: 0xffffff, crack: 0x4aa8e8, rim: 0x2f7fd0 };
+const FIRE_SIDE = { hot: 0xfff0a0, rim: 0xb01a0a, flames: [0xffe14a, 0xffa21a, 0xff6a1a, 0xe8341a, 0xffc23a] };
+/** Frontera dentada entre los dos lados (desplazamiento por fila). */
+const SEAM = [0, 1, 1, 0, -1, -1];
 
 /** Colores del protagonista con DASH (azulado). */
 const DASH_LOOK = { body: 0x6fc8ff, rim: 0x2a7fd8 };
@@ -47,10 +61,14 @@ const GHOUL = {
 /**
  * @param mouth apertura total de la boca en radianes (0 = cerrada, 2π = desaparecido).
  * @param look aspecto normal o con máscara.
+ * @param spread (FUEGO HIELO) cuánto han avanzado el hielo y el fuego, de 0 a 1.
+ * @param frame (FUEGO HIELO) fotograma del parpadeo de las llamas.
  */
-export function heroGeometry(mouth: number, look: HeroLook = 'normal'): THREE.BufferGeometry {
+export function heroGeometry(mouth: number, look: HeroLook = 'normal', spread = 1, frame = 0): THREE.BufferGeometry {
   const deg = Math.round((mouth * 180) / Math.PI);
-  return cached(`hero:${deg}:${look}`, () => {
+  const step = look === 'fireice' ? Math.round(Math.max(0, Math.min(1, spread)) * FIRE_ICE_STEPS) : 0;
+  const flick = look === 'fireice' ? ((frame % FIRE_FRAMES) + FIRE_FRAMES) % FIRE_FRAMES : 0;
+  return cached(`hero:${deg}:${look}:${step}:${flick}`, () => {
     const c = (HERO_SIZE - 1) / 2;
     const r = HERO_SIZE / 2 + 0.1;
     const half = (deg * Math.PI) / 360;
@@ -80,12 +98,45 @@ export function heroGeometry(mouth: number, look: HeroLook = 'normal'): THREE.Bu
         const edge = rim && dist > r - 1.5;
         if (ghoul) return edge ? GHOUL.rim : GHOUL.body;
         if (look === 'dash') return edge ? DASH_LOOK.rim : DASH_LOOK.body;
+        if (look === 'fireice') {
+          const side = fireIceSide(x, y, step / FIRE_ICE_STEPS);
+          if (side) return fireIceColor(side, x, y, edge, flick);
+        }
         return edge ? HERO_RIM : HERO_YELLOW;
       },
       halfDepth: (x, y) => HERO_HALF_DEPTH + (isEye(x, y) || ghoulEye(x, y) ? 1 : 0),
     };
     return buildVoxelGeometry(sprite, HERO_VOXEL);
   });
+}
+
+/**
+ * Lado de FUEGO HIELO de un píxel: el hielo avanza desde el borde izquierdo y el
+ * fuego desde el derecho hasta encontrarse en una costura dentada en el centro.
+ * `front` marca el píxel del frente que avanza (más claro).
+ */
+function fireIceSide(x: number, y: number, k: number): { kind: 'ice' | 'fire'; front: boolean } | null {
+  const seam = (HERO_SIZE - 1) / 2 + SEAM[y % SEAM.length];
+  const iceTo = k * seam;
+  const fireFrom = HERO_SIZE - k * (HERO_SIZE - seam);
+  if (x < iceTo) return { kind: 'ice', front: k < 1 && x >= iceTo - 1 };
+  if (x >= fireFrom) return { kind: 'fire', front: k < 1 && x < fireFrom + 1 };
+  return null;
+}
+
+function fireIceColor(side: { kind: 'ice' | 'fire'; front: boolean }, x: number, y: number, edge: boolean, frame: number): number {
+  if (side.kind === 'ice') {
+    if (side.front) return ICE_SIDE.light;
+    if (edge) return ICE_SIDE.rim;
+    if ((x + y * 2) % 7 === 0) return ICE_SIDE.shine;
+    if ((x * 3 + y) % 9 === 0) return ICE_SIDE.crack;
+    return (x + y) % 2 ? ICE_SIDE.body : ICE_SIDE.light;
+  }
+  if (side.front) return FIRE_SIDE.hot;
+  if (edge) return frame === 1 && y % 3 === 0 ? FIRE_SIDE.flames[3] : FIRE_SIDE.rim;
+  // Lenguas de fuego que suben: el dibujo se desplaza hacia arriba en cada fotograma.
+  const n = (x * 7 + (y - frame * 2) * 13 + ((x * y) % 3)) % FIRE_SIDE.flames.length;
+  return FIRE_SIDE.flames[(n + FIRE_SIDE.flames.length) % FIRE_SIDE.flames.length];
 }
 
 // -----------------------------------------------------------------------------

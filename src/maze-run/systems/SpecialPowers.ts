@@ -21,6 +21,9 @@ interface ActivePower {
  * rompiendo los bloques que pisa y pisoteando fantasmas. Al final recoge los
  * tentáculos y baja al suelo.
  *
+ * FUEGO HIELO: algo más grande, mitad de hielo y mitad en llamas. Z dispara un
+ * rastro de hielo y X una llamarada (ver `FireIce`).
+ *
  * Cada poder tiene su efecto (`duration`) y una animación de salida (`outroTime`).
  */
 export class SpecialPowers {
@@ -74,9 +77,20 @@ export class SpecialPowers {
     return this.isOn('ghoul');
   }
 
-  /** Aspecto del protagonista: con máscara mientras dure el GHOUL (incluida su salida). */
+  get fireIce(): boolean {
+    return this.isOn('fireIce');
+  }
+
+  /** Aspecto del protagonista mientras dure el poder (incluida su salida). */
   get look(): HeroLook {
-    return this.active?.id === 'ghoul' ? 'ghoul' : 'normal';
+    const id = this.active?.id;
+    return id === 'ghoul' ? 'ghoul' : id === 'fireIce' ? 'fireice' : 'normal';
+  }
+
+  /** Segundos que le quedan al efecto del poder activo. */
+  get secondsLeft(): number {
+    const a = this.active;
+    return a ? Math.max(0, a.duration - a.elapsed) : 0;
   }
 
   /**
@@ -109,13 +123,13 @@ export class SpecialPowers {
   }
 
   /**
-   * Escala visual del jugador: GIGANTE y GHOUL son grandes desde el principio (crecen
-   * en la cinemática) y encogen al salir; el GIGANTE además parpadea al final.
+   * Escala visual del jugador: con un poder es más grande desde el principio (crece
+   * en la cinemática) y encoge al salir; el GIGANTE además parpadea al final.
    */
   get playerScale(): number {
     const a = this.active;
     if (!a) return 1;
-    const scale = a.id === 'giant' ? CONFIG.specialPowers.giant.scale : CONFIG.specialPowers.ghoul.scale;
+    const scale = CONFIG.specialPowers[a.id].scale;
     const t = a.elapsed;
     if (t >= a.duration) {
       const k = this.outro;

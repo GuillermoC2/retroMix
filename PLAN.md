@@ -5,7 +5,7 @@ Documento vivo. Se actualiza al empezar y al terminar cada tarea. Las decisiones
 
 Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[?]` propuesta sin aprobar (requiere visto bueno del usuario)
 
-**Estado actual:** Fase 3 (muros portal y tienda de habilidades) hecha, a la espera de que el usuario la pruebe; todo sujeto a cambios hasta que le guste. Con esto queda la base del juego: lo siguiente es ir añadiendo habilidades, minijuegos y alguna mecánica nueva. Pendiente para más adelante: mejorar la interfaz y el funcionamiento del Pong.
+**Estado actual:** Fase 3 (muros portal y tienda de habilidades) hecha y tercer poder especial, FUEGO HIELO (D-055), con poderes y habilidades que ya no se mezclan (D-054), a la espera de que el usuario los pruebe; todo sujeto a cambios hasta que le guste. Con esto queda la base del juego: lo siguiente es ir añadiendo habilidades, minijuegos y alguna mecánica nueva. Pendiente para más adelante: mejorar la interfaz y el funcionamiento del Pong.
 
 ---
 
@@ -97,6 +97,8 @@ No se harán sin el visto bueno del usuario (se evita añadir funcionalidades no
 - [?] Mostrar en la tienda las habilidades que ya se tienen y sus efectos sumados
 - [?] Lista de récords que reacciona en directo: al superar una distancia de la lista durante la partida, esa fila salta y se marca como superada
 - [?] Retocar el sprite del protagonista mirando hacia arriba (parado, se lee algo como un corazón)
+- [?] FUEGO HIELO: que el fuego derrita el hielo que toca (ahora son independientes)
+- [?] Si "pierdes la habilidad" debía ser la habilidad comprada (para siempre) y no solo su efecto en curso (D-054)
 
 ## Fase 2 — Minijuegos como desafíos: portales
 
@@ -121,6 +123,11 @@ activa solo; si se pierde, se acaba la partida.
 - [x] GHOUL revisado: tentáculos de vóxeles, sin máscara (gris oscuro con ojo rojo), más grande (×2,6), nueva animación; GIGANTE al doble (×6) — D-037
 - [x] Color de las paredes con los poderes: alerta roja con GHOUL, cambio de color más rápido con GIGANTE — D-038
 - [x] Corregido: al recibir un segundo poder se veía un momento el anuncio del primero (la animación se repetía al volver a mostrar la interfaz tras el minijuego o el menú K)
+- [x] Poder especial y habilidades se excluyen: con un poder no se cogen objetos de habilidad; al recibir un poder se pierden los efectos de habilidad activos (láser, dash, imán, congelación). Con un poder no se puede usar ROMPEMUROS (la Z queda libre para el poder) — D-054
+- [x] FUEGO HIELO dura 20 s (antes 12) — D-055
+- [x] Llamarada más grande: 9 casillas de largo (antes 7) y más ancha (medio ancho 0,4 → 1,5) — D-055
+- [x] FUEGO HIELO: hielo y fuego cada 0,5 s; la cuña de hielo es una rampa que sube por encima de los muros y deja pasar sobre ellos deslizándose — D-055
+- [x] Poder FUEGO HIELO: Z dispara un rastro de hielo en cuña (estrecho → ancho) que come puntos, mata fantasmas y sobre el que se desliza más rápido; X lanza llamaradas que queman bloques, fantasmas y puntos; algo más grande (×1,35); cinemática: el lado izquierdo se congela y el derecho arde — D-055
 - [ ] Más poderes especiales
 - [ ] Más minijuegos (Tetris, Space Invaders…)
 - [ ] Animaciones de entrada y salida del portal más elaboradas (a petición del usuario, más adelante)

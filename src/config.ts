@@ -392,7 +392,7 @@ export const CONFIG = {
    * de `pool` y se activa automáticamente.
    */
   specialPowers: {
-    pool: ['giant', 'ghoul'],
+    pool: ['giant', 'ghoul', 'fireIce'],
     /**
      * Cinemática al recibir un poder: el protagonista sale volando hacia la cámara,
      * hace la acción propia del poder y cae de golpe a su sitio dejando humo. La
@@ -485,6 +485,66 @@ export const CONFIG = {
        * espera `hold` s.
        */
       intro: { darkenTime: 0.5, growTime: 0.3, closeUpEndSize: 0.55, tentacleEvery: 0.22, tentacleGrow: 0.2, hold: 0.5 },
+    },
+    /**
+     * FUEGO HIELO: medio cuerpo de hielo (izquierda) y medio en llamas (derecha).
+     * Z dispara un rastro de hielo en cuña (estrecho junto a la boca, ancho al final)
+     * que come los puntos que cubre y mata a los fantasmas que lo pisan; sobre el
+     * hielo el protagonista se desliza más rápido. X lanza una llamarada que quema
+     * bloques, fantasmas y puntos.
+     */
+    fireIce: {
+      name: 'FUEGO HIELO',
+      /** Subtítulo del anuncio al empezar (las teclas del poder). */
+      announceSub: 'Z HIELO · X FUEGO',
+      duration: 20,
+      /** Solo un poco más grande. */
+      scale: 1.35,
+      speed: 1.1,
+      warnTime: 1.5,
+      outroTime: 0.35,
+      /** Paredes: alternan entre azul hielo y naranja fuego (periodo s, fracción naranja). */
+      wallAlert: { dim: 0x2a8cff, bright: 0xff5a14, period: 1.6, duty: 0.5 },
+      ice: {
+        /** Largo de la cuña (casillas) y medio ancho junto a la boca y al final. */
+        length: 9,
+        halfWidth: [0.35, 2.3],
+        /** Velocidad (casillas/s) a la que avanza el frente del disparo. */
+        speed: 30,
+        /** Segundos que dura el hielo en el suelo; los últimos `melt` se derrite. */
+        life: 7,
+        melt: 1.5,
+        /**
+         * Rampa: la cuña sube desde el suelo (`floor`, casillas de altura junto a la boca)
+         * hasta quedar `overWalls` por encima de los muros a `ramp` casillas de la boca.
+         * Sobre ella se pasa por encima de los muros mientras dure el hielo.
+         */
+        floor: 0.15,
+        ramp: 2,
+        overWalls: 0.15,
+        /** Recarga (s) entre disparos. */
+        cooldown: 0.5,
+        /** Multiplicador de velocidad del protagonista sobre el hielo (se desliza). */
+        slide: 1.7,
+      },
+      fire: {
+        /** Largo de la llamarada (casillas) y medio ancho junto a la boca y al final. */
+        length: 9,
+        halfWidth: [0.4, 1.5],
+        /** Velocidad (casillas/s) a la que avanza el frente de la llamarada. */
+        speed: 26,
+        /** Segundos que dura cada llamarada (sigue a la boca) y recarga desde que empieza. */
+        time: 0.5,
+        cooldown: 0.5,
+        /** Sacudida al quemar bloques. */
+        shake: 0.1,
+      },
+      /**
+       * Acto de la cinemática: el lado izquierdo se congela y el derecho empieza a
+       * arder a la vez (`spreadTime`, en escalones), crece un poco de golpe
+       * (`growTime`) y espera `hold` s.
+       */
+      intro: { spreadTime: 1.2, growTime: 0.25, closeUpEndSize: 0.5, hold: 0.55 },
     },
   },
 

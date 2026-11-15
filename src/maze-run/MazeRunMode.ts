@@ -36,6 +36,9 @@ import { LaserView } from './systems/LaserView';
 import { Dash } from './systems/Dash';
 import { Magnet } from './systems/Magnet';
 import { DashTrail } from './effects/DashTrail';
+import { ElementParticles } from './effects/ElementParticles';
+import { FireIceView } from './effects/FireIceView';
+import { FireIce, type Flame } from './systems/FireIce';
 import { MagnetEffect } from './effects/MagnetEffect';
 import { AbilityShopMode } from './ui/AbilityShopMode';
 import { SpecialPowers } from './systems/SpecialPowers';
@@ -53,6 +56,14 @@ import { ACTOR_Z, worldX } from './world';
 import { HERO_DIAMETER, type HeroLook } from './entities/sprites';
 
 export const GAME_ID = 'maze-run';
+
+/** Alerta de color de las paredes (ver `NeonCycle.alert`) a partir de su configuración. */
+const alertColors = (a: { dim: number; bright: number; period: number; duty: number }) => ({
+  dim: new THREE.Color(a.dim),
+  bright: new THREE.Color(a.bright),
+  period: a.period,
+  duty: a.duty,
+});
 
 const DIRECTION_ACTIONS: readonly Action[] = ['up', 'right', 'down', 'left'];
 const ACTION_DIR: Record<string, Dir> = { up: Dir.Up, right: Dir.Right, down: Dir.Down, left: Dir.Left };
@@ -112,7 +123,17 @@ export class MazeRunMode implements GameMode {
   private magnetEffect = new MagnetEffect();
   private powers = new SpecialPowers();
   private tentacles = new TentacleView();
-  private cinematic = new PowerCinematic(this.tentacles);
+  /** Partículas de fuego y hielo (poder FUEGO HIELO y su cinemática). */
+  private particles = new ElementParticles();
+  private fireIce = new FireIce();
+  private fireIceView = new FireIceView(this.particles);
+  /** Llamarada de este fotograma (null si no hay). */
+  private flame: Flame | null = null;
+  /** El protagonista se mueve sobre hielo (se desliza más rápido). */
+  private sliding = false;
+  /** Altura extra del protagonista sobre la rampa de hielo (suavizada). */
+  private iceLift = 0;
+  private cinematic = new PowerCinematic(this.tentacles, this.particles);
   private legs = new GhoulLegs();
   /** Patas del GHOUL visibles al aterrizar, antes de que empiece el poder. */
   private legsLanding = false;
@@ -156,7 +177,7 @@ export class MazeRunMode implements GameMode {
     scene.background = new THREE.Color(0x03030a);
     scene.add(new THREE.AmbientLight(0xffffff, 0.8), new THREE.HemisphereLight(0xffffff, 0x181020, 0.5));
     scene.add(this.cameraRig.light, this.cameraRig.light.target);
-    scene.add(this.mazeView.group, this.pelletsView.group, this.playerView.mesh, this.ghostsView.group, this.lavaView.group, this.shatter.group, this.portalsView.group, this.gatesView.group, this.pickupsView.group, this.laserView.group, this.dashTrail.group, this.magnetEffect.group, this.cinematic.group, this.smoke.group, this.tentacles.group);
+    scene.add(this.mazeView.group, this.pelletsView.group, this.playerView.mesh, this.ghostsView.group, this.lavaView.group, this.shatter.group, this.portalsView.group, this.gatesView.group, this.pickupsView.group, this.laserView.group, this.dashTrail.group, this.magnetEffect.group, this.fireIceView.group, this.cinematic.group, this.smoke.group, this.tentacles.group, this.particles.group);
 
     this.maze.ensureGenerated(this.player.tileY + CONFIG.maze.generateAhead);
     this.cameraRig.snap(this.scroll.y);
@@ -191,6 +212,8 @@ export class MazeRunMode implements GameMode {
     this.laserView.dispose();
     this.dashTrail.dispose();
     this.magnetEffect.dispose();
+    this.fireIceView.dispose();
+    this.particles.dispose();
     this.mazeView.dispose();
     this.pelletsView.dispose();
     this.playerView.dispose();
@@ -269,7 +292,7 @@ export class MazeRunMode implements GameMode {
 
     this.wallBreaker.infinite = godSettings.infiniteWallBreak;
     this.wallBreaker.update(dt);
-    if (input.pressed('power')) this.useWallBreak();
+    if (input.pressed('power')) this.usePowerKey();
     this.dash.update(dt);
     if (input.pressed('action')) this.useAction();
 
@@ -280,13 +303,18 @@ export class MazeRunMode implements GameMode {
     if (this.wasGhoul && !ghoul) this.endGhoul();
     this.wasGhoul = ghoul;
 
-    const boost = giant ? CONFIG.specialPowers.giant.speed : ghoul ? CONFIG.specialPowers.ghoul.speed : 1;
+    const active = this.powers.active?.id;
+    const boost = active && this.powers.isOn(active) ? CONFIG.specialPowers[active].speed : 1;
     const dashing = this.dash.inDash;
-    player.speedMultiplier = state.modifiers.playerSpeed * boost * (dashing ? CONFIG.abilities.dash.dashSpeed : 1);
+    // Sobre el hielo de FUEGO HIELO se desliza más rápido (GIGANTE y GHOUL no lo notan).
+    this.sliding = !ghoul && !giant && this.fireIce.iceAt(player.tileX, player.tileY) && player.moving;
+    const slide = this.sliding ? CONFIG.specialPowers.fireIce.ice.slide : 1;
+    player.speedMultiplier = state.modifiers.playerSpeed * boost * slide * (dashing ? CONFIG.abilities.dash.dashSpeed : 1);
     const fromX = player.x;
     const fromY = player.y;
-    player.update(dt, maze, giant ? this.giantPassable : ghoul ? this.ghoulPassable : undefined);
+    player.update(dt, maze, giant ? this.giantPassable : ghoul ? this.ghoulPassable : this.icePassable);
     state.reachRow(player.tileY);
+    this.updateIceLift(dt, giant || ghoul);
 
     if (giant) this.giantEat();
     else if (dashing) this.eatAlong(fromX, fromY, player.x, player.y);
@@ -300,6 +328,7 @@ export class MazeRunMode implements GameMode {
 
     this.ghosts.update(dt, player, state.meters, this.lava.y, state.modifiers.ghostSpeed);
     this.fireLaser(dt);
+    this.updateFireIce(dt);
     // DASH: todo el recorrido del acelerón de este fotograma mata a los fantasmas que toca.
     if (dashing) {
       for (const { ghost, score } of this.ghosts.zap(fromX, fromY, player.x, player.y, CONFIG.abilities.dash.hitHalfWidth, player)) {
@@ -344,9 +373,13 @@ export class MazeRunMode implements GameMode {
     }
   }
 
-  private eatPelletAt(x: number, y: number): void {
+  /**
+   * Come el punto de una casilla y coge el objeto de habilidad que haya, salvo con
+   * un poder especial (entonces no se cogen: se quedan donde están).
+   */
+  private eatPelletAt(x: number, y: number, takePickups = true): void {
     const { state } = this;
-    const pickup = this.pickups.takeAt(x, y);
+    const pickup = takePickups && !this.powers.active ? this.pickups.takeAt(x, y) : null;
     if (pickup) this.takePickup(pickup);
     const pellet = this.pellets.eatAt(x, y);
     if (pellet?.type === PelletType.Dot) state.addScore(CONFIG.pellets.dotScore, pellet.x, pellet.y);
@@ -379,9 +412,30 @@ export class MazeRunMode implements GameMode {
     }
   }
 
-  /** Tecla de acción (X): hace la acción disponible ahora mismo (hoy solo el dash de DASH). */
+  /**
+   * Tecla Z: ROMPEMUROS. Con un poder especial no se pueden romper muros: la Z hace
+   * la acción del poder si tiene una (FUEGO HIELO: rastro de hielo) o nada.
+   */
+  private usePowerKey(): void {
+    if (!this.powers.active) return this.useWallBreak();
+    this.hud.pressPowerKey();
+    const { player } = this;
+    if (this.powers.fireIce && this.fireIce.tryIce(this.maze, player.x, player.y, player.dir)) {
+      this.cameraRig.shake(0.1);
+      this.state.events.emit('elementShot', { kind: 'ice' });
+    }
+  }
+
+  /** Tecla de acción (X): hace la acción disponible ahora mismo (llamarada de FUEGO HIELO o dash de DASH). */
   private useAction(): void {
     this.hud.pressActionKey();
+    if (this.powers.fireIce) {
+      if (this.fireIce.tryFire()) {
+        this.cameraRig.shake(0.12);
+        this.state.events.emit('elementShot', { kind: 'fire' });
+      }
+      return;
+    }
     if (this.dash.tryDash()) {
       this.cameraRig.shake(0.12);
       this.state.events.emit('dash', {});
@@ -407,6 +461,73 @@ export class MazeRunMode implements GameMode {
     for (const { ghost, score } of this.ghosts.zap(x0, y0, x1, y1, CONFIG.abilities.laser.hitHalfWidth, player)) {
       state.addScore(score, ghost.x, ghost.y, true);
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Poder FUEGO HIELO
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Hielo: al cuajar, come los puntos que cubre; los fantasmas que lo pisan mueren.
+   * Fuego: la llamarada quema los bloques, los fantasmas y los puntos que alcanza.
+   * El hielo se sigue derritiendo (y matando) aunque el poder haya acabado.
+   */
+  private updateFireIce(dt: number): void {
+    const { state, player, maze, fireIce } = this;
+    for (const t of fireIce.update(dt, this.lava.y)) if (maze.isOpen(t.x, t.y)) this.eatPelletAt(t.x, t.y, false);
+    for (const { ghost, score } of this.ghosts.devourWhere((g) => fireIce.iceAt(g.tileX, g.tileY), player)) {
+      state.addScore(score, ghost.x, ghost.y, true);
+      this.fireIceView.ghostBurst(ghost.x, ghost.y, 'ice');
+    }
+
+    this.flame = this.powers.fireIce ? fireIce.flame(maze, player.x, player.y, player.dir) : null;
+    const flame = this.flame;
+    if (!flame) return;
+    if (flame.walls.length) {
+      maze.setTiles(flame.walls, Tile.Open);
+      this.shatter.burst(flame.walls, flame.dir, this.fireColor, true);
+      this.fireIceView.burnBurst(flame.walls);
+      this.cameraRig.shake(CONFIG.specialPowers.fireIce.fire.shake);
+      state.events.emit('wallBroken', { tiles: flame.walls });
+    }
+    for (const t of flame.open) this.eatPelletAt(t.x, t.y, false);
+    for (const { ghost, score } of this.ghosts.devourWhere((g) => fireIce.inFlame(flame, g.x, g.y, 0.35), player)) {
+      state.addScore(score, ghost.x, ghost.y, true);
+      this.fireIceView.ghostBurst(ghost.x, ghost.y, 'fire');
+    }
+  }
+
+  private readonly fireColor = new THREE.Color(0xff6a1a);
+  private readonly iceColor = new THREE.Color(0x9fe6ff);
+
+  /** Sobre la rampa de hielo se pasa por encima de los bloques que cubre (no del borde ni de los muros portal). */
+  private readonly icePassable: Passable = (x, y) =>
+    this.maze.isOpen(x, y) || (this.maze.tile(x, y) === Tile.Wall && this.fireIce.iceAt(x, y));
+
+  /**
+   * Altura sobre la rampa de hielo: sube y baja suave siguiendo la superficie. Si
+   * el hielo se derrite con el protagonista encima de un bloque, cae rompiéndolo
+   * (y se abre el camino más corto hasta los pasillos, para no quedar atrapado).
+   */
+  private updateIceLift(dt: number, otherPower: boolean): void {
+    const { player, maze } = this;
+    const onWall = maze.tile(player.tileX, player.tileY) === Tile.Wall;
+    if (!otherPower && onWall && !this.fireIce.iceAt(player.tileX, player.tileY)) this.dropFromIce();
+    const surface = otherPower ? null : this.fireIce.surface(player.tileX, player.tileY, onWall);
+    const target = surface === null ? 0 : Math.max(0, surface + 0.5 - ACTOR_Z);
+    this.iceLift += (target - this.iceLift) * (1 - Math.exp(-18 * dt));
+  }
+
+  private dropFromIce(): void {
+    const { player, maze } = this;
+    const here = { x: player.tileX, y: player.tileY };
+    maze.setTiles([here], Tile.Open);
+    const path = escapeTiles(maze, here.x, here.y);
+    if (path.length) maze.setTiles(path, Tile.Open);
+    const broken = [here, ...path];
+    this.shatter.burst(broken, player.dir, this.iceColor, true);
+    this.cameraRig.shake(0.25);
+    this.state.events.emit('wallBroken', { tiles: broken });
   }
 
   // ---------------------------------------------------------------------------
@@ -695,6 +816,9 @@ export class MazeRunMode implements GameMode {
 
   /** Aspecto del protagonista: el del poder especial si hay uno; si no, azulado con DASH (parpadea al acabarse). */
   private heroLook(): HeroLook {
+    // FUEGO HIELO parpadea al acabarse.
+    const blink = Math.floor(this.state.phaseTime * 8) % 2 === 0;
+    if (this.powers.look === 'fireice') return this.powers.warning && blink ? 'normal' : 'fireice';
     if (this.powers.look !== 'normal') return this.powers.look;
     if (!this.dash.active) return 'normal';
     return this.dash.warning && Math.floor(this.state.phaseTime * 8) % 2 === 0 ? 'normal' : 'dash';
@@ -716,16 +840,19 @@ export class MazeRunMode implements GameMode {
     this.phaseAfterCinematic = state.phase === 'ready' ? 'ready' : 'playing';
     state.setPhase('cinematic');
     const { impactShake, smokePuffs } = CONFIG.specialPowers.cinematic;
-    const current = { scale: this.powers.playerScale, lift: this.powers.ghoulLift, look: this.powers.look };
+    const current = { scale: this.powers.playerScale, lift: this.powers.ghoulLift + this.iceLift, look: this.powers.look };
     // Un poder nuevo sustituye al anterior sin su animación de salida.
     if (this.powers.ghoul) this.endGhoul();
     this.powers.clear();
     this.wasGhoul = false;
+    this.flame = null;
+    this.clearAbilityEffects();
     this.cinematic.play(id, this.player, current, (amount) => this.cameraRig.shake(amount), {
       onImpact: (at, scale) => {
         this.cameraRig.shake(impactShake);
         // Por encima de los muros, para que no lo tapen.
         this.smoke.ring(at.x, at.y, CONFIG.maze.wallDepth + 0.15, (HERO_DIAMETER / 2) * scale + 0.2, smokePuffs);
+        if (id === 'fireIce') this.fireIceView.landBurst(at.x, at.y, at.z);
         // El GHOUL aterriza clavando los cuatro tentáculos.
         if (id === 'ghoul') {
           this.legsLanding = true;
@@ -737,10 +864,24 @@ export class MazeRunMode implements GameMode {
         state.setPhase(this.phaseAfterCinematic);
         this.powers.activate(id);
         this.ghosts.resetCombo();
-        this.hud.announce(`¡${this.powers.name(id)}!`, 'PODER ESPECIAL');
+        this.hud.announce(`¡${this.powers.name(id)}!`, id === 'fireIce' ? CONFIG.specialPowers.fireIce.announceSub : 'PODER ESPECIAL');
         state.events.emit('specialPower', { id, active: true });
       },
     });
+  }
+
+  /**
+   * Un poder especial y las habilidades no se mezclan: al recibir un poder se
+   * pierden los efectos de habilidad en curso (láser, dash, imán y congelación).
+   * Las habilidades compradas se conservan: sus objetos vuelven a poder cogerse
+   * cuando acaba el poder.
+   */
+  private clearAbilityEffects(): void {
+    this.laser.clear();
+    this.beam = null;
+    this.dash.clear();
+    this.magnet.clear();
+    this.ghosts.unfreeze();
   }
 
   // ---------------------------------------------------------------------------
@@ -897,6 +1038,9 @@ export class MazeRunMode implements GameMode {
     this.laser.clear();
     this.dash.clear();
     this.magnet.clear();
+    this.fireIce.clear();
+    this.flame = null;
+    this.iceLift = 0;
     this.lava.y = player.y + CONFIG.lava.startOffset;
     this.scroll.y = player.y + CONFIG.camera.lookAhead;
     this.cameraRig.snap(this.scroll.y);
@@ -993,9 +1137,12 @@ export class MazeRunMode implements GameMode {
       spin = t * t * Math.PI * 4;
     }
     const pose = state.phase === 'cinematic' ? this.cinematic.update(dt, this.cameraRig.camera, this.player) : null;
-    if (pose) this.playerView.applyPose(pose);
-    else this.playerView.update(dt, this.player, scale, spin, this.powers.ghoulLift, this.heroLook());
+    if (pose) this.playerView.applyPose(pose, dt);
+    else this.playerView.update(dt, this.player, scale, spin, this.powers.ghoulLift + this.iceLift, this.heroLook());
     this.dashTrail.update(dt, this.playerView.mesh, state.phase === 'playing' && this.dash.inDash);
+    const fireIceOn = playing && this.powers.active?.id === 'fireIce';
+    this.fireIceView.update(dt, this.fireIce, this.maze, playing ? this.flame : null, this.playerView.mesh, fireIceOn, playing && this.sliding);
+    this.particles.update(dt);
     this.ghostsView.update(dt, this.ghosts);
     // Como en el clásico, los fantasmas desaparecen durante la animación de muerte.
     this.ghostsView.group.visible = !(dying && (state.phase === 'over' || state.phaseTime > 0.4));
@@ -1009,8 +1156,12 @@ export class MazeRunMode implements GameMode {
     this.tentacles.flush();
     this.hud.setValues(state.meters, state.score);
     this.hud.update(dt);
-    this.hud.setPower(this.wallBreaker.charges, godSettings.infiniteWallBreak);
-    this.hud.setAction(this.dash.active ? { name: 'DASH', seconds: this.dash.remaining, ready: this.dash.ready } : null);
+    // Con un poder especial no se rompen muros: la Z queda en gris o hace la acción del poder.
+    const fireIce = this.powers.fireIce;
+    const iceKey = fireIce ? { name: 'HIELO', ready: this.fireIce.iceReady } : null;
+    this.hud.setPower(this.wallBreaker.charges, godSettings.infiniteWallBreak, !!this.powers.active, iceKey);
+    if (fireIce) this.hud.setAction({ name: 'FUEGO', seconds: this.powers.secondsLeft, ready: this.fireIce.fireReady });
+    else this.hud.setAction(this.dash.active ? { name: 'DASH', seconds: this.dash.remaining, ready: this.dash.ready } : null);
     const skip = { off: '', win: 'MG GANADOS', lose: 'MG PERDIDOS' }[godSettings.skipMinigames];
     const cheats = [godSettings.invincible && 'INVENCIBLE', godSettings.infiniteWallBreak && 'MURO INF', skip].filter(Boolean);
     this.hud.setGodMode(cheats.length ? `DIOS: ${cheats.join(' · ')} [K]` : '');
@@ -1027,19 +1178,18 @@ export class MazeRunMode implements GameMode {
 
   /**
    * Color de las paredes según el poder: GHOUL las pone en alerta roja (desde que
-   * aterriza); GIGANTE acelera el cambio de color habitual.
+   * aterriza); FUEGO HIELO las alterna entre azul hielo y naranja fuego; GIGANTE
+   * acelera el cambio de color habitual.
    */
   private updateWallColor(): void {
     const neon = this.mazeView.neon;
     const id = this.powers.active?.id;
     neon.speed = id === 'giant' ? CONFIG.specialPowers.giant.neonSpeed : 1;
-    neon.alert = id === 'ghoul' || this.legsLanding ? this.ghoulAlert : null;
+    neon.alert = id === 'ghoul' || this.legsLanding ? this.ghoulAlert : id === 'fireIce' ? this.fireIceAlert : null;
   }
 
-  private readonly ghoulAlert = (() => {
-    const a = CONFIG.specialPowers.ghoul.wallAlert;
-    return { dim: new THREE.Color(a.dim), bright: new THREE.Color(a.bright), period: a.period, duty: a.duty };
-  })();
+  private readonly ghoulAlert = alertColors(CONFIG.specialPowers.ghoul.wallAlert);
+  private readonly fireIceAlert = alertColors(CONFIG.specialPowers.fireIce.wallAlert);
 
   /** Carteles con el nombre del minijuego sobre los portales abiertos. */
   private placePortalLabels(): void {

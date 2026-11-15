@@ -3,7 +3,7 @@ import { CONFIG } from '../../config';
 import { Dir } from '../maze/grid';
 import { ACTOR_Z, worldX } from '../world';
 import type { Player } from './Player';
-import { heroGeometry, type HeroLook } from './sprites';
+import { FIRE_FRAMES, heroGeometry, type HeroLook } from './sprites';
 
 const MAX_MOUTH = (80 * Math.PI) / 180;
 /** Fotogramas de boca (pocos, como un sprite arcade). */
@@ -25,14 +25,24 @@ export interface HeroPose {
   /** Apertura de la boca, de 0 (cerrada) a 1 (máxima). */
   mouth: number;
   look: HeroLook;
+  /** (FUEGO HIELO) cuánto han avanzado el hielo y el fuego por el cuerpo, de 0 a 1 (por defecto 1). */
+  spread?: number;
 }
 
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
+/** Fotogramas por segundo del parpadeo de las llamas (FUEGO HIELO). */
+const FLAME_FPS = 10;
 
 /** Figura 2.5D del protagonista: boca animada, orientación y animación de muerte. */
 export class PlayerView {
   readonly mesh: THREE.Mesh;
   private deathTime = -1;
+  /** Reloj del parpadeo de las llamas. */
+  private clock = 0;
+
+  private get flameFrame(): number {
+    return Math.floor(this.clock * FLAME_FPS) % FIRE_FRAMES;
+  }
 
   /**
    * Pose "en su sitio" (posición en el laberinto, orientación según su dirección y escala).
@@ -44,18 +54,20 @@ export class PlayerView {
     out.scale.set(player.dir === Dir.Left ? -scale : scale, scale, scale);
     out.mouth = 0.5;
     out.look = 'normal';
+    out.spread = 1;
     return out;
   }
 
   /** Coloca al protagonista según una pose externa (sin sombra: puede estar pegado a la cámara). */
-  applyPose(pose: HeroPose): void {
+  applyPose(pose: HeroPose, dt = 0): void {
+    this.clock += dt;
     this.mesh.position.copy(pose.position);
     this.mesh.quaternion.copy(pose.quaternion);
     this.mesh.scale.copy(pose.scale);
     this.mesh.visible = true;
     this.mesh.castShadow = false;
     const frame = Math.round(Math.max(0, Math.min(1, pose.mouth)) * (MOUTH_FRAMES - 1)) / (MOUTH_FRAMES - 1);
-    this.mesh.geometry = heroGeometry(frame * MAX_MOUTH, pose.look);
+    this.mesh.geometry = heroGeometry(frame * MAX_MOUTH, pose.look, pose.spread ?? 1, this.flameFrame);
   }
 
   constructor() {
@@ -74,6 +86,7 @@ export class PlayerView {
    * @param look aspecto (máscara del GHOUL).
    */
   update(dt: number, player: Player, scale = 1, spin = 0, lift = 0, look: HeroLook = 'normal'): void {
+    this.clock += dt;
     this.mesh.castShadow = true;
     // Al crecer, se eleva para que no se hunda en el suelo: asoma por encima de los muros.
     this.mesh.position.set(worldX(player.x), player.y, ACTOR_Z + Math.max(0, scale - 1) * GROW_LIFT + lift);
@@ -102,7 +115,7 @@ export class PlayerView {
       open = 1 - Math.abs(phase * 2 - 1); // triángulo 0→1→0
     }
     const frame = Math.round(open * (MOUTH_FRAMES - 1)) / (MOUTH_FRAMES - 1);
-    this.mesh.geometry = heroGeometry(frame * MAX_MOUTH, look);
+    this.mesh.geometry = heroGeometry(frame * MAX_MOUTH, look, 1, this.flameFrame);
   }
 
   dispose(): void {

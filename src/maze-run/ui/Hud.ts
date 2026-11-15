@@ -41,10 +41,16 @@ export class Hud {
   private keys = el('div', 'hud-keys');
   /** Habilidades compradas, encima de las ayudas de teclas. */
   private abilities = el('div', 'hud-abilities');
+  /**
+   * Tecla Z: ROMPEMUROS con sus usos en grande; con un poder especial, en gris (no se
+   * puede romper muros) o la acción del poder (p. ej. HIELO con FUEGO HIELO).
+   */
   private power = keyHint('Z', 'ROMPEMUROS');
+  private powerName = el('span', '', 'ROMPEMUROS');
   /** Usos de ROMPEMUROS, en grande a la derecha del nombre. */
   private charges = el('b', 'key-count');
   private chargesShown = '';
+  private powerShown = '';
   /**
    * Tecla de acción general (X): "ACCION" en gris si no hay nada que hacer; si hay
    * una acción disponible (p. ej. DASH), su nombre y los segundos que le quedan en grande.
@@ -67,7 +73,7 @@ export class Hud {
 
   constructor(parent: HTMLElement, records: RecordEntry) {
     this.power.label.classList.add('with-count');
-    this.power.label.appendChild(this.charges);
+    this.power.label.replaceChildren(this.powerName, this.charges);
     this.action.label.classList.add('with-count');
     this.action.label.replaceChildren(this.actionName, this.actionTime);
     this.keys.append(this.abilities, this.power.root, this.action.root, this.view.root);
@@ -127,14 +133,24 @@ export class Hud {
     this.records.update(dt);
   }
 
-  /** Usos que quedan de ROMPEMUROS (INF con el truco del modo dios). Al ganar uno, el número salta. */
-  setPower(charges: number, devInfinite: boolean): void {
+  /**
+   * Tecla Z. Usos que quedan de ROMPEMUROS (INF con el truco del modo dios); al ganar
+   * uno, el número salta. `blocked`: no se puede romper muros (hay un poder especial).
+   * `override`: la Z hace otra cosa (la acción del poder), con su nombre y si está lista.
+   */
+  setPower(charges: number, devInfinite: boolean, blocked = false, override: { name: string; ready: boolean } | null = null): void {
+    const mode = override ? `${override.name}|${override.ready}` : `ROMPEMUROS|${blocked}`;
+    if (mode !== this.powerShown) {
+      this.powerShown = mode;
+      this.powerName.textContent = override?.name ?? 'ROMPEMUROS';
+      this.charges.style.display = override ? 'none' : '';
+    }
     const text = devInfinite ? 'INF' : String(charges);
+    this.power.root.classList.toggle('empty', override ? !override.ready : blocked || (!devInfinite && charges <= 0));
     if (text === this.chargesShown) return;
     const gained = !devInfinite && this.chargesShown !== '' && charges > Number(this.chargesShown);
     this.chargesShown = text;
     this.charges.textContent = text;
-    this.power.root.classList.toggle('empty', !devInfinite && charges <= 0);
     if (gained) {
       this.charges.classList.remove('gained');
       void this.charges.offsetWidth;

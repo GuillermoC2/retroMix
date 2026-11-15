@@ -4,6 +4,7 @@ import type { Player } from '../entities/Player';
 import { PlayerView, type HeroPose } from '../entities/PlayerView';
 import { HERO_DIAMETER, cherryGeometry, type HeroLook } from '../entities/sprites';
 import { TENTACLE_COUNT, type TentacleView } from './TentacleView';
+import { rand, type ElementParticles } from './ElementParticles';
 
 type Stage = 'idle' | 'rise' | 'act' | 'fall' | 'settle';
 
@@ -16,6 +17,8 @@ interface ActFrame {
   /** Apertura de la boca (0–1). */
   mouth: number;
   look: HeroLook;
+  /** (FUEGO HIELO) avance del hielo y del fuego por el cuerpo (0–1; por defecto 1). */
+  spread?: number;
 }
 
 type DecorStage = 'act' | 'fall';
@@ -52,6 +55,8 @@ interface ActStage {
   shake(amount: number): void;
   props: THREE.Group;
   tentacles: TentacleView;
+  /** Partículas de fuego y hielo (FUEGO HIELO). */
+  particles: ElementParticles;
 }
 
 const DEG = Math.PI / 180;
@@ -244,10 +249,118 @@ class GhoulAct implements PowerAct {
   end(): void {}
 }
 
+/**
+ * FUEGO HIELO: de cara a la cámara, su lado izquierdo se congela y el derecho
+ * empieza a arder a la vez, avanzando en escalones hasta encontrarse en el centro
+ * (escarcha que cuaja por un lado y llamas que suben por el otro). Luego crece un
+ * poco de golpe con una explosión de fuego y hielo, y ruge.
+ */
+class FireIceAct implements PowerAct {
+  private cfg = CONFIG.specialPowers.fireIce;
+  private intro = this.cfg.intro;
+  readonly duration = this.intro.spreadTime + this.intro.growTime + this.intro.hold;
+  readonly finalScale = this.cfg.scale;
+  readonly finalLift = 0;
+  readonly finalLook = 'fireice';
+  private steps = 0;
+  private spread = 0;
+  /** Explosión de fuego y hielo al crecer: pendiente / hecha. */
+  private burst: 'no' | 'pending' | 'done' = 'no';
+  private lastT = 0;
+  private lastStage: DecorStage = 'act';
+  private center = new THREE.Vector3();
+  private point = new THREE.Vector3();
+  private v = new THREE.Vector3();
+
+  update(t: number, s: ActStage): ActFrame {
+    const { spreadTime, growTime, closeUpEndSize } = this.intro;
+    const startSize = CONFIG.specialPowers.cinematic.closeUpSize;
+
+    // 1. Hielo por la izquierda y fuego por la derecha, en escalones (cada uno con un crujido).
+    if (t < spreadTime) {
+      const steps = 6;
+      const step = Math.min(steps, Math.floor((t / spreadTime) * (steps + 1)));
+      if (step > this.steps) {
+        this.steps = step;
+        s.shake(0.05 + 0.015 * step);
+      }
+      this.spread = step / steps;
+      return { scale: 1, size: startSize, mouth: 0.15, look: 'fireice', spread: this.spread };
+    }
+    this.spread = 1;
+
+    // 2. Crece un poco de golpe, con una explosión de fuego y hielo.
+    const tg = t - spreadTime;
+    if (this.burst === 'no') {
+      this.burst = 'pending';
+      s.shake(0.3);
+    }
+    if (tg < growTime) {
+      const e = 1 - (1 - tg / growTime) ** 3;
+      return {
+        scale: 1 + (this.cfg.scale - 1) * e,
+        size: startSize + (closeUpEndSize - startSize) * e,
+        mouth: 0.6,
+        look: 'fireice',
+      };
+    }
+
+    // 3. Ruge y espera.
+    const tau = tg - growTime;
+    return { scale: this.cfg.scale, size: closeUpEndSize * pop(tau, 0.15), mouth: tau < 0.3 ? 1 : 0.3, look: 'fireice' };
+  }
+
+  decorate(stage: DecorStage, t: number, pose: HeroPose, s: ActStage): boolean {
+    const dt = stage === this.lastStage ? Math.max(0, t - this.lastT) : 1 / 60;
+    this.lastT = t;
+    this.lastStage = stage;
+    const scale = Math.abs(pose.scale.y);
+    const r = (HERO_DIAMETER / 2) * scale;
+    // Un poco por delante del cuerpo, para que no lo tape.
+    this.center.copy(pose.position).addScaledVector(s.forward, -0.12 * scale);
+    const k = stage === 'fall' ? 1 : this.spread;
+    if (k <= 0) return false;
+    const rate = (stage === 'fall' ? 50 : 90) * dt;
+    const count = Math.floor(rate) + (Math.random() < rate % 1 ? 1 : 0);
+    for (let i = 0; i < count; i++) {
+      // Llamas por el borde derecho (hasta donde ha llegado el fuego), que suben.
+      const af = rand(-Math.PI / 2, Math.PI / 2) * k;
+      this.at(s, Math.cos(af) * r, Math.sin(af) * r);
+      this.v.copy(s.up).multiplyScalar(rand(1.2, 2.4) * scale).addScaledVector(s.right, rand(0, 0.8) * scale);
+      s.particles.emit('fire', this.point.x, this.point.y, this.point.z, this.v.x, this.v.y, this.v.z, rand(0.06, 0.11) * scale, rand(0.3, 0.5), { grow: 0.8 });
+      // Escarcha por el borde izquierdo, que cuaja y cae despacio.
+      const ai = Math.PI + rand(-Math.PI / 2, Math.PI / 2) * k;
+      const ri = r * rand(0.95, 1.1);
+      this.at(s, Math.cos(ai) * ri, Math.sin(ai) * ri);
+      this.v.copy(s.right).multiplyScalar(-rand(0.1, 0.5) * scale).addScaledVector(s.up, -rand(0.1, 0.5) * scale);
+      s.particles.emit(Math.random() < 0.5 ? 'frost' : 'ice', this.point.x, this.point.y, this.point.z, this.v.x, this.v.y, this.v.z, rand(0.04, 0.08) * scale, rand(0.4, 0.7));
+    }
+    if (this.burst === 'pending') {
+      this.burst = 'done';
+      for (let i = 0; i < 40; i++) {
+        const a = (i / 40) * Math.PI * 2;
+        this.at(s, Math.cos(a) * r, Math.sin(a) * r);
+        this.v.copy(s.right).multiplyScalar(Math.cos(a)).addScaledVector(s.up, Math.sin(a)).multiplyScalar(rand(1.5, 3) * scale);
+        const kind = Math.cos(a) > 0 ? 'fire' : 'ice';
+        s.particles.emit(kind, this.point.x, this.point.y, this.point.z, this.v.x, this.v.y, this.v.z, rand(0.08, 0.14) * scale, rand(0.35, 0.55), { drag: 2.5, grow: 0.6 });
+      }
+    }
+    return false;
+  }
+
+  /** Punto (x, y) del plano de la cámara respecto al centro del protagonista (en `point`). */
+  private at(s: ActStage, x: number, y: number): void {
+    this.point.copy(this.center).addScaledVector(s.right, x).addScaledVector(s.up, y);
+  }
+
+  end(): void {}
+}
+
 /** Acto de cada poder. Un poder nuevo necesita el suyo (lo exige el tipo). */
 const ACTS: Record<SpecialPowerId, (props: THREE.Group) => PowerAct> = {
   giant: (props) => new GiantAct(props),
   ghoul: () => new GhoulAct(),
+  fireIce: () => new FireIceAct(),
 };
 
 export interface CinematicCallbacks {
@@ -284,7 +397,7 @@ export class PowerCinematic {
   private shakeFn: (amount: number) => void = () => {};
   private tmpQ = new THREE.Quaternion();
 
-  constructor(tentacles: TentacleView) {
+  constructor(tentacles: TentacleView, particles: ElementParticles) {
     const self = this;
     this.stageInfo = {
       right: new THREE.Vector3(),
@@ -301,6 +414,7 @@ export class PowerCinematic {
       shake: (amount) => this.shakeFn(amount),
       props: this.group,
       tentacles,
+      particles,
     };
   }
 
@@ -355,6 +469,7 @@ export class PowerCinematic {
       p.scale.lerpVectors(this.start.scale, ONE, e);
       p.mouth = 0.5;
       p.look = this.start.look;
+      p.spread = 1;
       if (k >= 1) this.next('act');
     } else if (this.stage === 'act') {
       const frame = this.act.update(Math.min(this.time, this.act.duration), s);
@@ -363,6 +478,7 @@ export class PowerCinematic {
       p.scale.setScalar(frame.scale);
       p.mouth = frame.mouth;
       p.look = frame.look;
+      p.spread = frame.spread ?? 1;
       this.decorated = this.act.decorate?.('act', this.time, p, s) ?? false;
       if (this.time >= this.act.duration) {
         this.start.position.copy(p.position);
@@ -380,6 +496,7 @@ export class PowerCinematic {
       p.scale.set(scale, scale, scale).lerp(this.rest.scale, e);
       p.mouth = 1;
       p.look = this.act.finalLook;
+      p.spread = 1;
       this.decorated = this.act.decorate?.('fall', this.time, p, s) ?? false;
       if (k >= 1) {
         this.callbacks?.onImpact(this.rest.position, scale);
@@ -389,6 +506,7 @@ export class PowerCinematic {
       const scale = this.act.finalScale;
       PlayerView.restPose(player, scale, p, this.act.finalLift);
       p.look = this.act.finalLook;
+      p.spread = 1;
       // Aplastamiento con rebote al tocar el suelo.
       const squash = 0.32 * Math.exp(-this.time * 9) * Math.cos(this.time * 24);
       p.scale.x *= 1 + squash;

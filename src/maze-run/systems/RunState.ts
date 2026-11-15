@@ -33,6 +33,8 @@ export type RunEvents = {
   laserFired: { duration: number };
   /** El protagonista ha hecho un dash (habilidad DASH). */
   dash: Record<string, never>;
+  /** FUEGO HIELO: disparo de hielo (Z) o llamarada (X). */
+  elementShot: { kind: 'ice' | 'fire' };
 };
 
 /**

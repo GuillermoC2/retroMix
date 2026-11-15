@@ -21,8 +21,8 @@ npm run build      # comprobación de tipos + build de producción en dist/
 | Tecla | Acción |
 | --- | --- |
 | WASD / flechas | Mover (la dirección queda en búfer hasta que se pueda girar) |
-| Z | ROMPEMUROS: romper el muro de delante (o el de la dirección pulsada si está bloqueada) |
-| X | Acción: hace la acción disponible en cada momento (hoy, el dash de DASH tras coger una pluma) |
+| Z | ROMPEMUROS: romper el muro de delante (o el de la dirección pulsada si está bloqueada). Con un poder especial no rompe muros: hace la acción del poder (FUEGO HIELO: rastro de hielo) o nada |
+| X | Acción: hace la acción disponible en cada momento (el dash de DASH tras coger una pluma; la llamarada de FUEGO HIELO) |
 | W/S o ↑/↓ | Mover la pala en el Pong |
 | C | Cambiar perspectiva: derecha → frontal → izquierda → lateral |
 | Enter / Espacio | Reiniciar tras el Game Over |
@@ -111,10 +111,16 @@ Ganar activa un poder especial aleatorio; perder acaba la partida.
 - **Añadir un minijuego:** crear un `GameMode` con `overlay = true` que al terminar haga `ctx.modes.pop()` y llame
   a `done({ won })`, y registrarlo en `src/minigames/registry.ts`. El portal elige uno al azar.
 - **Pong** (`src/minigames/pong/`): lógica en `PongGame`, ventana y dibujo en `PongMode`. Parámetros en `CONFIG.minigames.pong`.
-- **Poderes especiales** (`systems/SpecialPowers.ts`, `CONFIG.specialPowers`): se elige uno de `pool`. Hoy solo
+- **Poderes especiales** (`systems/SpecialPowers.ts`, `CONFIG.specialPowers`): se elige uno de `pool`.
   **GIGANTE**: ×6 de tamaño, más rápido, come muros, fantasmas y puntos durante 8 s.
   **GHOUL**: ×2,6, gris con el ojo rojo, 10 s caminando sobre 4 tentáculos de vóxeles por encima de los muros; rompe los bloques que pisa y pisotea fantasmas
-  (`systems/GhoulLegs.ts`, `effects/TentacleView.ts`). Las reglas de cada poder se aplican en `MazeRunMode`.
+  (`systems/GhoulLegs.ts`, `effects/TentacleView.ts`).
+  **FUEGO HIELO**: ×1,35, mitad de hielo y mitad en llamas, 20 s. Z dispara una cuña de hielo en rampa que come puntos,
+  mata fantasmas y sobre la que se desliza más rápido, también por encima de los muros que cubre; X lanza una
+  llamarada que quema bloques, fantasmas y puntos (ambas cada 0,5 s)
+  (`systems/FireIce.ts`, `effects/FireIceView.ts`, `effects/ElementParticles.ts`).
+  Las reglas de cada poder se aplican en `MazeRunMode`. Con un poder activo no se cogen objetos de habilidad, no se
+  usa ROMPEMUROS y, al recibirlo, se cortan los efectos de habilidad en curso (láser, dash, imán y congelación).
 - **Cinemática de poder** (`effects/PowerCinematic.ts`): al recibir un poder, el protagonista vuela hacia la cámara, hace
   el acto del poder (GIGANTE: come una cereza y crece en 3 escalones) y cae de golpe dejando humo. Un poder nuevo
   necesita su acto en `ACTS`. Tiempos en `CONFIG.specialPowers.cinematic` y en el `intro` de cada poder.

@@ -59,6 +59,11 @@ export class GhostDirector {
     this.freezeTimer = Math.max(this.freezeTimer, duration);
   }
 
+  /** Termina la congelación de golpe (p. ej. al recibir un poder especial). */
+  unfreeze(): void {
+    this.freezeTimer = 0;
+  }
+
   update(dt: number, player: Player, meters: number, lavaY: number, speedMultiplier: number): void {
     const frozen = this.frozen;
     if (frozen) this.freezeTimer = Math.max(0, this.freezeTimer - dt);
@@ -169,7 +174,7 @@ export class GhostDirector {
   }
 
   /** Se come a los fantasmas activos (asustados o no, congelados o no) que cumplen `hit`. */
-  private devourWhere(hit: (g: Ghost) => boolean, player: Player): GhostHit[] {
+  devourWhere(hit: (g: Ghost) => boolean, player: Player): GhostHit[] {
     const eaten: GhostHit[] = [];
     const scores = CONFIG.ghosts.eatScores;
     for (const g of this.ghosts) {
