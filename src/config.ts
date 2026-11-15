@@ -277,8 +277,8 @@ export const CONFIG = {
      * la del primero). Cada muro que se cruza alarga `growth` metros la siguiente:
      * la del muro k (0 = primero) es azar(gap) + k × growth.
      */
-    gap: [300, 350],
-    growth: 10,
+    gap: [200, 250],
+    growth: 20,
     /** Grosor del muro (casillas). */
     rows: 3,
     /** Las salas con portal se apartan al menos estas filas de un muro. */

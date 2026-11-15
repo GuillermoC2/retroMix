@@ -128,7 +128,7 @@ activa solo; si se pierde, se acaba la partida.
 
 ## Fase 3 — Muros portal y tienda de habilidades (2026-11-15)
 
-Cada 300–350 m (+10 m por muro, D-048) un muro portal corta el laberinto de lado a lado. No se puede romper ni rodear: al tocarlo se entra en un
+Cada 200–250 m (+20 m por muro, D-048) un muro portal corta el laberinto de lado a lado. No se puede romper ni rodear: al tocarlo se entra en un
 minijuego al azar (su nombre ya aparece sobre el muro). Si se gana, se abre una tienda con 3 habilidades permanentes
 (básica azul 5.000, épica morada 10.000, legendaria dorada 20.000 puntos) y luego el muro se abre; si se pierde, fin de la
 partida. Todo sujeto a cambios hasta que guste al usuario.
@@ -146,7 +146,7 @@ partida. Todo sujeto a cambios hasta que guste al usuario.
 - [x] Habilidad épica HIELO: cubitos de hielo cada 70 m; al cogerlo, fantasmas congelados 5 s (no matan; sí se comen asustados, con poderes o con el láser) — D-046
 - [x] Habilidad legendaria LASER (y LASER +): bolas naranjas cada 80 m; al comer una, láser por la boca 5 s (8 s con +) que se come a los fantasmas — D-047
 - [x] Sin anuncio grande al obtener una habilidad (es de los poderes especiales) — D-045
-- [x] Muros portal cada 300–350 m, +10 m por cada muro cruzado — D-048
+- [x] Muros portal cada 200–250 m, +20 m por cada muro cruzado — D-048
 - [x] Verificación: generador (300 semillas, 1.200 muros: posición, forma, sin salas cerca y cada tramo entre muros conectado), flujo completo en el navegador (saltar al muro, entrar, ganar, comprar, abrir y seguir; perder → Game Over; tienda sin puntos), muro irrompible e impasable con los poderes, capturas a 1024×768, 1280×720 y 1920×1080
 - [ ] El usuario prueba y ajusta: distancia entre muros, aspecto del muro, tienda, precios
 - [ ] Más habilidades (básicas, épicas y legendarias)

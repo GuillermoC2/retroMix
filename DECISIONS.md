@@ -275,7 +275,7 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 - **Verificación:** capturas a 1280×720, 1920×1080 y 1024×768 con la lista vacía y con 4 récords.
 
 ## D-041 · Muros portal cada 500 m
-- **Cambio (D-048):** ahora cada 300–350 m, +10 m por cada muro anterior.
+- **Cambio (D-048):** ahora cada 200–250 m, +20 m por cada muro anterior.
 - **Fecha:** 2026-11-15 · **Estado:** Vigente (valores y aspecto sujetos a cambio, como indicó el usuario)
 - **Contexto:** petición del usuario: cada unos 500 m, un muro portal que obstaculiza al jugador sin dejarle avanzar; al tocarlo entra en un minijuego aleatorio, cuyo nombre se ve ya en el muro. Diseño de entrada o portal a elección.
 - **Generación** (`MazeGenerator`, `gates` en `config.ts`): la fila de bloques que cae en `gates.firstAt` (500 m) y luego cada `gates.every` (500 m) se fuerza a 3 casillas y todas sus casillas (salvo el borde) pasan a ser un tipo nuevo, `Tile.Gate`. Las líneas de pasillo de debajo y de encima se abren de lado a lado. Así se mantiene la conectividad: cualquier camino entre dos casillas de debajo que pasara por arriba tiene que cruzar la línea inferior, que ya las une; igual por arriba con la superior. Las salas con portal (D-028) se mueven a 24 filas o más de un muro (`plazaClearance`), así que la de 510 m pasa a ~528 m.
@@ -344,6 +344,7 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 - **Contexto:** petición del usuario: muros cada 300–350 m, con 10 m más cada vez que se cruza uno.
 - **Decisión:** la separación hasta el muro k (0 = el primero, contada desde la salida) es un número al azar entre 300 y 350 m más k × 10 m. Ejemplo: 308, 650, 995 y 1337 m. Se mide desde donde ha caído de verdad el muro anterior (cae en la primera línea de pasillo a partir de su fila). El generador calcula los muros por adelantado con un azar propio, para que las salas con portal se aparten de ellos sin alterar el laberinto. `CONFIG.gates.gap` = [300, 350] y `growth` = 10.
 - **Verificación:** 300 semillas y 2.100 muros: separaciones dentro del margen, forma correcta, ninguna sala cerca y cada tramo conectado.
+- **Cambio (mismo día, feedback del usuario):** más cerca: 200–250 m, +20 m por cada muro cruzado (`gap` = [200, 250], `growth` = 20). Verificado de nuevo con 300 semillas y 2.400 muros, sin fallos.
 
 ## D-015 · Pruebas fuera del repositorio (provisional)
 - **Fecha:** 2026-11-13 · **Estado:** En revisión
