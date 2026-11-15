@@ -115,11 +115,11 @@ Ganar activa un poder especial aleatorio; perder acaba la partida.
 - **Cinemática de poder** (`effects/PowerCinematic.ts`): al recibir un poder, el protagonista vuela hacia la cámara, hace
   el acto del poder (GIGANTE: come una cereza y crece en 3 escalones) y cae de golpe dejando humo. Un poder nuevo
   necesita su acto en `ACTS`. Tiempos en `CONFIG.specialPowers.cinematic` y en el `intro` de cada poder.
-- **Muros portal** (`systems/Gates.ts`, `systems/GatesView.ts`, `CONFIG.gates`): cada 200–250 m (+20 m por muro) una barrera de lado a lado
+- **Muros portal** (`systems/Gates.ts`, `systems/GatesView.ts`, `CONFIG.gates`): cada 100–150 m (+20 m por muro) una barrera de lado a lado
   (`Tile.Gate`) que nada atraviesa. Al empujarla desde la línea de debajo se entra en su minijuego (nombre en un cartel
   sobre el muro). Ganar abre la tienda y luego el muro; perder acaba la partida.
 - **Habilidades** (`abilities/catalog.ts`, `systems/Abilities.ts`, `ui/AbilityShopMode.ts`, `CONFIG.abilities`): permanentes,
-  de tres niveles (básica 5.000, épica 10.000, legendaria 20.000 puntos). La tienda ofrece una por nivel. Cada una se
+  de tres niveles (básica 2.500, épica 5.000, legendaria 10.000 puntos). La tienda ofrece una por nivel. Cada una se
   compra una vez por partida, salvo las que tienen `maxLevel` (mejoras "+": SUSTO LARGO +). **Añadir una habilidad:**
   una entrada en `ABILITIES` (nivel, textos, icono pixel art, `maxLevel` opcional y `effects`) y aplicar su efecto donde
   toque leyendo `Abilities` (p. ej. `frightBonus` de SUSTO LARGO o `pickup` de HIELO y LASER).

@@ -275,7 +275,7 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 - **Verificación:** capturas a 1280×720, 1920×1080 y 1024×768 con la lista vacía y con 4 récords.
 
 ## D-041 · Muros portal cada 500 m
-- **Cambio (D-048):** ahora cada 200–250 m, +20 m por cada muro anterior.
+- **Cambio (D-048):** ahora cada 100–150 m, +20 m por cada muro anterior.
 - **Fecha:** 2026-11-15 · **Estado:** Vigente (valores y aspecto sujetos a cambio, como indicó el usuario)
 - **Contexto:** petición del usuario: cada unos 500 m, un muro portal que obstaculiza al jugador sin dejarle avanzar; al tocarlo entra en un minijuego aleatorio, cuyo nombre se ve ya en el muro. Diseño de entrada o portal a elección.
 - **Generación** (`MazeGenerator`, `gates` en `config.ts`): la fila de bloques que cae en `gates.firstAt` (500 m) y luego cada `gates.every` (500 m) se fuerza a 3 casillas y todas sus casillas (salvo el borde) pasan a ser un tipo nuevo, `Tile.Gate`. Las líneas de pasillo de debajo y de encima se abren de lado a lado. Así se mantiene la conectividad: cualquier camino entre dos casillas de debajo que pasara por arriba tiene que cruzar la línea inferior, que ya las une; igual por arriba con la superior. Las salas con portal (D-028) se mueven a 24 filas o más de un muro (`plazaClearance`), así que la de 510 m pasa a ~528 m.
@@ -333,7 +333,7 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 ## D-047 · Habilidad legendaria LASER (y LASER +)
 - **Fecha:** 2026-11-15 · **Estado:** Vigente (sujeta a cambios)
 - **Contexto:** petición del usuario: aparecen bolas naranjas rojizas; al comerlas, el protagonista dispara por la boca un láser naranja continuo durante 5 s. LASER + suma 3 s.
-- **Nivel:** el usuario no lo indicó; se elige **legendaria** (20.000), porque es la más potente hasta ahora y llena la casilla dorada, que estaba vacía. Se cambia con `tier` en el catálogo.
+- **Nivel:** el usuario no lo indicó; se elige **legendaria** (entonces 20.000; hoy 10.000, D-049), porque es la más potente hasta ahora y llena la casilla dorada, que estaba vacía. Se cambia con `tier` en el catálogo.
 - **Bolas:** como los cubitos de hielo (`systems/Pickups.ts`, ahora común a los dos tipos): una cada 80 m en una franja de 10 filas, la primera unas 14 filas por delante. Nunca en un energizador, junto a un portal ni junto a otro objeto. Bola voxel naranja con brillo y borde rojo, que gira y late.
 - **Láser** (`systems/Laser.ts`, `LaserView.ts`): sale de la boca hacia donde mira el protagonista y llega hasta la cara del primer muro (máx. 30 casillas); no rompe muros. Se come a los fantasmas que toca, asustados o no, congelados o no, con la misma cadena de puntos que comerlos. Dura 5 s (LASER +: 8 s). Comer otra bola mientras dispara vuelve a llenar el tiempo, sin sumarlo. En el último segundo parpadea. Funciona también con GIGANTE y GHOUL.
 - **Aspecto:** haz naranja con núcleo claro que vibra a saltos, destellos que corren de la boca al muro, fogonazo en la boca, y chispas y luz naranja en el punto de impacto. Al comer la bola, "LASER" flotante y una pequeña sacudida (sin anuncio grande). Evento `laserFired`.
@@ -345,6 +345,12 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 - **Decisión:** la separación hasta el muro k (0 = el primero, contada desde la salida) es un número al azar entre 300 y 350 m más k × 10 m. Ejemplo: 308, 650, 995 y 1337 m. Se mide desde donde ha caído de verdad el muro anterior (cae en la primera línea de pasillo a partir de su fila). El generador calcula los muros por adelantado con un azar propio, para que las salas con portal se aparten de ellos sin alterar el laberinto. `CONFIG.gates.gap` = [300, 350] y `growth` = 10.
 - **Verificación:** 300 semillas y 2.100 muros: separaciones dentro del margen, forma correcta, ninguna sala cerca y cada tramo conectado.
 - **Cambio (mismo día, feedback del usuario):** más cerca: 200–250 m, +20 m por cada muro cruzado (`gap` = [200, 250], `growth` = 20). Verificado de nuevo con 300 semillas y 2.400 muros, sin fallos.
+- **Cambio (mismo día, feedback del usuario):** aún más cerca: 100–150 m, +20 m por muro (`gap` = [100, 150]). Verificado con 300 semillas y 3.298 muros, sin fallos.
+
+## D-049 · Habilidades a mitad de precio
+- **Fecha:** 2026-11-15 · **Estado:** Vigente (cambia los precios de D-042)
+- **Contexto:** con los muros portal cada 100–150 m (D-048), al llegar a un muro casi nunca se tienen puntos suficientes. El usuario pide bajar a la mitad el precio de todas las habilidades.
+- **Decisión:** básica 2.500, épica 5.000 y legendaria 10.000 puntos (`CONFIG.abilities.tiers`). La tienda y las cartas leen el precio de ahí, así que no cambia nada más.
 
 ## D-015 · Pruebas fuera del repositorio (provisional)
 - **Fecha:** 2026-11-13 · **Estado:** En revisión

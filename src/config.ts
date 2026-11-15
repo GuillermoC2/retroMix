@@ -277,7 +277,7 @@ export const CONFIG = {
      * la del primero). Cada muro que se cruza alarga `growth` metros la siguiente:
      * la del muro k (0 = primero) es azar(gap) + k × growth.
      */
-    gap: [200, 250],
+    gap: [100, 150],
     growth: 20,
     /** Grosor del muro (casillas). */
     rows: 3,
@@ -295,9 +295,9 @@ export const CONFIG = {
    */
   abilities: {
     tiers: {
-      basic: { name: 'BASICA', price: 5000, color: '#3a8bff' },
-      epic: { name: 'EPICA', price: 10000, color: '#b04bff' },
-      legendary: { name: 'LEGENDARIA', price: 20000, color: '#ffc21a' },
+      basic: { name: 'BASICA', price: 2500, color: '#3a8bff' },
+      epic: { name: 'EPICA', price: 5000, color: '#b04bff' },
+      legendary: { name: 'LEGENDARIA', price: 10000, color: '#ffc21a' },
     },
     /** SUSTO LARGO (básica): segundos extra del susto de los energizadores, por cada nivel (máx. 2: SUSTO LARGO +). */
     longFright: { frightBonus: 2 },

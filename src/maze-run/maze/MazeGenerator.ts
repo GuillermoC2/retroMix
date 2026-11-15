@@ -18,7 +18,7 @@ import { Tile } from './grid';
  *  - Cada `portals.every` metros se abre una sala amplia con un portal en el
  *    centro: dos filas de bloques (y sus tres líneas) se vacían entre dos columnas
  *    de pasillo. Vaciar solo abre casillas, así que la conectividad se mantiene.
- *  - Cada 200–250 m (más 20 m por cada muro anterior, `CONFIG.gates`), un muro portal: una fila de bloques entera pasa a
+ *  - Cada 100–150 m (más 20 m por cada muro anterior, `CONFIG.gates`), un muro portal: una fila de bloques entera pasa a
  *    ser `Tile.Gate` (barrera de lado a lado) y las líneas de debajo y de encima
  *    se abren de lado a lado. Así, todo lo de debajo sigue conectado entre sí por
  *    la línea inferior y todo lo de encima por la superior.
