@@ -35,9 +35,13 @@ export class AltitudeDisplay {
     });
     this.number.body.style.fontSize = `${cfg.fontSize}px`;
     this.record.className = 'hud-best';
-    this.record.innerHTML = `RECORD <b>${bestDistance} M</b>`;
     this.root.appendChild(this.record);
+    this.setBest(bestDistance);
     this.setMeters(0);
+  }
+
+  setBest(bestDistance: number): void {
+    this.record.innerHTML = `RECORD <b>${bestDistance} M</b>`;
   }
 
   setMeters(meters: number): void {

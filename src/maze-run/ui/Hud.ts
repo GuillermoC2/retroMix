@@ -122,6 +122,13 @@ export class Hud {
     this.score.setScore(score);
   }
 
+  /** Todos los récords de nuevo (p. ej. tras borrarlos desde el menú K): mejores marcas y lista. */
+  setAllRecords(records: RecordEntry): void {
+    this.score.setBest(records.bestScore);
+    this.altitude.setBest(records.bestDistance);
+    this.records.set(records.topDistances);
+  }
+
   /** Lista de récords de distancia actualizada (p. ej. al acabar la partida); `highlight` resalta un puesto. */
   setRecords(distances: number[], highlight = -1): void {
     this.records.set(distances, highlight);

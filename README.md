@@ -28,7 +28,7 @@ npm run build      # comprobación de tipos + build de producción en dist/
 | C | Cambiar perspectiva: derecha → frontal → izquierda → lateral |
 | Enter / Espacio | Reiniciar tras el Game Over |
 | ←/→, Enter, 1–3, Esc | En la tienda de habilidades: elegir, comprar, comprar directamente, salir sin comprar (también con el ratón) |
-| K | *(desarrollo)* Menú de modo dios (pausa): trucos (invencible, romper muro infinito, saltar minijuegos: no / ganar / perder) con 1–9 o clic; con clic, teletransporte (siguiente portal, siguiente muro portal, +100/+500/+1000 m), poderes especiales (cierra el menú y lanza el poder) y sumar 10.000 puntos; K o Esc cierran. Requiere `CONFIG.dev.godMenuKey`; los trucos se recuerdan entre recargas y una partida con trucos no guarda récords |
+| K | *(desarrollo)* Menú de modo dios (pausa): trucos (invencible, romper muro infinito, saltar minijuegos: no / ganar / perder) con 1–9 o clic; con clic, teletransporte (siguiente portal, siguiente muro portal, +100/+500/+1000 m), poderes especiales (cierra el menú y lanza el poder) sumar 10.000 puntos y borrar los récords; K o Esc cierran. Requiere `CONFIG.dev.godMenuKey`; los trucos se recuerdan entre recargas y una partida con trucos no guarda récords |
 
 ## Tecnología
 

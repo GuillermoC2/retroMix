@@ -55,11 +55,21 @@ export class Records {
       bestScore: Math.max(prev.bestScore, score),
       topDistances: top,
     };
+    this.save();
+    return { distance: distance > prev.bestDistance, score: score > prev.bestScore, distanceRank };
+  }
+
+  /** Borra los récords de un juego (mejor distancia, mejor puntuación y lista). */
+  reset(game: string): void {
+    delete this.data[game];
+    this.save();
+  }
+
+  private save(): void {
     try {
       localStorage.setItem(KEY, JSON.stringify(this.data));
     } catch {
       /* almacenamiento no disponible: se mantiene en memoria */
     }
-    return { distance: distance > prev.bestDistance, score: score > prev.bestScore, distanceRank };
   }
 }

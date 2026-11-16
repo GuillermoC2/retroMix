@@ -950,6 +950,15 @@ export class MazeRunMode implements GameMode {
           this.state.addScore(10000, this.player.x, this.player.y);
         },
       },
+      {
+        label: 'BORRAR RECORDS',
+        button: () => 'BORRAR',
+        run: () => {
+          this.ctx.records.reset(GAME_ID);
+          this.hud.setAllRecords(this.ctx.records.get(GAME_ID));
+          this.hud.announce('RECORDS', 'BORRADOS', ANNOUNCE.bad);
+        },
+      },
     ];
     const abilities = ABILITIES.map((a) => ({
       label: `${abilityName(a, Math.min(maxLevel(a), this.abilities.level(a) + 1))} (${CONFIG.abilities.tiers[a.tier].name})`,

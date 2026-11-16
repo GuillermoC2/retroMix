@@ -82,6 +82,7 @@ Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[?]` propuesta sin
 - [x] Menú de modo dios con K: activar/desactivar invencibilidad, romper muro infinito y cada poder especial; el romper muro infinito deja de estar activo por defecto — D-032
 - [x] Menú K, sección PRUEBAS: saltar justo debajo del siguiente muro portal y sumar 10.000 puntos (para probar la tienda) — D-041
 - [x] Menú K más ancho, en paneles de colores; TELETRANSPORTE (siguiente portal, siguiente muro, +100/+500/+1000 m) y truco SALTAR MINIJUEGOS (NO / GANAR / PERDER) — D-044
+- [x] Menú K, sección PRUEBAS: BORRAR RECORDS (distancia, puntos y lista; el HUD se actualiza al momento) — D-064
 - [ ] Antes de publicar: poner a `false` todo lo de `CONFIG.dev`
 
 ## Siguiente — Ajuste por juego real

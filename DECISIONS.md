@@ -487,6 +487,12 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 - **Efecto:** la estela de antes se mantiene. Al chocar sale humo voxel: un anillo que se abre a los lados desde la base de la pieza y una bocanada bajo cada casilla de apoyo. Se reutiliza el humo de la cinemática de los poderes (`SmokeEffect`), que pasa de `maze-run/effects/` a `render/` porque ya lo usan dos sitios. En el pozo, Y es el eje vertical: el grupo del humo va girado −90° en X y el anillo sale algo por delante del pozo (para que el fondo no tape la mitad). La sacudida de la escena y la de la ventana (hundimiento y temblor) crecen con la altura de la caída (máximo a partir de 12 filas), igual que la cantidad y el tamaño del humo.
 - **Verificación:** en el navegador, en el muro portal y en el portal especial: ↑ gira, Z y X sueltan y fijan la pieza, y el humo se ve en las capturas del choque. Sin errores en la consola; `tsc` correcto.
 
+## D-064 · Menú K: borrar récords
+- **Fecha:** 2026-11-16 · **Estado:** Vigente (solo desarrollo)
+- **Contexto:** petición del usuario: un botón en el modo dios para borrar los récords.
+- **Decisión:** en la sección PRUEBAS del menú K, "BORRAR RECORDS" (botón BORRAR). Borra los récords del laberinto: mejor distancia, mejor puntuación y la lista de las 5 mejores distancias (`Records.reset(game)`, que también los quita de localStorage). El HUD se actualiza al momento (`Hud.setAllRecords`) y sale el anuncio "RECORDS · BORRADOS". No pide confirmación: es una herramienta de desarrollo, como el resto del menú. La partida en curso sigue y, al acabar, puede guardar su récord con normalidad (si no se han usado trucos).
+- **Verificación:** en el navegador, con récords de prueba (812 m, 34.560 puntos, 3 distancias): tras pulsar el botón, el HUD muestra 0 y la lista vacía, y localStorage queda sin récords. Sin errores en la consola; `tsc` correcto.
+
 ## D-015 · Pruebas fuera del repositorio (provisional)
 - **Fecha:** 2026-11-13 · **Estado:** En revisión
 - **Decisión actual:** el test de conectividad del generador, el fuzzing de movimiento y las capturas con Edge headless + `puppeteer-core` se ejecutaron desde un directorio temporal, sin añadir dependencias al proyecto.

@@ -37,8 +37,12 @@ export class ScoreDisplay {
     this.number.setText('0');
 
     this.record.className = 'hud-best';
-    this.record.innerHTML = `RECORD <b>${bestScore}</b>`;
     this.root.appendChild(this.record);
+    this.setBest(bestScore);
+  }
+
+  setBest(bestScore: number): void {
+    this.record.innerHTML = `RECORD <b>${bestScore}</b>`;
   }
 
   setScore(score: number): void {
