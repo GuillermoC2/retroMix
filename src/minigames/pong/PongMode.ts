@@ -101,12 +101,10 @@ export class PongMode implements GameMode {
     const { game, frame } = this;
     const hard = this.theme.hard;
     switch (game.phase) {
-      case 'countdown':
-        frame.showBig(String(Math.max(1, Math.ceil(game.cfg.countdown - game.phaseTime))));
-        frame.setSmall(this.goalText());
-        break;
+      // Sin cuenta atrás: la espera inicial no muestra nada.
+      case 'ready':
       case 'play':
-        frame.showBig(game.phaseTime < 0.45 && game.score.player + game.score.ai === 0 ? '¡YA!' : '');
+        frame.showBig('');
         frame.setSmall('');
         break;
       case 'point': {
@@ -118,17 +116,10 @@ export class PongMode implements GameMode {
       case 'over': {
         const won = game.winner === 'player';
         frame.showBig(won ? '¡HAS GANADO!' : 'HAS PERDIDO', { tone: won ? 'good' : 'bad', strong: true, fire: hard, burst: won });
-        frame.setSmall(won ? this.stakes.wonText : 'FIN DE LA PARTIDA');
+        frame.setSmall(won ? this.stakes.wonText : this.stakes.lostText);
         break;
       }
     }
-  }
-
-  /** Condición de la partida para la cuenta atrás, p. ej. "GANAS CON 1 PUNTO · PIERDES CON 3". */
-  private goalText(): string {
-    const { player, ai } = this.game.pointsToWin;
-    const pts = (n: number) => `${n} PUNTO${n === 1 ? '' : 'S'}`;
-    return `GANAS CON ${pts(player)} · PIERDES CON ${ai}`;
   }
 
   render(): void {

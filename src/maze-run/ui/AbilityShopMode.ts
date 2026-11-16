@@ -6,6 +6,8 @@ import { abilityName, type AbilityDef, type PixelIcon } from '../abilities/catal
 import type { ShopSlot } from '../systems/Abilities';
 
 export interface ShopHooks {
+  /** Se ha perdido el minijuego del muro: las cartas se ven, pero no se puede escoger ninguna. */
+  blocked?: boolean;
   slots: ShopSlot[];
   /** Puntos disponibles ahora mismo. */
   points: () => number;
@@ -81,7 +83,14 @@ export class AbilityShopMode implements GameMode {
     const head = el('div', 'shop-head');
     const points = el('div', 'shop-points', 'PUNTOS ');
     points.appendChild(this.pointsNumber);
-    head.append(el('div', 'shop-title', '¡MURO SUPERADO!'), el('div', 'shop-sub', 'ELIGE UNA HABILIDAD'), points);
+    const blocked = !!this.hooks.blocked;
+    this.root.classList.toggle('blocked', blocked);
+    if (blocked) this.exitButton.textContent = 'CONTINUAR';
+    head.append(
+      el('div', 'shop-title', blocked ? 'MURO SUPERADO' : '¡MURO SUPERADO!'),
+      el('div', 'shop-sub', blocked ? 'HAS PERDIDO: NO PUEDES ESCOGER HABILIDAD' : 'ELIGE UNA HABILIDAD'),
+      points,
+    );
 
     const row = el('div', 'shop-cards');
     this.hooks.slots.forEach((slot, i) => {
@@ -99,8 +108,9 @@ export class AbilityShopMode implements GameMode {
     this.exitButton.addEventListener('mouseenter', () => this.select(EXIT));
     this.exitButton.addEventListener('click', () => this.ready && this.close());
     const keys = el('div', 'shop-keys');
-    keys.innerHTML =
-      '<span class="key">&lt;</span><span class="key">&gt;</span> ELEGIR · <span class="key">ENTER</span> COMPRAR · <span class="key">ESC</span> SALIR';
+    keys.innerHTML = blocked
+      ? '<span class="key">ENTER</span> CONTINUAR'
+      : '<span class="key">&lt;</span><span class="key">&gt;</span> ELEGIR · <span class="key">ENTER</span> COMPRAR · <span class="key">ESC</span> SALIR';
     foot.append(this.exitButton, keys);
 
     this.root.append(head, row, foot);
@@ -145,6 +155,7 @@ export class AbilityShopMode implements GameMode {
   }
 
   private canBuy(i: number): boolean {
+    if (this.hooks.blocked) return false;
     const slot = this.hooks.slots[i];
     return !!slot?.ability && this.hooks.points() >= CONFIG.abilities.tiers[slot.tier].price;
   }
@@ -185,7 +196,9 @@ export class AbilityShopMode implements GameMode {
 
   private select(index: number): void {
     if (this.closing >= 0) return;
-    this.selected = index;
+    // Bloqueada: ninguna carta se puede elegir, así que Enter siempre continúa.
+    this.selected = this.hooks.blocked ? EXIT : index;
+    index = this.selected;
     this.cards.forEach((c, i) => c.classList.toggle('selected', i === index));
     this.exitButton.classList.toggle('selected', index === EXIT);
   }
@@ -193,7 +206,7 @@ export class AbilityShopMode implements GameMode {
   private tryBuy(index: number): void {
     const slot = this.hooks.slots[index];
     const card = this.cards[index];
-    if (!slot.ability || !this.hooks.buy(slot)) {
+    if (!slot.ability || this.hooks.blocked || !this.hooks.buy(slot)) {
       // No se puede: la carta tiembla.
       card.classList.remove('denied');
       void card.offsetWidth;
@@ -215,6 +228,11 @@ export class AbilityShopMode implements GameMode {
     this.hooks.slots.forEach((slot, i) => {
       const card = this.cards[i];
       if (!slot.ability || card.classList.contains('bought')) return;
+      if (this.hooks.blocked) {
+        card.classList.add('locked');
+        card.querySelector('.shop-need')!.textContent = 'BLOQUEADA';
+        return;
+      }
       const missing = CONFIG.abilities.tiers[slot.tier].price - points;
       card.classList.toggle('locked', missing > 0);
       card.querySelector('.shop-need')!.textContent = missing > 0 ? `FALTAN ${missing}` : '';

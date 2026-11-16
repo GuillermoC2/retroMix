@@ -20,9 +20,9 @@ const CLEAR_TEXTS = ['', '¡LINEA!', '¡DOBLE!', '¡TRIPLE!', '¡CUADRUPLE!'];
  * Teclas: ← → mover (se repite al mantener), ↑ o X girar, Z girar al revés,
  * ↓ bajar rápido, Espacio/Enter soltar de golpe.
  *
- * Según la entrada (`stakes.kind`): en un muro portal hay que hacer 5 líneas
+ * Según la entrada (`stakes.kind`): en un muro portal hay que hacer 2 líneas
  * y se ve con los colores del laberinto; en un portal de poder especial,
- * 10 líneas, cae algo más rápido y todo es rojizo, con los avisos en llamas.
+ * 5 líneas, cae algo más rápido y todo es rojizo, con los avisos en llamas.
  */
 export class BlocksMode implements GameMode {
   readonly overlay = true;
@@ -159,14 +159,10 @@ export class BlocksMode implements GameMode {
     const { game, frame } = this;
     const hard = this.theme.hard;
     switch (game.phase) {
-      case 'countdown':
-        frame.showBig(String(Math.max(1, Math.ceil(game.cfg.countdown - game.phaseTime))));
-        frame.setSmall(`HAZ ${game.linesToWin} LINEAS`);
-        return;
       case 'over': {
         const won = !!game.won;
         frame.showBig(won ? '¡HAS GANADO!' : 'HAS PERDIDO', { tone: won ? 'good' : 'bad', strong: true, fire: hard, burst: won });
-        frame.setSmall(won ? this.stakes.wonText : 'FIN DE LA PARTIDA');
+        frame.setSmall(won ? this.stakes.wonText : this.stakes.lostText);
         return;
       }
     }
@@ -174,8 +170,6 @@ export class BlocksMode implements GameMode {
     if (this.clearTextTime > 0) {
       // En el portal difícil, los avisos de líneas salen en llamas.
       frame.showBig(this.clearText, { tone: 'good', strong: game.lastClear >= 2, fire: hard });
-    } else if (game.locks === 0 && game.phase === 'play' && game.phaseTime < 0.45) {
-      frame.showBig('¡YA!');
     } else {
       frame.showBig('');
     }

@@ -1,7 +1,7 @@
 import { CONFIG } from '../../config';
 import type { MinigameKind } from '../types';
 
-export type BlocksPhase = 'countdown' | 'play' | 'clear' | 'over';
+export type BlocksPhase = 'ready' | 'play' | 'clear' | 'over';
 
 /** Tipos de pieza (1–7; 0 = casilla vacía). */
 export const PIECE_TYPES = 7;
@@ -64,7 +64,7 @@ export class BlocksGame {
   private readonly fall: { start: number; perLine: number; min: number };
   /** grid[y][x]: 0 vacío, 1–7 tipo de pieza fijada. */
   readonly grid: number[][];
-  phase: BlocksPhase = 'countdown';
+  phase: BlocksPhase = 'ready';
   phaseTime = 0;
   piece: Piece | null = null;
   next: number;
@@ -129,8 +129,8 @@ export class BlocksGame {
   update(dt: number, input: { move: number; rotate: number; soft: boolean; drop: boolean }): void {
     this.phaseTime += dt;
     switch (this.phase) {
-      case 'countdown':
-        if (this.phaseTime >= this.cfg.countdown) {
+      case 'ready':
+        if (this.phaseTime >= this.cfg.startDelay) {
           this.setPhase('play');
           this.spawn();
         }

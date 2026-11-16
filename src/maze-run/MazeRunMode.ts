@@ -74,8 +74,8 @@ const POWER_COLORS: Record<SpecialPowerId, string> = { giant: '#ffd51a', ghoul: 
 const ANNOUNCE = { good: '#3ae8ff', bad: '#ff2e3a' };
 
 /** Lo que se juega en cada tipo de entrada a un minijuego. */
-const PORTAL_STAKES: MinigameStakes = { kind: 'portal', wonText: 'TE LLEVAS UN PODER ESPECIAL' };
-const GATE_STAKES: MinigameStakes = { kind: 'gate', wonText: '¡A LA TIENDA DE HABILIDADES!' };
+const PORTAL_STAKES: MinigameStakes = { kind: 'portal', wonText: 'TE LLEVAS UN PODER ESPECIAL', lostText: 'FIN DE LA PARTIDA' };
+const GATE_STAKES: MinigameStakes = { kind: 'gate', wonText: '¡A LA TIENDA DE HABILIDADES!', lostText: 'TE QUEDAS SIN HABILIDAD' };
 
 /** Entrada a un minijuego en curso: por un portal de sala o por un muro portal. */
 interface Entering {
@@ -756,32 +756,21 @@ export class MazeRunMode implements GameMode {
     }
   }
 
-  /** Vuelta del minijuego de un muro: ganar lleva a la tienda; perder acaba la partida. */
+  /**
+   * Vuelta del minijuego de un muro: siempre se abre la tienda y luego el muro.
+   * Si se ha perdido, las cartas salen bloqueadas (no se puede escoger ninguna), pero no se muere (D-060).
+   */
   private onGateMinigameDone(gate: Gate, result: MinigameResult): void {
-    const { state, player } = this;
-    state.events.emit('minigameResult', { game: gate.game.id, won: result.won });
-    if (result.won) return this.openShop(gate);
-    // Sale del muro y vuelve a la línea de debajo (el muro sigue cerrado).
-    const e = this.entering!;
-    player.x = Math.round(e.fromX);
-    player.y = gate.y0 - 1;
-    player.wantDir = null;
-    this.entering = null;
-    this.gatesView.absorbing = null;
-    if (godSettings.invincible) {
-      state.setPhase('playing');
-      this.hud.announce('PERDISTE', 'INVENCIBLE: SIGUES VIVO', ANNOUNCE.bad);
-    } else {
-      this.lostMinigame = gate.game.name;
-      this.die('minigame');
-    }
+    this.state.events.emit('minigameResult', { game: gate.game.id, won: result.won });
+    this.openShop(gate, !result.won);
   }
 
-  /** Tienda de habilidades: una casilla por nivel; al cerrarla se abre el muro. */
-  private openShop(gate: Gate): void {
+  /** Tienda de habilidades: una casilla por nivel; al cerrarla se abre el muro. `blocked`: se ve pero no se puede comprar. */
+  private openShop(gate: Gate, blocked: boolean): void {
     const { state } = this;
     this.ctx.modes.push(
       new AbilityShopMode(this.ctx, {
+        blocked,
         slots: this.abilities.offer(this.rng),
         points: () => state.score,
         level: (a) => this.abilities.level(a),

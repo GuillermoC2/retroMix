@@ -1,6 +1,6 @@
 import { CONFIG } from '../../config';
 
-export type PongPhase = 'countdown' | 'play' | 'point' | 'over';
+export type PongPhase = 'ready' | 'play' | 'point' | 'over';
 export type PongSide = 'player' | 'ai';
 
 /** Grosor de las líneas de fondo (arriba y abajo) y de las palas, en píxeles lógicos. */
@@ -20,7 +20,7 @@ export class PongGame {
   readonly cfg = CONFIG.minigames.pong;
   readonly width = this.cfg.width;
   readonly height = this.cfg.height;
-  phase: PongPhase = 'countdown';
+  phase: PongPhase = 'ready';
   phaseTime = 0;
   /** Centro vertical de cada pala. */
   playerY = this.height / 2;
@@ -64,8 +64,8 @@ export class PongGame {
     this.updateAi(dt);
 
     switch (this.phase) {
-      case 'countdown':
-        if (this.phaseTime >= this.cfg.countdown) this.serve('ai');
+      case 'ready':
+        if (this.phaseTime >= this.cfg.startDelay) this.serve('ai');
         break;
       case 'point':
         if (this.phaseTime >= this.cfg.pointPause) this.serve(this.lastPoint === 'player' ? 'ai' : 'player');

@@ -5,7 +5,7 @@ Documento vivo. Se actualiza al empezar y al terminar cada tarea. Las decisiones
 
 Leyenda: `[x]` hecho · `[~]` en curso · `[ ]` pendiente · `[?]` propuesta sin aprobar (requiere visto bueno del usuario)
 
-**Estado actual:** Fase 3 (muros portal y tienda de habilidades) hecha y tercer poder especial, FUEGO HIELO (D-055), con poderes y habilidades que ya no se mezclan (D-054), a la espera de que el usuario los pruebe; todo sujeto a cambios hasta que le guste. Con esto queda la base del juego: lo siguiente es ir añadiendo habilidades, minijuegos y alguna mecánica nueva. Pong rehecho en 2.5D con variante por tipo de entrada y ventana animada (D-056), a la espera de que el usuario lo pruebe.
+**Estado actual:** Fase 3 (muros portal y tienda de habilidades) hecha y tercer poder especial, FUEGO HIELO (D-055), con poderes y habilidades que ya no se mezclan (D-054), a la espera de que el usuario los pruebe; todo sujeto a cambios hasta que le guste. Con esto queda la base del juego: lo siguiente es ir añadiendo habilidades, minijuegos y alguna mecánica nueva. Pong rehecho en 2.5D con variante por tipo de entrada y ventana animada (D-056), a la espera de que el usuario lo pruebe. Minijuegos sin cuenta atrás, BLOQUES con 2/5 líneas y perder en un muro portal ya no mata (D-060).
 
 ---
 
@@ -101,7 +101,6 @@ No se harán sin el visto bueno del usuario (se evita añadir funcionalidades no
 - [?] GIGANTE inmune a la lava (ahora la lava sí le mata, D-031)
 - [?] Puntos por cada muro comido por el GIGANTE
 - [?] Gastar puntos en la tienda baja también la puntuación final y su récord (D-042). Alternativa: llevar aparte los puntos gastables y los totales
-- [?] Que perder el minijuego de un muro portal no acabe la partida (p. ej. reintentar pagando puntos o perder una habilidad)
 - [?] Mostrar en la tienda las habilidades que ya se tienen y sus efectos sumados
 - [?] Lista de récords que reacciona en directo: al superar una distancia de la lista durante la partida, esa fila salta y se marca como superada
 - [?] Retocar el sprite del protagonista mirando hacia arriba (parado, se lee algo como un corazón)
@@ -147,6 +146,7 @@ activa solo; si se pierde, se acaba la partida.
 - [ ] Más poderes especiales
 - [x] Segundo minijuego: BLOQUES (piezas que caen, 2.5D): 5 líneas en muro portal, 10 y más rápido en portal especial — D-058
 - [x] Ventana y piezas 3D comunes para los minijuegos (`MinigameFrame`, `scene3d`) — D-058
+- [x] Sin cuenta atrás: 1 s invisible entre que aparece la ventana y empieza el juego; BLOQUES 2 líneas en muro portal y 5 en portal especial (Pong igual) — D-060
 - [ ] Más minijuegos (Space Invaders…)
 - [ ] Animaciones de entrada y salida del portal más elaboradas (a petición del usuario, más adelante)
 
@@ -179,6 +179,7 @@ partida. Todo sujeto a cambios hasta que guste al usuario.
 - [x] Verificación: generador (300 semillas, 1.200 muros: posición, forma, sin salas cerca y cada tramo entre muros conectado), flujo completo en el navegador (saltar al muro, entrar, ganar, comprar, abrir y seguir; perder → Game Over; tienda sin puntos), muro irrompible e impasable con los poderes, capturas a 1024×768, 1280×720 y 1920×1080
 - [ ] El usuario prueba y ajusta: distancia entre muros, aspecto del muro, tienda, precios
 - [ ] Más habilidades (básicas, épicas y legendarias)
+- [x] Perder el minijuego de un muro portal ya no mata: la tienda sale bloqueada (no se puede escoger habilidad) y el muro se abre igual — D-060
 - [x] Portales especiales en uno de cada dos tramos entre muros (portal, muro, muro, portal…), con un 20 % de excepciones en los demás tramos — D-057
 - [ ] Más minijuegos para los muros (y los portales)
 - [?] Mostrar en el HUD el tiempo que queda de congelación (HIELO) y de láser

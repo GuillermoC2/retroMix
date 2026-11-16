@@ -584,8 +584,8 @@ export const CONFIG = {
       aiSpeed: 72,
       aiReactFrom: 0.4,
       aiError: 11,
-      /** Cuenta atrás antes de empezar (s) y pausa tras cada punto (s). */
-      countdown: 3,
+      /** Espera (s) sin nada en pantalla entre que aparece la ventana y empieza el juego, y pausa tras cada punto (s). */
+      startDelay: 1,
       pointPause: 0.9,
       /** Tiempo (s) que se muestra el resultado antes de volver al laberinto. */
       resultTime: 2.4,
@@ -596,7 +596,7 @@ export const CONFIG = {
       width: 10,
       height: 16,
       /** Líneas que hay que completar según la entrada (muro portal / portal de poder especial). */
-      linesToWin: { gate: 5, portal: 10 },
+      linesToWin: { gate: 2, portal: 5 },
       /**
        * Caída (s por fila): al empezar, lo que baja por cada línea hecha y el mínimo.
        * El portal especial es algo más rápido.
@@ -615,7 +615,8 @@ export const CONFIG = {
       lockResets: 12,
       /** Duración (s) de la animación de líneas completas. */
       clearTime: 0.38,
-      countdown: 3,
+      /** Espera (s) sin nada en pantalla entre que aparece la ventana y sale la primera pieza. */
+      startDelay: 1,
       resultTime: 2.4,
     },
   },

@@ -18,6 +18,8 @@ export interface MinigameStakes {
   kind: MinigameKind;
   /** Texto bajo "¡HAS GANADO!" (p. ej. "TE LLEVAS UN PODER ESPECIAL"). */
   wonText: string;
+  /** Texto bajo "HAS PERDIDO" (p. ej. "FIN DE LA PARTIDA"). */
+  lostText: string;
 }
 
 /**
