@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { NeonCycle } from '../../render/neon';
 import { PixelCanvas, hexRGB } from '../../render/pixelTextures';
+import { SmokeEffect } from '../../render/SmokeEffect';
 import { Spring, VoxelGlyphs, VoxelParticles, boxCorners, createMinigameRenderer, disposeScene, fitDistance } from '../scene3d';
 import { BlocksGame, type Cell } from './BlocksGame';
 import type { BlocksTheme } from './themes';
@@ -64,6 +65,8 @@ export class BlocksScene {
   private counterPop = new Spring(220, 9);
   private shownCounter = '';
   private particles = new VoxelParticles(MAX_PARTICLES, 'y');
+  /** Humo al soltar una pieza de golpe (girado para que suba por Y). */
+  private smoke = new SmokeEffect();
   private ambient: THREE.AmbientLight;
   /** Golpe de cada casilla fijada (1 al fijarse, baja a 0): se aplasta y brilla. */
   private impact: Float32Array;
@@ -148,7 +151,8 @@ export class BlocksScene {
     for (const m of [this.board, this.active, this.nextMesh, this.ghost]) m.setColorAt(0, this.white);
     this.nextGroup.add(this.nextMesh);
     this.nextGroup.position.set(this.panelX, this.oy + H - 3.2, 0.6);
-    this.scene.add(this.board, this.active, this.ghost, this.nextGroup, this.particles.mesh);
+    this.smoke.group.rotation.x = -Math.PI / 2;
+    this.scene.add(this.board, this.active, this.ghost, this.nextGroup, this.particles.mesh, this.smoke.group);
 
     this.counterMaterial = new THREE.MeshLambertMaterial({ vertexColors: true, color: theme.hard ? 0xff5a2a : 0xffd51a, emissive: theme.hard ? 0xff3a10 : 0xffb000, emissiveIntensity: 0.35 });
     this.counter.position.set(this.panelX, this.oy + H - 9.2, 0.4);
@@ -290,6 +294,7 @@ export class BlocksScene {
     this.drawNext(dt);
     this.drawCounter(dt);
     this.updateParticles(dt);
+    this.smoke.update(dt);
 
     this.shakeAmount *= Math.exp(-dt * 12);
     const s = this.shakeAmount;
@@ -321,7 +326,8 @@ export class BlocksScene {
             this.particles.spawn({ x: p.x + (Math.random() - 0.5) * 0.6, y: p.y, z: 0.5, vx: 0, vy: 3 + Math.random() * 3, vz: 0, life: 0.15 + Math.random() * 0.2, size: 0.35, gravity: 0, color: color.clone().lerp(this.white, 0.4) });
           }
         }
-        this.shake(0.25);
+        this.dropSmoke(lock.cells, lock.dropped);
+        this.shake(0.3 + Math.min(1, lock.dropped / 12) * 0.35);
       }
       const bottom = Math.min(...lock.cells.map((c) => c.y));
       for (const c of lock.cells) {
@@ -531,6 +537,24 @@ export class BlocksScene {
     this.counter.rotation.z = Math.sin(this.time * 1.4) * 0.04;
   }
 
+  /**
+   * Humo al chocar una pieza soltada de golpe: una bocanada bajo cada casilla
+   * de apoyo y un anillo que se abre a los lados; más humo cuanto más ha caído.
+   * El grupo del humo está girado: (x, y, z) del pozo → (x, −z, y) del humo.
+   */
+  private dropSmoke(cells: { x: number; y: number }[], dropped: number): void {
+    const bottom = Math.min(...cells.map((c) => c.y));
+    const base = cells.filter((c) => c.y === bottom);
+    const fall = Math.min(1, dropped / 12);
+    const xs = base.map((c) => this.cellPos(c.x, c.y).x);
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+    const y = this.cellPos(0, bottom).y - 0.45;
+    const half = (Math.max(...xs) - Math.min(...xs)) / 2 + 0.5;
+    // Algo por delante del pozo (z = 1,1) para que el fondo no tape la mitad del anillo.
+    this.smoke.ring(cx, -1.1, y, half, 10 + Math.round(fall * 10), 0.9 + fall * 0.6);
+    for (const x of xs) this.smoke.ring(x, -1.1, y, 0.35, 3, 0.7 + fall * 0.4);
+  }
+
   private updateParticles(dt: number): void {
     const { game, theme } = this;
     if (theme.embers) {
@@ -562,5 +586,6 @@ export class BlocksScene {
   dispose(): void {
     disposeScene(this.scene, this.renderer);
     this.glyphs.dispose();
+    this.smoke.dispose();
   }
 }

@@ -34,6 +34,8 @@ export class GhostDirector {
    */
   freezeTimer = 0;
   private eatCombo = 0;
+  /** Fantasmas que estaban apareciendo al asustar con `includeSpawning`: al terminar de aparecer salen asustados. */
+  private frightOnSpawn = new Set<Ghost>();
   private spawnCooldown = 0;
   private playerField = new DistanceField();
   private fieldAge = Infinity;
@@ -84,7 +86,10 @@ export class GhostDirector {
       g.stateTime += dt;
       switch (g.state) {
         case 'spawning':
-          if (g.stateTime >= SPAWN_TIME) g.setState('normal');
+          if (g.stateTime >= SPAWN_TIME) {
+            g.setState(this.frightOnSpawn.has(g) && this.frightTimer > 0 ? 'frightened' : 'normal');
+            this.frightOnSpawn.delete(g);
+          }
           break;
         case 'normal':
           if (frozen) break;
@@ -119,12 +124,18 @@ export class GhostDirector {
   /**
    * Asusta a todos los fantasmas activos.
    * @param bonus segundos extra (habilidades compradas, p. ej. SUSTO LARGO).
+   * @param includeSpawning los que están apareciendo también salen asustados (al abrir un muro
+   * portal; con un energizador, como en el clásico, salen normales).
    */
-  frighten(meters: number, bonus = 0): number {
+  frighten(meters: number, bonus = 0, includeSpawning = false): number {
     const duration = frightDuration(meters) + bonus;
     this.frightTimer = duration;
     this.eatCombo = 0;
-    for (const g of this.ghosts) if (g.state === 'normal' || g.state === 'frightened') g.setState('frightened');
+    this.frightOnSpawn.clear();
+    for (const g of this.ghosts) {
+      if (g.state === 'normal' || g.state === 'frightened') g.setState('frightened');
+      else if (includeSpawning && g.state === 'spawning') this.frightOnSpawn.add(g);
+    }
     return duration;
   }
 
@@ -199,6 +210,7 @@ export class GhostDirector {
       this.frightTimer -= dt;
       if (this.frightTimer <= 0) {
         for (const g of this.ghosts) if (g.state === 'frightened') g.setState('normal');
+        this.frightOnSpawn.clear();
       }
       return; // el ciclo dispersión/persecución se congela mientras dura el susto
     }
@@ -285,6 +297,7 @@ export class GhostDirector {
   clear(): void {
     [...this.ghosts].forEach((g) => this.remove(g));
     this.frightTimer = 0;
+    this.frightOnSpawn.clear();
     this.freezeTimer = 0;
   }
 
@@ -292,5 +305,6 @@ export class GhostDirector {
     const i = this.ghosts.indexOf(g);
     if (i >= 0) this.ghosts.splice(i, 1);
     this.homeFields.delete(g);
+    this.frightOnSpawn.delete(g);
   }
 }

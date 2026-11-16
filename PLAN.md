@@ -147,6 +147,8 @@ activa solo; si se pierde, se acaba la partida.
 - [x] Segundo minijuego: BLOQUES (piezas que caen, 2.5D): 5 líneas en muro portal, 10 y más rápido en portal especial — D-058
 - [x] Ventana y piezas 3D comunes para los minijuegos (`MinigameFrame`, `scene3d`) — D-058
 - [x] Sin cuenta atrás: 1 s invisible entre que aparece la ventana y empieza el juego; BLOQUES 2 líneas en muro portal y 5 en portal especial (Pong igual) — D-060
+- [x] BLOQUES: las piezas caen más rápido (1,7 veces), algo más en el portal especial que en el muro portal — D-062
+- [x] BLOQUES: Z y X sueltan la pieza de golpe, con humo voxel y sacudida al chocar (↑ gira) — D-063
 - [ ] Más minijuegos (Space Invaders…)
 - [ ] Animaciones de entrada y salida del portal más elaboradas (a petición del usuario, más adelante)
 
@@ -180,6 +182,7 @@ partida. Todo sujeto a cambios hasta que guste al usuario.
 - [ ] El usuario prueba y ajusta: distancia entre muros, aspecto del muro, tienda, precios
 - [ ] Más habilidades (básicas, épicas y legendarias)
 - [x] Perder el minijuego de un muro portal ya no mata: la tienda sale bloqueada (no se puede escoger habilidad) y el muro se abre igual — D-060
+- [x] Al abrirse un muro portal, los fantasmas se asustan (también los que están apareciendo), para no chocar sin querer al salir — D-061
 - [x] Portales especiales en uno de cada dos tramos entre muros (portal, muro, muro, portal…), con un 20 % de excepciones en los demás tramos — D-057
 - [ ] Más minijuegos para los muros (y los portales)
 - [?] Mostrar en el HUD el tiempo que queda de congelación (HIELO) y de láser

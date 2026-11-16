@@ -120,7 +120,8 @@ Ganar activa un poder especial aleatorio; perder acaba la partida.
   temas en `themes.ts` y teclado y avisos en `PongMode`. Parámetros en `CONFIG.minigames.pong`.
 - **BLOQUES** (`src/minigames/blocks/`): piezas de 4 bloques que caen. Lógica en `BlocksGame`, pozo 2.5D en `BlocksScene`,
   temas en `themes.ts` y teclado y avisos en `BlocksMode`. Parámetros en `CONFIG.minigames.blocks`.
-  Teclas: ← → mover, ↑ o X girar, Z girar al revés, ↓ bajar rápido, Espacio soltar.
+  Teclas: ← → mover, ↑ girar, ↓ bajar rápido, Z, X o Espacio soltar de golpe (con humo y sacudida). El humo voxel es
+  `render/SmokeEffect.ts`, común con la cinemática de los poderes.
 - **Común:** `MinigameFrame` (ventana animada, título, avisos con fuego, cierre) y `scene3d` (muelles, cifras de vóxeles,
   partículas, encuadre de cámara, liberar la GPU).
 - **Poderes especiales** (`systems/SpecialPowers.ts`, `CONFIG.specialPowers`): se elige uno de `pool`.
@@ -139,7 +140,7 @@ Ganar activa un poder especial aleatorio; perder acaba la partida.
 - **Muros portal** (`systems/Gates.ts`, `systems/GatesView.ts`, `CONFIG.gates`): cada 100–150 m (+20 m por muro) una barrera de lado a lado
   (`Tile.Gate`) que nada atraviesa. Al empujarla desde la línea de debajo se entra en su minijuego (nombre en un cartel
   sobre el muro). Ganar abre la tienda y luego el muro; perder abre la tienda bloqueada (no se puede escoger
-  habilidad) y luego el muro, sin acabar la partida.
+  habilidad) y luego el muro, sin acabar la partida. Al abrirse, los fantasmas se asustan como con un energizador.
 - **Habilidades** (`abilities/catalog.ts`, `systems/Abilities.ts`, `ui/AbilityShopMode.ts`, `CONFIG.abilities`): permanentes,
   de tres niveles (básica 2.500, épica 5.000, legendaria 10.000 puntos). La tienda ofrece una por nivel. Cada una se
   compra una vez por partida, salvo las que tienen `maxLevel` (mejoras "+": SUSTO LARGO +). **Añadir una habilidad:**

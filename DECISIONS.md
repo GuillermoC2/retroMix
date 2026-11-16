@@ -468,6 +468,25 @@ Estados: **Vigente** · **Sustituida por D-NNN** · **En revisión**.
 - **Portales especiales:** sin cambios, perder sigue acabando la partida ("FIN DE LA PARTIDA").
 - **Verificación:** en el navegador, con Pong y con BLOQUES desde un muro real: a los 0,4 s fase `ready` sin textos y a 1,3 s ya se juega. Al perder, tienda bloqueada: con 50.000 puntos, la tecla 1 no compra nada y Enter continúa. Luego el muro se abre, la partida sigue y se suma el ROMPEMUROS. Sin errores en la consola; `tsc` correcto.
 
+## D-061 · Al abrirse un muro portal, los fantasmas se asustan
+- **Fecha:** 2026-11-16 · **Estado:** Vigente (sujeta a cambios si no convence al usuario)
+- **Contexto:** petición del usuario: al salir de un muro portal a veces chocaba sin querer con fantasmas que estaban allí. Entre el muro que se deshace y la animación no se ven bien. Su propuesta: darles el efecto de asustados.
+- **Decisión:** al abrirse el muro (`openGate`, tanto si se ha ganado como si se ha perdido el minijuego, D-060), `ghosts.frighten(...)` con la misma duración que un energizador: según la distancia, de 7 s a 3,5 s, más el extra de SUSTO LARGO. Se pueden comer como con un energizador y la racha de puntos empieza de cero.
+- **También los que están apareciendo:** con un energizador, un fantasma que está apareciendo sale normal, como en el clásico. Al abrir el muro saldría normal justo cuando más peligra el jugador, así que `frighten` acepta `includeSpawning`. Esos fantasmas salen asustados si el susto sigue activo. Solo lo usa el muro; el energizador no cambia. Los fantasmas que aparecen después de abrirse el muro salen normales (aparecen por delante, a distancia).
+- **Verificación:** en el navegador, al abrirse el muro, el fantasma normal pasa a asustado y el temporizador de susto se pone en marcha (6 s a unos 120 m). Con un fantasma apareciendo: con `includeSpawning` sale asustado; con el energizador, normal. `tsc` correcto.
+
+## D-062 · BLOQUES: las piezas caen más rápido
+- **Fecha:** 2026-11-16 · **Estado:** Vigente (afinable en `CONFIG.minigames.blocks.fall`)
+- **Contexto:** petición del usuario: que las piezas caigan más rápido, y algo más en el modo difícil (portal especial) que en el normal (muro portal).
+- **Decisión:** caída (s por fila) en el muro portal: empieza en 0,45 (antes 0,75), baja 0,03 por línea y como mínimo 0,15. En el portal especial: empieza en 0,33 (antes 0,55), baja 0,03 por línea y como mínimo 0,12. Es 1,7 veces más rápido que antes, y el portal sigue siendo un 35 % más rápido que el muro, como antes. Una pieza tarda en cruzar el pozo (16 filas) unos 7 s en el muro y 5 s en el portal (antes 12 y 9). Como ahora se piden pocas líneas (2 y 5, D-060), lo que cuenta es sobre todo la velocidad inicial.
+
+## D-063 · BLOQUES: Z y X sueltan la pieza de golpe, con humo
+- **Fecha:** 2026-11-16 · **Estado:** Vigente (sujeta a cambios si no convence al usuario)
+- **Contexto:** petición del usuario: al pulsar Z o X la pieza debe caer sola, con un efecto de humo al caer que simule una caída violenta.
+- **Teclas:** Z y X sueltan la pieza de golpe, igual que Espacio y Enter (que siguen funcionando). Antes X giraba y Z giraba al revés. Ahora solo se gira con ↑ (en sentido horario): se pierde el giro al revés, que el usuario no ha pedido conservar.
+- **Efecto:** la estela de antes se mantiene. Al chocar sale humo voxel: un anillo que se abre a los lados desde la base de la pieza y una bocanada bajo cada casilla de apoyo. Se reutiliza el humo de la cinemática de los poderes (`SmokeEffect`), que pasa de `maze-run/effects/` a `render/` porque ya lo usan dos sitios. En el pozo, Y es el eje vertical: el grupo del humo va girado −90° en X y el anillo sale algo por delante del pozo (para que el fondo no tape la mitad). La sacudida de la escena y la de la ventana (hundimiento y temblor) crecen con la altura de la caída (máximo a partir de 12 filas), igual que la cantidad y el tamaño del humo.
+- **Verificación:** en el navegador, en el muro portal y en el portal especial: ↑ gira, Z y X sueltan y fijan la pieza, y el humo se ve en las capturas del choque. Sin errores en la consola; `tsc` correcto.
+
 ## D-015 · Pruebas fuera del repositorio (provisional)
 - **Fecha:** 2026-11-13 · **Estado:** En revisión
 - **Decisión actual:** el test de conectividad del generador, el fuzzing de movimiento y las capturas con Edge headless + `puppeteer-core` se ejecutaron desde un directorio temporal, sin añadir dependencias al proyecto.

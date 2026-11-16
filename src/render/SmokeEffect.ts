@@ -17,6 +17,8 @@ const GRAYS = [0xffffff, 0xe4e4f0, 0xc8c8d8, 0xa8a8bc];
 /**
  * Humo voxel: bocanadas cúbicas que salen en anillo desde un punto (p. ej. un
  * aterrizaje), se frenan, suben un poco, crecen y se deshacen en escalones.
+ * El anillo va en el plano XY y sube por Z; en una escena con Y hacia arriba,
+ * basta con girar `group` −90° en X (lo hace BLOQUES).
  */
 export class SmokeEffect {
   readonly group = new THREE.Group();

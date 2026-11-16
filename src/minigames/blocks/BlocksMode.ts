@@ -17,8 +17,8 @@ const CLEAR_TEXTS = ['', '¡LINEA!', '¡DOBLE!', '¡TRIPLE!', '¡CUADRUPLE!'];
  * el laberinto pausado. Lógica en `BlocksGame`, pozo 3D en `BlocksScene` y
  * ventana en `MinigameFrame`.
  *
- * Teclas: ← → mover (se repite al mantener), ↑ o X girar, Z girar al revés,
- * ↓ bajar rápido, Espacio/Enter soltar de golpe.
+ * Teclas: ← → mover (se repite al mantener), ↑ girar, ↓ bajar rápido,
+ * Z, X, Espacio o Enter soltar de golpe (cae con humo y sacudida, D-063).
  *
  * Según la entrada (`stakes.kind`): en un muro portal hay que hacer 2 líneas
  * y se ve con los colores del laberinto; en un portal de poder especial,
@@ -92,9 +92,9 @@ export class BlocksMode implements GameMode {
 
     game.update(dt, {
       move: this.horizontal(dt),
-      rotate: input.pressed('up') || input.pressed('action') ? 1 : input.pressed('power') ? -1 : 0,
+      rotate: input.pressed('up') ? 1 : 0,
       soft: input.isHeld('down'),
-      drop: game.phase === 'play' && input.pressed('confirm'),
+      drop: game.phase === 'play' && (input.pressed('confirm') || input.pressed('action') || input.pressed('power')),
     });
     this.react(dt);
     this.updateTexts();
@@ -148,8 +148,10 @@ export class BlocksMode implements GameMode {
     }
     if (game.hardDrops !== this.lastHardDrops) {
       this.lastHardDrops = game.hardDrops;
-      frame.kick(0, 0.03);
-      frame.shake(2.5, 0.18);
+      // Caída violenta: la ventana se hunde y tiembla más cuanto más ha caído la pieza.
+      const fall = Math.min(1, (game.lastLock?.dropped ?? 0) / 12);
+      frame.kick((Math.random() - 0.5) * 1.2, 0.05 + fall * 0.07);
+      frame.shake(3.5 + fall * 3.5, 0.25);
     }
     this.clearTextTime = Math.max(0, this.clearTextTime - dt);
   }

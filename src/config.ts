@@ -599,11 +599,11 @@ export const CONFIG = {
       linesToWin: { gate: 2, portal: 5 },
       /**
        * Caída (s por fila): al empezar, lo que baja por cada línea hecha y el mínimo.
-       * El portal especial es algo más rápido.
+       * El portal especial es algo más rápido (D-062).
        */
       fall: {
-        gate: { start: 0.75, perLine: 0.04, min: 0.2 },
-        portal: { start: 0.55, perLine: 0.03, min: 0.15 },
+        gate: { start: 0.45, perLine: 0.03, min: 0.15 },
+        portal: { start: 0.33, perLine: 0.03, min: 0.12 },
       },
       /** Bajada rápida (↓): factor sobre la caída normal. */
       softDropFactor: 0.08,

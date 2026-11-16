@@ -10,7 +10,7 @@ import { Player } from './entities/Player';
 import { PlayerView } from './entities/PlayerView';
 import { ShatterEffect } from './effects/ShatterEffect';
 import { PowerCinematic } from './effects/PowerCinematic';
-import { SmokeEffect } from './effects/SmokeEffect';
+import { SmokeEffect } from '../render/SmokeEffect';
 import { TENTACLE_COUNT, TentacleView } from './effects/TentacleView';
 import { GhoulLegs, type FootPlant, type GroundZ } from './systems/GhoulLegs';
 import { escapeTiles } from './maze/escape';
@@ -795,6 +795,10 @@ export class MazeRunMode implements GameMode {
     this.shatter.burst(this.gates.tiles(gate).filter((t) => t.x % 2 === 1), Dir.Up, color, true);
     this.cameraRig.shake(0.4);
     this.state.setPhase('playing');
+    // Al salir del muro, los fantasmas se asustan como con un energizador (también los que están
+    // apareciendo): entre el muro que se deshace y la animación no se ven bien y era fácil chocar
+    // con uno sin querer (D-061).
+    this.ghosts.frighten(this.state.meters, this.abilities.frightBonus, true);
     this.grantWallBreak();
     const name = bought ? abilityName(bought, this.abilities.level(bought)) : '';
     this.refreshAbilities(name);
