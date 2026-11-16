@@ -154,6 +154,13 @@ Ganar activa un poder especial aleatorio; perder acaba la partida.
     que mata a los fantasmas que toca (`systems/Dash.ts`, `effects/DashTrail.ts`).
   - IMAN (básica, hasta 2 niveles): imanes cada 75 m; al coger uno, durante 5 s (+5 s con IMAN +) los puntos pequeños a
     menos de 3,5 casillas vuelan hacia el protagonista (`systems/Magnet.ts`, `effects/MagnetEffect.ts`).
+  - MAS ROMPEMUROS (básica, sin mejora): +1 ROMPEMUROS al comprarla y +1 más cada vez que se supera un muro portal
+    (`wallBreaksOnBuy`, `wallBreaksPerGate`).
+  - FANTASMA AMIGO (épica): corazones cada 85 m; al coger uno, el fantasma más cercano se vuelve aliado 10 s (verde, con
+    un corazón encima): persigue y se come a los demás, ni mata ni se puede comer. Si no hay fantasmas, lo será el primero
+    que aparezca. Al acabar se convierte en ojos y vuelve a su casa (estado `ally` en `GhostDirector`).
+  - TIEMPO LENTO (legendaria): relojes de arena cada 100 m; al coger uno, fantasmas, lava y subida del escenario van al
+    35 % de velocidad durante 6 s, con una viñeta en los bordes de la pantalla (`systems/SlowTime.ts`).
   - Los objetos que siembran las habilidades (`effects.pickup`) los gestiona `systems/Pickups.ts`.
 - **Otros enganches:** `RunState.events` (`meters`, `score`, `energizer`, `died`, `portalEntered`, `minigameResult`,
   `specialPower`, `gateEntered`, `abilityBought`, `ghostsFrozen`, `laserFired`, `dash`…), `RunState.modifiers` (multiplicadores de velocidad), `Maze.setTiles()` y récords por juego (`Records.get(id)`).

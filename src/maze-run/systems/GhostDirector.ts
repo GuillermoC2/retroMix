@@ -42,6 +42,13 @@ export class GhostDirector {
   private homeFields = new Map<Ghost, DistanceField>();
   /** Fantasmas eliminados por la lava en el último update (para efectos). */
   readonly burned: Ghost[] = [];
+  /** FANTASMA AMIGO: el aliado (si hay) y los segundos que le quedan. */
+  ally: Ghost | null = null;
+  allyTimer = 0;
+  /** Se cogió un corazón sin fantasmas cerca: el primero que termine de aparecer será el aliado. */
+  private allyPending = false;
+  /** Fantasmas que se ha comido el aliado en el último update (para los puntos). */
+  readonly allyHits: GhostHit[] = [];
 
   constructor(
     private maze: Maze,
@@ -72,6 +79,14 @@ export class GhostDirector {
     else this.updateModes(dt);
     this.updatePlayerField(dt, player, lavaY);
     this.burned.length = 0;
+    this.allyHits.length = 0;
+    if (this.allyTimer > 0) {
+      this.allyTimer = Math.max(0, this.allyTimer - dt);
+      if (this.allyTimer === 0) {
+        this.allyPending = false;
+        this.dismissAlly(player);
+      }
+    }
 
     const ctx: GhostBrainContext = {
       maze: this.maze,
@@ -87,9 +102,16 @@ export class GhostDirector {
       switch (g.state) {
         case 'spawning':
           if (g.stateTime >= SPAWN_TIME) {
-            g.setState(this.frightOnSpawn.has(g) && this.frightTimer > 0 ? 'frightened' : 'normal');
+            const scared = this.frightOnSpawn.has(g) && this.frightTimer > 0;
             this.frightOnSpawn.delete(g);
+            if (this.allyPending) this.makeAlly(g);
+            else g.setState(scared ? 'frightened' : 'normal');
           }
+          break;
+        case 'ally':
+          // El aliado no se congela: va a por el fantasma más cercano (o se queda cerca del jugador).
+          g.move(ghostSpeed(meters) * speedMultiplier * CONFIG.abilities.friend.speed * dt, this.maze, (opts) => this.chooseAlly(g, opts, player), blocked);
+          this.allyBite(g, player);
           break;
         case 'normal':
           if (frozen) break;
@@ -137,6 +159,77 @@ export class GhostDirector {
       else if (includeSpawning && g.state === 'spawning') this.frightOnSpawn.add(g);
     }
     return duration;
+  }
+
+  /**
+   * FANTASMA AMIGO: el fantasma activo más cercano al jugador pasa a ser aliado
+   * durante `duration` s. Si no hay ninguno, lo será el primero que aparezca.
+   * @returns el nuevo aliado, o null si queda pendiente.
+   */
+  befriend(player: Player, duration: number): Ghost | null {
+    this.dismissAlly(player);
+    this.allyTimer = duration;
+    this.eatCombo = 0;
+    let best: Ghost | null = null;
+    let bestD = Infinity;
+    for (const g of this.ghosts) {
+      if (g.state !== 'normal' && g.state !== 'frightened') continue;
+      const d = (g.x - player.x) ** 2 + (g.y - player.y) ** 2;
+      if (d < bestD) {
+        bestD = d;
+        best = g;
+      }
+    }
+    if (best) this.makeAlly(best);
+    else this.allyPending = true;
+    return best;
+  }
+
+  /** Termina el aliado: se convierte en ojos y vuelve a una casa por delante del jugador. */
+  dismissAlly(player: Player): void {
+    this.allyPending = false;
+    const g = this.ally;
+    this.ally = null;
+    if (!g || g.state !== 'ally') return;
+    g.home = this.pickSpawnTile(player) ?? { x: g.tileX, y: g.tileY };
+    g.setState('eaten');
+  }
+
+  private makeAlly(g: Ghost): void {
+    this.allyPending = false;
+    this.frightOnSpawn.delete(g);
+    this.ally = g;
+    g.setState('ally');
+  }
+
+  /** El aliado se come a los fantasmas activos que toca. */
+  private allyBite(ally: Ghost, player: Player): void {
+    const r2 = CONFIG.ghosts.hitRadius ** 2;
+    const scores = CONFIG.ghosts.eatScores;
+    for (const g of this.ghosts) {
+      if (g.state !== 'normal' && g.state !== 'frightened') continue;
+      if ((g.x - ally.x) ** 2 + (g.y - ally.y) ** 2 > r2) continue;
+      this.allyHits.push({ ghost: g, score: scores[Math.min(this.eatCombo++, scores.length - 1)] });
+      g.home = this.pickSpawnTile(player) ?? { x: g.tileX, y: g.tileY };
+      g.setState('eaten');
+    }
+  }
+
+  /** Dirección del aliado: hacia el fantasma activo más cercano; si no hay, hacia el jugador. */
+  private chooseAlly(ally: Ghost, options: Dir[], player: Player): Dir {
+    let tx = player.tileX;
+    let ty = player.tileY;
+    let bestD = Infinity;
+    for (const g of this.ghosts) {
+      if (g.state !== 'normal' && g.state !== 'frightened') continue;
+      const d = (g.x - ally.x) ** 2 + (g.y - ally.y) ** 2;
+      if (d < bestD) {
+        bestD = d;
+        tx = g.tileX;
+        ty = g.tileY;
+      }
+    }
+    return this.bestBy(options, (d) => this.euclid(ally, d, tx, ty))!;
   }
 
   /** Colisiones con el jugador: devuelve si el jugador muere y qué fantasmas se ha comido. */
@@ -299,6 +392,9 @@ export class GhostDirector {
     this.frightTimer = 0;
     this.frightOnSpawn.clear();
     this.freezeTimer = 0;
+    this.ally = null;
+    this.allyTimer = 0;
+    this.allyPending = false;
   }
 
   private remove(g: Ghost): void {
@@ -306,5 +402,9 @@ export class GhostDirector {
     if (i >= 0) this.ghosts.splice(i, 1);
     this.homeFields.delete(g);
     this.frightOnSpawn.delete(g);
+    if (g === this.ally) {
+      this.ally = null;
+      this.allyTimer = 0;
+    }
   }
 }

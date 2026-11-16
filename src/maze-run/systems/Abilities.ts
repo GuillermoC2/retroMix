@@ -51,6 +51,11 @@ export class Abilities {
     return this.sum((a) => a.effects.frightBonus ?? 0);
   }
 
+  /** ROMPEMUROS extra al superar un muro portal (MAS ROMPEMUROS). */
+  get wallBreaksPerGate(): number {
+    return this.sum((a) => a.effects.wallBreaksPerGate ?? 0);
+  }
+
   /** Objetos que deben aparecer por el laberinto (uno por habilidad que los siembra). */
   get pickups(): PickupKind[] {
     return [...this.owned.keys()].flatMap((a) => (a.effects.pickup ? [a.effects.pickup] : []));

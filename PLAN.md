@@ -181,7 +181,11 @@ partida. Todo sujeto a cambios hasta que guste al usuario.
 - [x] ROMPEMUROS: 2 usos al empezar y +1 por cada portal o muro portal superado; en el HUD, "ROMPEMUROS" con los usos en grande — D-050
 - [x] Verificación: generador (300 semillas, 1.200 muros: posición, forma, sin salas cerca y cada tramo entre muros conectado), flujo completo en el navegador (saltar al muro, entrar, ganar, comprar, abrir y seguir; perder → Game Over; tienda sin puntos), muro irrompible e impasable con los poderes, capturas a 1024×768, 1280×720 y 1920×1080
 - [ ] El usuario prueba y ajusta: distancia entre muros, aspecto del muro, tienda, precios
+- [x] Habilidad básica MAS ROMPEMUROS: +1 ROMPEMUROS al comprarla y +1 por muro portal superado; sin mejora "+" (quitada a petición del usuario) — D-065
+- [x] Habilidad épica FANTASMA AMIGO: corazones; al coger uno, el fantasma más cercano es tu aliado 10 s y se come a los demás — D-065
+- [x] Habilidad legendaria TIEMPO LENTO: relojes de arena; al coger uno, fantasmas, lava y pantalla van al 35 % durante 6 s — D-065
 - [ ] Más habilidades (básicas, épicas y legendarias)
+- [?] Otras ideas propuestas sin elegir: PUNTOS GORDOS, ZAPATILLAS, ALARMA, COLCHON DE LAVA, CEREZAS (básicas); ESCUDO, BOMBA, ENERGIZADOR EXTRA, COHETE, SEGUNDA OPORTUNIDAD (épicas); VIDA EXTRA, TORMENTA, CLON, FANTASMAS AL REVES, MAESTRO DE JUEGOS (legendarias)
 - [x] Perder el minijuego de un muro portal ya no mata: la tienda sale bloqueada (no se puede escoger habilidad) y el muro se abre igual — D-060
 - [x] Al abrirse un muro portal, los fantasmas se asustan (también los que están apareciendo), para no chocar sin querer al salir — D-061
 - [x] Portales especiales en uno de cada dos tramos entre muros (portal, muro, muro, portal…), con un 20 % de excepciones en los demás tramos — D-057

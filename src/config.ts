@@ -385,6 +385,41 @@ export const CONFIG = {
       band: 10,
       firstAhead: 9,
     },
+    /**
+     * MAS ROMPEMUROS (básica, sin mejora): ROMPEMUROS al comprarla y ROMPEMUROS
+     * extra cada vez que se supera un muro portal.
+     */
+    moreWallBreaks: { onBuy: 1, perGate: 1 },
+    /**
+     * FANTASMA AMIGO (épica): aparecen corazones; al coger uno, el fantasma más
+     * cercano se vuelve aliado un rato: persigue y se come a los demás, y ni mata
+     * ni se puede comer. Al acabar se convierte en ojos y vuelve a su casa.
+     */
+    friend: {
+      duration: 10,
+      /** Velocidad del aliado respecto a la de un fantasma normal. */
+      speed: 1.25,
+      /** Últimos segundos en los que parpadea (aviso). */
+      warning: 2,
+      every: 85,
+      band: 10,
+      firstAhead: 10,
+    },
+    /**
+     * TIEMPO LENTO (legendaria): aparecen relojes de arena; al coger uno, todo menos
+     * el protagonista (fantasmas, lava y subida del escenario) va a cámara lenta.
+     */
+    slowTime: {
+      duration: 6,
+      /** Factor del tiempo del mundo mientras dura. */
+      scale: 0.35,
+      /** Segundos que tarda en entrar y salir la cámara lenta. */
+      ease: 0.3,
+      warning: 1.5,
+      every: 100,
+      band: 10,
+      firstAhead: 12,
+    },
     shop: {
       /** Tiempo (s) antes de aceptar teclas (evita compras sin querer al salir del minijuego). */
       inputDelay: 0.6,

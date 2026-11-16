@@ -1,10 +1,14 @@
 import * as THREE from 'three';
 import {
   FEATHER_COLOR,
+  HEART_COLOR,
+  HOURGLASS_COLOR,
   ICE_COLOR,
   LASER_COLOR,
   MAGNET_COLOR,
   featherGeometry,
+  heartGeometry,
+  hourglassGeometry,
   iceCubeGeometry,
   laserOrbGeometry,
   magnetGeometry,
@@ -25,7 +29,8 @@ const glow = (color: number, intensity: number) =>
 /**
  * Objetos de habilidad: el cubito de hielo flota y se balancea mirando a cámara;
  * la bola del láser gira y late con brillo naranja; la pluma se mece como si
- * cayera; el imán bota y se inclina a un lado y a otro.
+ * cayera; el imán bota y se inclina a un lado y a otro; el corazón late; el
+ * reloj de arena se da la vuelta despacio.
  */
 export class PickupsView {
   readonly group = new THREE.Group();
@@ -65,6 +70,29 @@ export class PickupsView {
       animate: (m, t) => {
         m.position.z = ACTOR_Z + 0.06 + Math.abs(Math.sin(t * 3.5)) * 0.1;
         m.rotation.set(0.25, Math.sin(t * 1.6) * 0.5, Math.sin(t * 3.5) * 0.15);
+      },
+    },
+    friend: {
+      geometry: heartGeometry,
+      material: glow(HEART_COLOR, 0.35),
+      animate: (m, t) => {
+        // Late: dos golpes seguidos y una pausa.
+        const beat = t % 1.1;
+        const pump = beat < 0.12 || (beat > 0.22 && beat < 0.34) ? 1.18 : 1;
+        m.scale.setScalar(pump);
+        m.position.z = ACTOR_Z + 0.08 + Math.sin(t * 2) * 0.05;
+        m.rotation.set(0.2, Math.sin(t * 1.4) * 0.4, 0);
+      },
+    },
+    slow: {
+      geometry: hourglassGeometry,
+      material: glow(HOURGLASS_COLOR, 0.3),
+      animate: (m, t) => {
+        // Se da la vuelta cada 2 s (despacio, como el tiempo que frena).
+        const cycle = t % 2;
+        const flip = cycle < 1.5 ? 0 : ((cycle - 1.5) / 0.5) * Math.PI;
+        m.rotation.set(0.2, Math.sin(t * 0.9) * 0.3, Math.floor(t / 2) * Math.PI + flip);
+        m.position.z = ACTOR_Z + 0.1 + Math.sin(t * 1.5) * 0.04;
       },
     },
   };

@@ -81,6 +81,8 @@ export class Hud {
   private specialFill = el('div', 'hud-special-fill');
   private specialTime = el('b', 'hud-special-time');
   private announcer = el('div', 'hud-announce');
+  /** Viñeta de TIEMPO LENTO (parpadea al acabarse). */
+  private slowMo = el('div', 'hud-slowmo');
   /** Fondos oscuros suaves detrás de cada columna (para que se lean sobre el escenario). */
   private scrimLeft = el('div', 'hud-scrim left');
   private scrimRight = el('div', 'hud-scrim right');
@@ -101,7 +103,7 @@ export class Hud {
     this.special.append(this.specialName, specialRow);
     for (const dir of ['up', 'left', 'down', 'right']) this.startHint.append(el('span', `key arrow ${dir}`));
     this.startHint.append(el('span', 'hud-start-text', 'PARA EMPEZAR'));
-    this.root.append(this.scrimLeft, this.scrimRight, this.keys, this.startHint, this.god, this.special, this.announcer);
+    this.root.append(this.slowMo, this.scrimLeft, this.scrimRight, this.keys, this.startHint, this.god, this.special, this.announcer);
     this.setGodMode('');
     this.setSpecial(null);
     this.setStartHint(false);
@@ -296,6 +298,12 @@ export class Hud {
   setGodMode(text: string): void {
     this.god.textContent = text;
     this.god.style.display = text ? '' : 'none';
+  }
+
+  /** TIEMPO LENTO: viñeta de color en los bordes de la pantalla; `warning` la hace parpadear. */
+  setSlowMo(on: boolean, warning: boolean): void {
+    this.slowMo.classList.toggle('on', on);
+    this.slowMo.classList.toggle('warn', on && warning);
   }
 
   /** Aviso de inicio ("pulsa una dirección para empezar") con las teclas dibujadas. */

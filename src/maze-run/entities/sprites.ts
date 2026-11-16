@@ -373,3 +373,48 @@ export function magnetGeometry(): THREE.BufferGeometry {
     return buildVoxelGeometry(sprite, 0.07);
   });
 }
+
+// -----------------------------------------------------------------------------
+// Corazón (habilidad FANTASMA AMIGO) y reloj de arena (habilidad TIEMPO LENTO)
+// -----------------------------------------------------------------------------
+
+const HEART = [
+  '.hh.hh.',
+  'hwhhhhh',
+  'hhhhhhh',
+  '.hhhhh.',
+  '..hhh..',
+  '...h...',
+];
+export const HEART_COLOR = 0xff5ad8;
+
+/** Corazón voxel: objeto de FANTASMA AMIGO y marca sobre el fantasma aliado. */
+export function heartGeometry(): THREE.BufferGeometry {
+  return cached('heart', () => {
+    const palette = { h: HEART_COLOR, w: 0xffd0f4 };
+    const sprite = spriteFromRows(HEART, palette, () => 1);
+    return buildVoxelGeometry(sprite, 0.09);
+  });
+}
+
+/** Color del fantasma aliado (FANTASMA AMIGO). */
+export const ALLY_BODY = 0x3aff8a;
+
+const HOURGLASS = [
+  'GGGGGGG',
+  '.gSSSg.',
+  '..gSg..',
+  '...g...',
+  '..gSg..',
+  '.gSSSg.',
+  'GGGGGGG',
+];
+export const HOURGLASS_COLOR = 0xffc21a;
+
+export function hourglassGeometry(): THREE.BufferGeometry {
+  return cached('hourglass', () => {
+    const palette = { G: HOURGLASS_COLOR, g: 0x9fe6ff, S: 0xffe08a };
+    const sprite = spriteFromRows(HOURGLASS, palette, (_x, y) => (y === 0 || y === 6 ? 1 : 0));
+    return buildVoxelGeometry(sprite, 0.085);
+  });
+}

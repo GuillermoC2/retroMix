@@ -882,3 +882,18 @@ html, body {
 .shop-exit.selected { color: #05051a; background: var(--white); border-color: var(--white); text-shadow: none; box-shadow: 0 0 0 3px #000, 0 0 18px rgba(255, 255, 255, 0.6); }
 .shop-keys { font-size: 9px; color: #9aa3ff; }
 .shop-keys .key { min-width: 0; margin: 0 4px 8px; padding: 6px 7px 4px; font-size: 9px; text-shadow: none; }
+
+/* TIEMPO LENTO: viñeta dorada y violeta en los bordes, con líneas de barrido; parpadea al acabarse. */
+.hud-slowmo {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 194, 26, 0.06) 0 2px, transparent 2px 6px),
+    radial-gradient(ellipse at center, transparent 55%, rgba(120, 60, 255, 0.28) 80%, rgba(255, 194, 26, 0.32) 100%);
+}
+.hud-slowmo.on { opacity: 1; }
+.hud-slowmo.warn { animation: slowmo-warn 0.25s steps(1) infinite; }
+@keyframes slowmo-warn { 50% { opacity: 0.25; } }

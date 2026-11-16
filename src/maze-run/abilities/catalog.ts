@@ -10,6 +10,10 @@ export interface AbilityEffects {
   frightBonus?: number;
   /** Objeto que aparece por el laberinto mientras se tiene la habilidad (cubito de hielo, bola del láser). */
   pickup?: PickupKind;
+  /** ROMPEMUROS que se dan al comprarla (cada nivel). */
+  wallBreaksOnBuy?: number;
+  /** ROMPEMUROS extra cada vez que se supera un muro portal. */
+  wallBreaksPerGate?: number;
 }
 
 /** Icono pixel art: filas de caracteres (arriba → abajo) y color de cada carácter; '.' es transparente. */
@@ -151,7 +155,73 @@ const MAGNET_ICON: PixelIcon = {
   palette: { S: '#e8ecf8', G: '#9aa0b4', R: '#ff3a3a', h: '#ff8a8a', D: '#b01a2a' },
 };
 
-const { longFright, ice, laser, dash, magnet } = CONFIG.abilities;
+/** Muro de bloques neón que se rompe, con un "+". */
+const BREAKING_WALL: PixelIcon = {
+  rows: [
+    '............W...',
+    '...........WWW..',
+    '............W...',
+    'BBBBBBbBBBBBB...',
+    'BBBBBBbBBBBBB.y.',
+    'bbbbbbbbbbbb..y.',
+    'BBbBBBBBkBB.....',
+    'BBbBBBBkk.....B.',
+    'bbbbbbbk........',
+    'BBBBBbBk.....BB.',
+    'BBBBBbBBk.......',
+    'bbbbbbbbbk...y..',
+    'BBbBBBBBbBBk....',
+    'BBbBBBBBbBBBk...',
+    'bbbbbbbbbbbbbb..',
+  ],
+  palette: { B: '#3ae8ff', b: '#0e6a8a', k: '#05051a', y: '#ffd51a', W: '#f4f4ff' },
+};
+
+/** Fantasma verde (aliado) con un corazón. */
+const FRIEND_GHOST: PixelIcon = {
+  rows: [
+    '..........hh.hh.',
+    '....#####hhhhhhh',
+    '...#######hhhhh.',
+    '..#########.hhh.',
+    '.###########.h..',
+    '.##ww####ww##...',
+    '##wwpp##wwpp##..',
+    '##wwpp##wwpp##..',
+    '###ww####ww###..',
+    '##############..',
+    '##############..',
+    '##############..',
+    '##############..',
+    '##.###..###.##..',
+    '#...#....#...#..',
+  ],
+  palette: { '#': '#3aff8a', w: '#ffffff', p: '#1b2bd6', h: '#ff5ad8' },
+};
+
+/** Reloj de arena dorado. */
+const HOURGLASS_ICON: PixelIcon = {
+  rows: [
+    '..GGGGGGGGGGGG..',
+    '...gwwwwwwwwg...',
+    '...gwSSSSSSwg...',
+    '....gwSSSSwg....',
+    '.....gwSSwg.....',
+    '......gSSg......',
+    '.......gg.......',
+    '......gwSg......',
+    '.....gw.S.g.....',
+    '....gw..S..g....',
+    '...gw..SSS..g...',
+    '...gwSSSSSSSg...',
+    '...gSSSSSSSSg...',
+    '..GGGGGGGGGGGG..',
+    '..DDDDDDDDDDDD..',
+  ],
+  palette: { G: '#ffc21a', D: '#a06a00', g: '#9fe6ff', w: '#e8fbff', S: '#ffe08a' },
+};
+
+const { longFright, ice, laser, dash, magnet, moreWallBreaks, friend, slowTime } = CONFIG.abilities;
 
 /** Todas las habilidades que pueden salir en la tienda. Añadir una es añadir una entrada aquí. */
 export const ABILITIES: readonly AbilityDef[] = [
@@ -200,5 +270,29 @@ export const ABILITIES: readonly AbilityDef[] = [
     upgradeDescription: `EL IMAN DURA ${magnet.plusBonus} S MAS: ${magnet.duration + magnet.plusBonus} S EN TOTAL`,
     icon: MAGNET_ICON,
     effects: { pickup: 'magnet' },
+  },
+  {
+    id: 'more-wall-breaks',
+    tier: 'basic',
+    name: 'MAS ROMPEMUROS',
+    description: `+${moreWallBreaks.onBuy} ROMPEMUROS AHORA Y +${moreWallBreaks.perGate} MAS CADA VEZ QUE SUPERAS UN MURO PORTAL`,
+    icon: BREAKING_WALL,
+    effects: { wallBreaksOnBuy: moreWallBreaks.onBuy, wallBreaksPerGate: moreWallBreaks.perGate },
+  },
+  {
+    id: 'friend',
+    tier: 'epic',
+    name: 'FANTASMA AMIGO',
+    description: `APARECEN CORAZONES. AL COGER UNO EL FANTASMA MAS CERCANO SE HACE TU AMIGO ${friend.duration} S Y SE COME A LOS DEMAS`,
+    icon: FRIEND_GHOST,
+    effects: { pickup: 'friend' },
+  },
+  {
+    id: 'slow-time',
+    tier: 'legendary',
+    name: 'TIEMPO LENTO',
+    description: `APARECEN RELOJES DE ARENA. AL COGER UNO TODO MENOS TU VA A CAMARA LENTA DURANTE ${slowTime.duration} S: FANTASMAS, LAVA Y PANTALLA`,
+    icon: HOURGLASS_ICON,
+    effects: { pickup: 'slow' },
   },
 ];

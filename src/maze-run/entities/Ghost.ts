@@ -2,7 +2,8 @@ import type { Maze } from '../maze/Maze';
 import type { DistanceField } from '../maze/DistanceField';
 import { DIRS, DX, DY, isHorizontal, opposite, type Dir } from '../maze/grid';
 
-export type GhostState = 'spawning' | 'normal' | 'frightened' | 'eaten';
+/** `ally`: aliado del jugador (FANTASMA AMIGO): persigue a los demás, ni mata ni se puede comer. */
+export type GhostState = 'spawning' | 'normal' | 'frightened' | 'eaten' | 'ally';
 
 /** Información que necesita una personalidad para elegir objetivo. */
 export interface GhostBrainContext {

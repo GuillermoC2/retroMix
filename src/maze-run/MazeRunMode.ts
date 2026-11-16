@@ -35,6 +35,7 @@ import { Laser, type LaserBeam } from './systems/Laser';
 import { LaserView } from './systems/LaserView';
 import { Dash } from './systems/Dash';
 import { Magnet } from './systems/Magnet';
+import { SlowTime } from './systems/SlowTime';
 import { DashTrail } from './effects/DashTrail';
 import { ElementParticles } from './effects/ElementParticles';
 import { FireIceView } from './effects/FireIceView';
@@ -69,7 +70,7 @@ const DIRECTION_ACTIONS: readonly Action[] = ['up', 'right', 'down', 'left'];
 const ACTION_DIR: Record<string, Dir> = { up: Dir.Up, right: Dir.Right, down: Dir.Down, left: Dir.Left };
 
 /** Color de las etiquetas flotantes y de los anuncios según su origen. */
-const TAG_COLORS = { ice: '#7fd8ff', laser: '#ff8a1a', dash: '#6ab8ff', magnet: '#ff4a5a', wallBreak: '#ffd51a' };
+const TAG_COLORS = { ice: '#7fd8ff', laser: '#ff8a1a', dash: '#6ab8ff', magnet: '#ff4a5a', wallBreak: '#ffd51a', friend: '#3aff8a', slow: '#ffc21a' };
 const POWER_COLORS: Record<SpecialPowerId, string> = { giant: '#ffd51a', ghoul: '#ff2e3a', fireIce: '#ff8a1a' };
 const ANNOUNCE = { good: '#3ae8ff', bad: '#ff2e3a' };
 
@@ -125,6 +126,7 @@ export class MazeRunMode implements GameMode {
   private dash = new Dash();
   private dashTrail = new DashTrail();
   private magnet = new Magnet();
+  private slowTime = new SlowTime();
   private magnetEffect = new MagnetEffect();
   private powers = new SpecialPowers();
   private tentacles = new TentacleView();
@@ -333,7 +335,14 @@ export class MazeRunMode implements GameMode {
     const gate = this.gates.touching(player);
     if (gate) return this.enterGate(gate);
 
-    this.ghosts.update(dt, player, state.meters, this.lava.y, state.modifiers.ghostSpeed);
+    // TIEMPO LENTO: fantasmas, lava y subida del escenario usan un tiempo más lento.
+    this.slowTime.update(dt);
+    const worldDt = dt * this.slowTime.scale;
+    this.ghosts.update(worldDt, player, state.meters, this.lava.y, state.modifiers.ghostSpeed);
+    for (const { ghost, score } of this.ghosts.allyHits) {
+      state.addScore(score, ghost.x, ghost.y, true);
+      this.cameraRig.shake(0.12);
+    }
     this.fireLaser(dt);
     this.updateFireIce(dt);
     // DASH: todo el recorrido del acelerón de este fotograma mata a los fantasmas que toca.
@@ -354,9 +363,9 @@ export class MazeRunMode implements GameMode {
     }
 
     // El escenario sube solo; la lava persigue el borde inferior de la pantalla (puede quedarse atrás un rato).
-    this.scroll.update(dt, state.meters, player.y, state.modifiers.scrollSpeed, true);
+    this.scroll.update(worldDt, state.meters, player.y, state.modifiers.scrollSpeed, true);
     const screenBottom = this.scroll.y - this.cameraRig.halfHeight;
-    this.lava.update(dt, state.meters, screenBottom + CONFIG.lava.screenOffset, state.modifiers.lavaSpeed);
+    this.lava.update(worldDt, state.meters, screenBottom + CONFIG.lava.screenOffset, state.modifiers.lavaSpeed);
     if (this.lava.touches(player.y) && !godSettings.invincible) return this.die('lava');
 
     maze.ensureGenerated(player.tileY + CONFIG.maze.generateAhead);
@@ -413,6 +422,15 @@ export class MazeRunMode implements GameMode {
     } else if (p.kind === 'dash') {
       this.dash.grant(CONFIG.abilities.dash.duration);
       this.tagPopup('DASH', p.x, p.y, TAG_COLORS.dash);
+    } else if (p.kind === 'friend') {
+      // Sin fantasmas a la vista, el primero que aparezca será el amigo.
+      const ally = this.ghosts.befriend(this.player, CONFIG.abilities.friend.duration);
+      this.tagPopup('AMIGO', ally ? ally.x : p.x, ally ? ally.y : p.y, TAG_COLORS.friend);
+      this.cameraRig.shake(0.12);
+    } else if (p.kind === 'slow') {
+      this.slowTime.grant(CONFIG.abilities.slowTime.duration);
+      this.tagPopup('TIEMPO LENTO', p.x, p.y, TAG_COLORS.slow);
+      this.cameraRig.shake(0.15);
     } else {
       this.magnet.grant(this.abilities.magnetDuration || CONFIG.abilities.magnet.duration);
       this.tagPopup('IMAN', p.x, p.y, TAG_COLORS.magnet);
@@ -777,7 +795,7 @@ export class MazeRunMode implements GameMode {
         buy: (slot: ShopSlot) => {
           const price = CONFIG.abilities.tiers[slot.tier].price;
           if (!slot.ability || !this.abilities.canBuy(slot.ability) || !state.spend(price)) return false;
-          this.abilities.add(slot.ability);
+          this.gainAbility(slot.ability);
           state.events.emit('abilityBought', { id: slot.ability.id, tier: slot.tier, price });
           return true;
         },
@@ -795,23 +813,34 @@ export class MazeRunMode implements GameMode {
     this.shatter.burst(this.gates.tiles(gate).filter((t) => t.x % 2 === 1), Dir.Up, color, true);
     this.cameraRig.shake(0.4);
     this.state.setPhase('playing');
+    // MAS ROMPEMUROS suma los suyos a los del muro (D-065).
+    this.grantWallBreak(CONFIG.powers.wallBreak.perPortal + this.abilities.wallBreaksPerGate);
     // Al salir del muro, los fantasmas se asustan como con un energizador (también los que están
     // apareciendo): entre el muro que se deshace y la animación no se ven bien y era fácil chocar
     // con uno sin querer (D-061).
     this.ghosts.frighten(this.state.meters, this.abilities.frightBonus, true);
-    this.grantWallBreak();
     const name = bought ? abilityName(bought, this.abilities.level(bought)) : '';
     this.refreshAbilities(name);
     // Comprar no muestra anuncio (es de los poderes especiales): salta su etiqueta en el HUD.
     if (!bought) this.hud.announce('¡ADELANTE!', 'MURO SUPERADO', ANNOUNCE.good);
   }
 
-  /** Superar un portal o un muro portal da un ROMPEMUROS más. */
-  private grantWallBreak(): void {
-    const n = CONFIG.powers.wallBreak.perPortal;
+  /** Superar un portal o un muro portal da ROMPEMUROS (uno; en los muros, más con MAS ROMPEMUROS). */
+  private grantWallBreak(n: number = CONFIG.powers.wallBreak.perPortal): void {
     this.wallBreaker.grant(n);
     this.tagPopup(`+${n} ROMPEMUROS`, this.player.x, this.player.y, TAG_COLORS.wallBreak);
     this.hud.pulsePower();
+  }
+
+  /** Suma un nivel de una habilidad y aplica lo que da al comprarla (MAS ROMPEMUROS). @returns si se ha añadido. */
+  private gainAbility(a: AbilityDef): boolean {
+    if (!this.abilities.add(a)) return false;
+    const n = a.effects.wallBreaksOnBuy ?? 0;
+    if (n > 0) {
+      this.wallBreaker.grant(n);
+      this.hud.pulsePower();
+    }
+    return true;
   }
 
   /** Aspecto del protagonista: el del poder especial si hay uno; si no, azulado con DASH (parpadea al acabarse). */
@@ -872,7 +901,8 @@ export class MazeRunMode implements GameMode {
 
   /**
    * Un poder especial y las habilidades no se mezclan: al recibir un poder se
-   * pierden los efectos de habilidad en curso (láser, dash, imán y congelación).
+   * pierden los efectos de habilidad en curso (láser, dash, imán, congelación,
+   * fantasma amigo y cámara lenta).
    * Las habilidades compradas se conservan: sus objetos vuelven a poder cogerse
    * cuando acaba el poder.
    */
@@ -882,6 +912,8 @@ export class MazeRunMode implements GameMode {
     this.dash.clear();
     this.magnet.clear();
     this.ghosts.unfreeze();
+    this.ghosts.dismissAlly(this.player);
+    this.slowTime.clear();
   }
 
   // ---------------------------------------------------------------------------
@@ -964,7 +996,7 @@ export class MazeRunMode implements GameMode {
       label: `${abilityName(a, Math.min(maxLevel(a), this.abilities.level(a) + 1))} (${CONFIG.abilities.tiers[a.tier].name})`,
       button: () => (this.abilities.canBuy(a) ? 'DAR' : 'MAX'),
       run: () => {
-        if (!this.abilities.add(a)) return;
+        if (!this.gainAbility(a)) return;
         this.usedCheats = true;
         const name = abilityName(a, this.abilities.level(a));
         this.refreshAbilities(name);
@@ -1153,10 +1185,13 @@ export class MazeRunMode implements GameMode {
     const fireIceOn = playing && this.powers.active?.id === 'fireIce';
     this.fireIceView.update(dt, this.fireIce, this.maze, playing ? this.flame : null, this.playerView.mesh, fireIceOn, playing && this.sliding);
     this.particles.update(dt);
-    this.ghostsView.update(dt, this.ghosts);
+    // Con TIEMPO LENTO, los fantasmas y la lava también se animan a cámara lenta.
+    const worldDt = playing ? dt * this.slowTime.scale : dt;
+    this.hud.setSlowMo(playing && this.slowTime.active, this.slowTime.warning);
+    this.ghostsView.update(worldDt, this.ghosts);
     // Como en el clásico, los fantasmas desaparecen durante la animación de muerte.
     this.ghostsView.group.visible = !(dying && (state.phase === 'over' || state.phaseTime > 0.4));
-    this.lavaView.update(dt, this.lava);
+    this.lavaView.update(worldDt, this.lava);
     this.shatter.update(dt);
     this.smoke.update(dt);
     // Los tentáculos los coloca la cinemática (acto y caída) o, como patas, el poder.

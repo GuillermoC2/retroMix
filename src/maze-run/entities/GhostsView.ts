@@ -3,19 +3,22 @@ import { CONFIG } from '../../config';
 import type { GhostDirector } from '../systems/GhostDirector';
 import { ACTOR_Z, worldX } from '../world';
 import type { Ghost } from './Ghost';
-import { FLASH_BODY, FLASH_FACE, ICE_BODY, SCARED_BODY, SCARED_FACE, ghostGeometry, type GhostLook } from './sprites';
+import { ALLY_BODY, FLASH_BODY, FLASH_FACE, HEART_COLOR, ICE_BODY, SCARED_BODY, SCARED_FACE, ghostGeometry, heartGeometry, type GhostLook } from './sprites';
 
 interface GhostMeshes {
   body: THREE.Mesh;
   /** Bloque de hielo translúcido que lo envuelve mientras está congelado. */
   ice: THREE.Mesh;
+  /** Corazón que flota sobre el fantasma aliado (FANTASMA AMIGO). */
+  heart: THREE.Mesh;
 }
 
 /**
  * Una malla voxel por fantasma; cambia de geometría según estado, mirada y
  * fotograma del faldón. Congelados: quietos dentro de un bloque de hielo, con el
  * cuerpo azul hielo (o de susto si están asustados); al final tiemblan y
- * parpadean con su color antes de soltarse.
+ * parpadean con su color antes de soltarse. El aliado (FANTASMA AMIGO) es verde
+ * con un corazón que late encima; al acabarse parpadea con su color.
  */
 export class GhostsView {
   readonly group = new THREE.Group();
@@ -32,6 +35,7 @@ export class GhostsView {
     depthWrite: false,
   });
   private iceEdgeMaterial = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 });
+  private heartMaterial = new THREE.MeshLambertMaterial({ vertexColors: true, emissive: HEART_COLOR, emissiveIntensity: 0.4 });
   private time = 0;
 
   update(dt: number, director: GhostDirector): void {
@@ -39,7 +43,7 @@ export class GhostsView {
     const alive = new Set(director.ghosts);
     for (const [g, m] of this.meshes) {
       if (!alive.has(g)) {
-        this.group.remove(m.body, m.ice);
+        this.group.remove(m.body, m.ice, m.heart);
         this.meshes.delete(g);
       }
     }
@@ -49,6 +53,7 @@ export class GhostsView {
     const frozen = director.frozen;
     const thawing = frozen && director.freezeTimer < CONFIG.abilities.ice.thawWarning;
     const thawFlash = thawing && Math.floor(this.time * 8) % 2 === 0;
+    const allyFlash = director.allyTimer < CONFIG.abilities.friend.warning && Math.floor(this.time * 8) % 2 === 0;
 
     for (const g of director.ghosts) {
       let m = this.meshes.get(g);
@@ -58,15 +63,18 @@ export class GhostsView {
         const ice = new THREE.Mesh(this.iceGeometry, this.iceMaterial);
         ice.add(new THREE.LineSegments(this.iceEdges, this.iceEdgeMaterial));
         ice.renderOrder = 1;
-        m = { body, ice };
+        const heart = new THREE.Mesh(heartGeometry(), this.heartMaterial);
+        m = { body, ice, heart };
         this.meshes.set(g, m);
-        this.group.add(body, ice);
+        this.group.add(body, ice, heart);
       }
-      const isFrozen = frozen && g.state !== 'eaten';
+      const isFrozen = frozen && g.state !== 'eaten' && g.state !== 'ally';
       const frame = isFrozen ? 0 : ((Math.floor(this.time * 7 + g.id) % 2) as 0 | 1);
       let look: GhostLook;
       if (g.state === 'eaten') {
         look = { body: null, frame, face: g.dir };
+      } else if (g.state === 'ally') {
+        look = { body: allyFlash ? g.personality.color : ALLY_BODY, frame, face: g.dir };
       } else if (isFrozen && !thawFlash) {
         // Asustado y congelado: se ve asustado (se puede comer) dentro del hielo.
         look = g.state === 'frightened' ? { body: SCARED_BODY, frame, face: 'scared', faceColor: SCARED_FACE } : { body: ICE_BODY, frame, face: g.dir };
@@ -85,6 +93,14 @@ export class GhostsView {
       m.body.scale.set(s, s, s);
       m.body.rotation.y = g.state === 'spawning' ? (1 - s) * Math.PI * 2 : 0;
 
+      m.heart.visible = g.state === 'ally';
+      if (m.heart.visible) {
+        const beat = (this.time + g.id * 0.3) % 1.1;
+        m.heart.scale.setScalar(beat < 0.12 || (beat > 0.22 && beat < 0.34) ? 1.2 : 1);
+        // Por encima de los muros (a la altura del fantasma lo tapaba el bloque de la fila de arriba).
+        m.heart.position.set(worldX(g.x), g.y + 0.5, CONFIG.maze.wallDepth + 0.35 + Math.sin(this.time * 3) * 0.06);
+      }
+
       m.ice.visible = isFrozen;
       if (isFrozen) {
         m.ice.position.set(worldX(g.x) + shake, g.y, ACTOR_Z);
@@ -99,5 +115,6 @@ export class GhostsView {
     this.iceEdges.dispose();
     this.iceMaterial.dispose();
     this.iceEdgeMaterial.dispose();
+    this.heartMaterial.dispose();
   }
 }
